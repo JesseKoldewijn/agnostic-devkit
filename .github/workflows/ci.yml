@@ -1,0 +1,337 @@
+name: CI
+
+on:
+    push:
+        branches: [main, master, develop]
+    pull_request:
+        branches: [main, master, develop]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    lint-and-type-check:
+        name: Lint & Type Check
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "25.0.0"
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Setup Yarn
+              run: corepack prepare yarn@4.10.3 --activate
+
+            - name: Get Yarn cache directory path
+              id: yarn-cache-dir-path
+              run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+            - name: Cache Yarn dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Type check
+              run: yarn type-check
+
+    test:
+        name: Unit Tests
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "25.0.0"
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Setup Yarn
+              run: corepack prepare yarn@4.10.3 --activate
+
+            - name: Get Yarn cache directory path
+              id: yarn-cache-dir-path
+              run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+            - name: Cache Yarn dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Run unit tests with coverage
+              run: yarn test:coverage
+
+            - name: Upload coverage reports
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: coverage-report
+                  path: |
+                      coverage/
+                  retention-days: 7
+
+    build:
+        name: Build Extension
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "25.0.0"
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Setup Yarn
+              run: corepack prepare yarn@4.10.3 --activate
+
+            - name: Get Yarn cache directory path
+              id: yarn-cache-dir-path
+              run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+            - name: Cache Yarn dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Build extension (for E2E with coverage)
+              env:
+                  CI_COVERAGE: "true"
+              run: yarn build
+
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: extension-build
+                  path: dist/
+                  retention-days: 7
+
+    test-e2e:
+        name: E2E Tests
+        runs-on: ubuntu-latest
+        needs: [build]
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "25.0.0"
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Setup Yarn
+              run: corepack prepare yarn@4.10.3 --activate
+
+            - name: Get Yarn cache directory path
+              id: yarn-cache-dir-path
+              run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+            - name: Cache Yarn dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Cache Playwright browsers
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: ${{ runner.os }}-playwright-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-playwright-
+
+            - name: Install Playwright browsers
+              run: yarn playwright install --with-deps chromium
+
+            - name: Download build artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: extension-build
+                  path: dist/
+
+            - name: Run E2E tests
+              env:
+                  CI_COVERAGE: "true"
+              run: yarn test:e2e
+
+            - name: Generate Playwright coverage report
+              if: always()
+              run: yarn coverage:playwright
+
+            - name: Upload E2E coverage
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: playwright-coverage
+                  path: coverage/playwright/
+                  retention-days: 7
+
+    merge-coverage:
+        name: Merge Coverage Reports
+        runs-on: ubuntu-latest
+        needs: [test, test-e2e]
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "25.0.0"
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Setup Yarn
+              run: corepack prepare yarn@4.10.3 --activate
+
+            - name: Get Yarn cache directory path
+              id: yarn-cache-dir-path
+              run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+            - name: Cache Yarn dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Download Vitest coverage
+              uses: actions/download-artifact@v4
+              continue-on-error: true
+              with:
+                  name: coverage-report
+                  path: coverage/
+
+            - name: Download Playwright coverage
+              uses: actions/download-artifact@v4
+              continue-on-error: true
+              with:
+                  name: playwright-coverage
+                  path: coverage/playwright/
+
+            - name: Merge coverage reports
+              run: yarn coverage:merge
+
+            - name: Upload merged coverage report
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: merged-coverage-report
+                  path: coverage/merged/
+                  retention-days: 30
+
+            - name: Extract coverage stats
+              id: coverage
+              run: |
+                  # Extract coverage from JSON reports
+                  get_coverage() {
+                    local json_file=$1
+                    if [ -f "$json_file" ]; then
+                      node -e "
+                        const data = require('./$json_file');
+                        const summary = data.summary || data;
+                        const lines = summary.lines?.pct ?? summary.total?.lines?.pct ?? 0;
+                        console.log(Math.round(lines * 10) / 10);
+                      " 2>/dev/null || echo "0"
+                    else
+                      echo "0"
+                    fi
+                  }
+
+                  UNIT_COV=$(get_coverage "coverage/vitest/coverage-summary.json")
+                  E2E_COV=$(get_coverage "coverage/playwright/coverage-summary.json")
+                  TOTAL_COV=$(get_coverage "coverage/merged/coverage-summary.json")
+
+                  echo "unit=$UNIT_COV" >> $GITHUB_OUTPUT
+                  echo "e2e=$E2E_COV" >> $GITHUB_OUTPUT
+                  echo "total=$TOTAL_COV" >> $GITHUB_OUTPUT
+
+                  echo "Unit Coverage: $UNIT_COV%"
+                  echo "E2E Coverage: $E2E_COV%"
+                  echo "Total Coverage: $TOTAL_COV%"
+
+            - name: Create coverage badges JSON
+              run: |
+                  mkdir -p .badges
+                  cat > .badges/coverage.json << EOF
+                  {
+                    "schemaVersion": 1,
+                    "label": "coverage",
+                    "message": "${{ steps.coverage.outputs.total }}%",
+                    "color": "$([ $(echo "${{ steps.coverage.outputs.total }} >= 80" | bc -l) -eq 1 ] && echo "brightgreen" || ([ $(echo "${{ steps.coverage.outputs.total }} >= 60" | bc -l) -eq 1 ] && echo "yellow" || echo "red"))"
+                  }
+                  EOF
+                  cat > .badges/coverage-unit.json << EOF
+                  {
+                    "schemaVersion": 1,
+                    "label": "unit coverage",
+                    "message": "${{ steps.coverage.outputs.unit }}%",
+                    "color": "$([ $(echo "${{ steps.coverage.outputs.unit }} >= 80" | bc -l) -eq 1 ] && echo "brightgreen" || ([ $(echo "${{ steps.coverage.outputs.unit }} >= 60" | bc -l) -eq 1 ] && echo "yellow" || echo "red"))"
+                  }
+                  EOF
+                  cat > .badges/coverage-e2e.json << EOF
+                  {
+                    "schemaVersion": 1,
+                    "label": "e2e coverage",
+                    "message": "${{ steps.coverage.outputs.e2e }}%",
+                    "color": "$([ $(echo "${{ steps.coverage.outputs.e2e }} >= 80" | bc -l) -eq 1 ] && echo "brightgreen" || ([ $(echo "${{ steps.coverage.outputs.e2e }} >= 60" | bc -l) -eq 1 ] && echo "yellow" || echo "red"))"
+                  }
+                  EOF
+
+            - name: Commit coverage badges
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+              run: |
+                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --local user.name "github-actions[bot]"
+                  git add .badges/
+                  git diff --staged --quiet || git commit -m "chore: update coverage badges [skip ci]"
+                  git push

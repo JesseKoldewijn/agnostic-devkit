@@ -1,0 +1,56 @@
+{
+	"name": "chrome-extension",
+	"version": "1.0.0",
+	"description": "A Chromium extension built with Vite, TypeScript, SolidJS, and Tailwind CSS v4",
+	"type": "module",
+	"scripts": {
+		"dev": "vite build --watch",
+		"build": "vite build",
+		"watch": "vite build --watch",
+		"preview": "vite preview",
+		"type-check": "tsc --noEmit",
+		"test": "vitest run",
+		"test:ui": "vitest --ui",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:coverage": "CI_COVERAGE=true playwright test && yarn coverage:playwright",
+		"build:coverage": "CI_COVERAGE=true yarn build",
+		"test:all:coverage": "yarn test:coverage && yarn build:coverage && yarn test:e2e:coverage && yarn coverage:merge",
+		"coverage:playwright": "node scripts/generate-playwright-coverage.js",
+		"coverage:merge": "node scripts/merge-coverage.js",
+		"coverage:open": "npx --yes open-cli coverage/merged/index.html",
+		"check:unused": "node scripts/check-unused.js"
+	},
+	"dependencies": {
+		"solid-js": "^1.9.9"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.56.1",
+		"@tailwindcss/vite": "^4.1.15",
+		"@types/chrome": "^0.1.24",
+		"@types/jsdom": "^27",
+		"@types/node": "^24.10.1",
+		"@vitest/coverage-v8": "^4.0.14",
+		"@vitest/ui": "^4.0.14",
+		"happy-dom": "^20.0.8",
+		"jsdom": "^27.0.1",
+		"knip": "^5.67.6",
+		"monocart-coverage-reports": "^2.12.9",
+		"playwright": "^1.56.1",
+		"tailwindcss": "^4.1.15",
+		"typescript": "^5.9.3",
+		"vite": "^7.1.11",
+		"vite-plugin-istanbul": "^7.2.1",
+		"vite-plugin-scope-tailwind": "^2.0.2",
+		"vite-plugin-solid": "^2.11.10",
+		"vite-plugin-web-extension": "^4.4.5",
+		"vitest": "^4.0.14"
+	},
+	"packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
+	"volta": {
+		"node": "25.0.0",
+		"yarn": "4.10.3"
+	}
+}

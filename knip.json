@@ -1,0 +1,20 @@
+{
+	"$schema": "https://unpkg.com/knip@latest/schema.json",
+	"entry": [
+		"src/background/index.ts",
+		"src/content/index.ts",
+		"src/popup/index.tsx",
+		"src/sidebar/index.tsx",
+		"src/options/index.tsx"
+	],
+	"project": ["src/**/*.{ts,tsx}"],
+	"ignore": [
+		"src/vite-env.d.ts",
+		"src/test/**",
+		"**/*.test.ts",
+		"**/*.test.tsx",
+		"**/*.spec.ts",
+		"**/*.spec.tsx"
+	],
+	"ignoreDependencies": ["vite-plugin-scope-tailwind", "tailwindcss"]
+}
