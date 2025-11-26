@@ -122,7 +122,7 @@ export function isSidebarSupported(): boolean {
 /**
  * Check if notifications are supported
  */
-function isNotificationsSupported(): boolean {
+export function isNotificationsSupported(): boolean {
 	return chrome.notifications?.getPermissionLevel !== undefined;
 }
 
@@ -136,7 +136,7 @@ export function logBrowserInfo(): void {
 	console.log("[Browser] User agent:", navigator.userAgent);
 }
 
-const isNotificationDisabled = async (): Promise<boolean> => {
+export const isNotificationDisabled = async (): Promise<boolean> => {
 	if (!isNotificationsSupported()) return true;
 
 	const result = await browser.storage?.sync.get(["notifications"]);
@@ -163,3 +163,33 @@ export async function showNotification(
 	return await chrome.notifications.create(undefined as any, options);
 }
 
+/**
+ * Helper: Show a notification with action buttons
+ */
+export async function showNotificationWithButtons(
+	title: string,
+	message: string,
+	buttons: { title: string }[],
+	force?: boolean
+): Promise<string> {
+	if ((await isNotificationDisabled()) && !force) return "";
+	const iconUrl = chrome.runtime.getURL("./icons/icon-48.png");
+	const options: chrome.notifications.NotificationCreateOptions = {
+		type: "basic",
+		title,
+		iconUrl,
+		message,
+		buttons,
+		requireInteraction: true, // Keep notification visible until user interacts
+	};
+
+	return await chrome.notifications.create(undefined as any, options);
+}
+
+// Export testable classes for use in other modules and tests
+export {
+	BrowserDetector,
+	SidePanelManager,
+	DisplayModeManager,
+	ThemeManager,
+} from "./browserClasses";

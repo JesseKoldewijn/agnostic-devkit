@@ -1,53 +1,79 @@
-import { Component, createSignal, onMount } from "solid-js";
+import { Component, createSignal, onMount, Show } from "solid-js";
 import { getTheme, type Theme } from "../utils/theme";
 import { browser } from "../utils/browser";
+import { PresetToggleList, PresetManager } from "../components";
 
 export const App: Component = () => {
-	const [count, setCount] = createSignal(0);
 	const [currentTheme, setCurrentTheme] = createSignal<Theme>("system");
+	const [showManager, setShowManager] = createSignal(false);
+	const [currentUrl, setCurrentUrl] = createSignal<string>("");
 
 	onMount(async () => {
 		const theme = await getTheme();
 		setCurrentTheme(theme);
 
+		// Get current tab URL
+		const tabs = await browser.tabs?.query({ active: true, currentWindow: true });
+		if (tabs?.[0]?.url) {
+			setCurrentUrl(tabs[0].url);
+		}
+
 		// Listen for theme changes
 		browser.storage?.onChanged.addListener((changes, areaName) => {
 			if (areaName === "sync" && changes.theme) {
-				setCurrentTheme(changes.theme.newValue as Theme);
+				setCurrentTheme(changes.theme.newValue);
 			}
 		});
 	});
 
 	return (
-		<div class="w-96 h-96 p-6 bg-background">
-			<div class="flex flex-col items-center justify-center h-full space-y-4">
-				<h1 class="text-3xl font-bold text-foreground">
-					Chrome Extension
-				</h1>
-				<p class="text-muted-foreground">
-					Built with Vite + SolidJS + Tailwind CSS v4
-				</p>
+		<div class="w-96 min-h-96 p-4 bg-background">
+			<Show
+				when={!showManager()}
+				fallback={
+					<PresetManager
+						onClose={() => setShowManager(false)}
+						class="h-[400px]"
+					/>
+				}
+			>
+				<div class="flex flex-col space-y-4">
+					{/* Header */}
+					<div class="flex items-center justify-between">
+						<h1 class="text-lg font-bold text-foreground">
+							Parameters
+						</h1>
+						<div class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground">
+							{currentTheme()}
+						</div>
+					</div>
 
-				<div class="px-3 py-1 bg-secondary rounded-md text-xs text-secondary-foreground">
-					Theme: {currentTheme()}
+					{/* Current URL display */}
+					<Show when={currentUrl()}>
+						<div class="px-3 py-2 bg-muted/50 rounded-lg border border-border">
+							<div class="text-xs text-muted-foreground mb-1">Current Tab</div>
+							<div class="text-xs font-mono text-foreground truncate" title={currentUrl()}>
+								{currentUrl()}
+							</div>
+						</div>
+					</Show>
+
+					{/* Preset Toggle List */}
+					<PresetToggleList
+						onManagePresets={() => setShowManager(true)}
+					/>
+
+					{/* Footer buttons */}
+					<div class="pt-2 border-t border-border">
+						<button
+							onClick={() => browser.runtime?.openOptionsPage()}
+							class="w-full px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+						>
+							Open Options
+						</button>
+					</div>
 				</div>
-
-				<div class="flex flex-col items-center space-y-3">
-					<button
-						onClick={() => setCount(count() + 1)}
-						class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-					>
-						Count: {count()}
-					</button>
-
-					<button
-						onClick={() => browser.runtime?.openOptionsPage()}
-						class="px-6 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
-					>
-						Open Options
-					</button>
-				</div>
-			</div>
+			</Show>
 		</div>
 	);
 };

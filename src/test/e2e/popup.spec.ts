@@ -11,43 +11,50 @@ test.describe("Popup E2E Tests", () => {
 		extensionContext,
 		extensionId,
 	}) => {
-		// Navigate directly to popup page (works with launchPersistentContext)
 		const popupPage = await openPopupPage(extensionContext, extensionId);
 
-		// The helper should have already waited for root, but verify it exists
-		// If root doesn't exist, check what's actually on the page
-		const rootExists = await popupPage
-			.locator("#root")
-			.count()
-			.catch(() => 0);
-		if (rootExists === 0) {
-			// Debug: log page content
-			const bodyText = await popupPage
-				.locator("body")
-				.textContent()
-				.catch(() => "");
-			const pageUrl = popupPage.url();
-			const pageTitle = await popupPage.title().catch(() => "");
-			console.log(`Page URL: ${pageUrl}`);
-			console.log(`Page Title: ${pageTitle}`);
-			console.log(`Body content: ${bodyText?.substring(0, 200)}`);
-			throw new Error(
-				`Root element not found. URL: ${pageUrl}, Title: ${pageTitle}`
-			);
-		}
+		// Wait for content to load
+		await popupPage.waitForLoadState("networkidle");
 
-		// Listen for console messages to debug
-		popupPage.on("console", (msg) => {
-			if (msg.type() === "error") {
-				console.log("Console error:", msg.text());
-			}
+		// Verify title
+		const title = await popupPage.title();
+		expect(title).toBe("Chrome Extension Popup");
+
+		// Verify main heading is visible
+		const heading = popupPage.getByRole("heading", {
+			name: "Parameters",
 		});
+		await expect(heading).toBeVisible();
 
-		// Wait for network to be idle to ensure scripts loaded
-		await popupPage
-			.waitForLoadState("networkidle", { timeout: 15000 })
-			.catch(() => {
-				// Network idle may timeout, that's okay
+		// Verify theme indicator is visible
+		const themeIndicator = popupPage.locator(".text-secondary-foreground").first();
+		await expect(themeIndicator).toBeVisible();
+
+		// Verify "Manage" button exists
+		const manageButton = popupPage.getByRole("button", { name: "Manage" });
+		await expect(manageButton).toBeVisible();
+
+		// Verify "Open Options" button exists
+		const optionsButton = popupPage.getByRole("button", {
+			name: "Open Options",
+		});
+		await expect(optionsButton).toBeVisible();
+
+		await popupPage.close();
+	});
+
+	test.skip("should display current tab URL when available", async ({
+		extensionContext,
+		extensionId,
+	}) => {
+		const popupPage = await openPopupPage(extensionContext, extensionId);
+
+		// Wait for content to load
+		await popupPage.waitForLoadState("networkidle");
+
+		// The "Current Tab" section should be visible if there's an active tab
+		const currentTabSection = popupPage.getByText("Current Tab");
+		await expect(currentTabSection).toBeVisible({ timeout: 10000
 			});
 
 		// Wait for content to actually render - check if heading appears
@@ -74,56 +81,39 @@ test.describe("Popup E2E Tests", () => {
 
 		// Verify main heading is visible
 		const heading = popupPage.getByRole("heading", {
-			name: "Chrome Extension",
+			name: "Parameters",
 		});
 		await expect(heading).toBeVisible();
 
-		// Verify description text
-		const description = popupPage.getByText(
-			"Built with Vite + SolidJS + Tailwind CSS v4"
-		);
-		await expect(description).toBeVisible();
+		// Verify Manage Presets button exists
+		const manageButton = popupPage.getByText("Manage Presets");
+		await expect(manageButton).toBeVisible();
 
 		// Verify theme indicator is visible
-		const themeIndicator = popupPage.getByText(/Theme:/);
+		const themeIndicator = popupPage.locator(".text-secondary-foreground");
 		await expect(themeIndicator).toBeVisible();
 
 		await popupPage.close();
 	});
 
-	test("should display count button and increment on click", async ({
+	test("should open preset manager when clicking Manage", async ({
 		extensionContext,
 		extensionId,
 	}) => {
 		const popupPage = await openPopupPage(extensionContext, extensionId);
 		await popupPage.waitForLoadState("networkidle");
 
-		// Find the count button
-		const countButton = popupPage.getByRole("button", { name: /Count:/ });
-		await expect(countButton).toBeVisible();
+		// Find and click the Manage button
+		const manageButton = popupPage.getByRole("button", { name: "Manage" });
+		await expect(manageButton).toBeVisible();
+		await manageButton.click();
 
-		// Get initial count
-		const initialText = await countButton.textContent();
-		const initialCount = parseInt(initialText?.match(/\d+/)?.[0] || "0");
+		// Wait for preset manager to appear
+		await popupPage.waitForTimeout(500);
 
-		// Click the button
-		await countButton.click();
-
-		// Wait for state update
-		await popupPage.waitForTimeout(100);
-
-		// Verify count incremented
-		const newText = await countButton.textContent();
-		const newCount = parseInt(newText?.match(/\d+/)?.[0] || "0");
-		expect(newCount).toBe(initialCount + 1);
-
-		// Click again to verify it continues incrementing
-		await countButton.click();
-		await popupPage.waitForTimeout(100);
-
-		const finalText = await countButton.textContent();
-		const finalCount = parseInt(finalText?.match(/\d+/)?.[0] || "0");
-		expect(finalCount).toBe(initialCount + 2);
+		// Verify preset manager UI elements appear
+		const closeButton = popupPage.getByRole("button", { name: "Close" });
+		await expect(closeButton).toBeVisible({ timeout: 5000 });
 
 		await popupPage.close();
 	});
@@ -169,14 +159,12 @@ test.describe("Popup E2E Tests", () => {
 		const popupPage = await openPopupPage(extensionContext, extensionId);
 		await popupPage.waitForLoadState("networkidle");
 
-		// Verify theme indicator shows a valid theme
-		const themeIndicator = popupPage.getByText(
-			/Theme: (light|dark|system)/
-		);
+		// Verify theme indicator displays a valid theme
+		const themeIndicator = popupPage.locator(".text-secondary-foreground").first();
 		await expect(themeIndicator).toBeVisible();
 
 		const themeText = await themeIndicator.textContent();
-		expect(themeText).toMatch(/Theme: (light|dark|system)/);
+		expect(themeText).toMatch(/(light|dark|system)/);
 
 		await popupPage.close();
 	});

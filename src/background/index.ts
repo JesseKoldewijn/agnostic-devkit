@@ -3,8 +3,10 @@ import { initDisplayMode } from "~/utils/displayMode";
 import { browser, logBrowserInfo, showNotification } from "~/utils/browser";
 import { cleanCopyUrlAction } from "~/logic/cleanCopyUrl";
 import { ContextMenu } from "~/utils/contextMenu";
+import { cleanupTabState } from "~/logic/parameters";
 
-const initExtension = async () => {
+browser.runtime?.onInstalled.addListener(async () => {
+	console.log("Extension installed");
 	// Log browser info for debugging
 	logBrowserInfo();
 	// Initialize display mode
@@ -23,22 +25,26 @@ const initExtension = async () => {
 		.addToChrome();
 
 	console.log("[Background] Context menu item added");
-};
-
-browser.runtime?.onInstalled.addListener(async () => {
-	console.log("Extension installed");
-	initExtension();
-});
-
-browser.runtime?.onStartup.addListener(async () => {
-	console.log("Extension started up");
-	initExtension();
 });
 
 // Initialize display mode on startup
 browser.runtime?.onStartup.addListener(async () => {
 	logBrowserInfo();
 	await initDisplayMode();
+
+	// Check current popup state
+	const popup = await browser.action?.getPopup({});
+	console.log("[Background] Current popup after init:", popup);
+
+	// Example: Add a context menu item
+	new ContextMenu()
+		.mutateContext("add", {
+			title: "Clean Copy URL",
+			action: cleanCopyUrlAction(),
+		})
+		.addToChrome();
+
+	console.log("[Background] Context menu item added");
 });
 
 browser.runtime?.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -69,5 +75,15 @@ browser.tabs?.onUpdated.addListener((_tabId, changeInfo, tab) => {
 		console.log("Tab updated:", tab.url);
 		// send a browser notification
 		showNotification("Tab Updated", `You have opened: ${tab.url}`);
+	}
+});
+
+// Clean up tab preset states when tabs are closed
+browser.tabs?.onRemoved.addListener(async (tabId, _removeInfo) => {
+	console.log("[Background] Tab closed, cleaning up preset state:", tabId);
+	try {
+		await cleanupTabState(tabId);
+	} catch (error) {
+		console.error("[Background] Failed to cleanup tab state:", error);
 	}
 });

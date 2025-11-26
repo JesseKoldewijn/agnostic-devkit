@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "unit coverage",
-  "message": "0%",
-  "color": "red"
+  "message": "89.9%",
+  "color": "brightgreen"
 }

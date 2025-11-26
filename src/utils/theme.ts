@@ -22,7 +22,7 @@ export async function setTheme(theme: Theme): Promise<void> {
 /**
  * Gets the effective theme (resolves 'system' to 'light' or 'dark')
  */
-function getEffectiveTheme(theme: Theme): "light" | "dark" {
+export function getEffectiveTheme(theme: Theme): "light" | "dark" {
 	if (theme === "system") {
 		return globalThis.matchMedia("(prefers-color-scheme: dark)").matches
 			? "dark"

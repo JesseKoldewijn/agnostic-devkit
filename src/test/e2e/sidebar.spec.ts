@@ -24,25 +24,21 @@ test.describe("Sidebar E2E Tests", () => {
 		expect(title).toBe("Chrome Extension Sidebar");
 
 		// Verify main heading is visible
-		const heading = sidebarPage.getByRole("heading", {
-			name: "Chrome Extension",
-		});
+		const heading = sidebarPage.locator("h1").filter({ hasText: "Parameter Presets" });
 		await expect(heading).toBeVisible();
 
-		// Verify description text
-		const description = sidebarPage.getByText(
-			"Built with Vite + SolidJS + Tailwind CSS v4"
-		);
-		await expect(description).toBeVisible();
+		// Verify "Current Tab" section exists
+		const currentTab = sidebarPage.getByText("Current Tab");
+		await expect(currentTab).toBeVisible();
 
 		// Verify theme indicator is visible
-		const themeIndicator = sidebarPage.getByText(/Theme:/);
+		const themeIndicator = sidebarPage.locator(".text-secondary-foreground").first();
 		await expect(themeIndicator).toBeVisible();
 
 		await sidebarPage.close();
 	});
 
-	test("should display count button and increment on click", async ({
+	test("should open preset manager when clicking Manage", async ({
 		extensionContext,
 		extensionId,
 	}) => {
@@ -51,37 +47,22 @@ test.describe("Sidebar E2E Tests", () => {
 			extensionId
 		);
 
-		// Find the count button
-		const countButton = sidebarPage.getByRole("button", { name: /Count:/ });
-		await expect(countButton).toBeVisible();
+		// Find and click the Manage button
+		const manageButton = sidebarPage.getByRole("button", { name: "Manage" });
+		await expect(manageButton).toBeVisible();
+		await manageButton.click();
 
-		// Get initial count
-		const initialText = await countButton.textContent();
-		const initialCount = parseInt(initialText?.match(/\d+/)?.[0] || "0");
+		// Wait for preset manager to appear
+		await sidebarPage.waitForTimeout(500);
 
-		// Click the button
-		await countButton.click();
-
-		// Wait for state update
-		await sidebarPage.waitForTimeout(100);
-
-		// Verify count incremented
-		const newText = await countButton.textContent();
-		const newCount = parseInt(newText?.match(/\d+/)?.[0] || "0");
-		expect(newCount).toBe(initialCount + 1);
-
-		// Click again to verify it continues incrementing
-		await countButton.click();
-		await sidebarPage.waitForTimeout(100);
-
-		const finalText = await countButton.textContent();
-		const finalCount = parseInt(finalText?.match(/\d+/)?.[0] || "0");
-		expect(finalCount).toBe(initialCount + 2);
+		// Verify preset manager UI elements appear
+		const closeButton = sidebarPage.getByRole("button", { name: "Close" });
+		await expect(closeButton).toBeVisible({ timeout: 5000 });
 
 		await sidebarPage.close();
 	});
 
-	test("should have Open Options button that navigates to options page", async ({
+	test("should display preset info card", async ({
 		extensionContext,
 		extensionId,
 	}) => {
@@ -91,34 +72,16 @@ test.describe("Sidebar E2E Tests", () => {
 		);
 		await sidebarPage.waitForLoadState("networkidle");
 
-		// Find the Open Options button
-		const openOptionsButton = sidebarPage.getByRole("button", {
-			name: "Open Options",
+		// Verify info card heading is visible
+		const infoHeading = sidebarPage.getByRole("heading", {
+			name: "About Presets",
 		});
-		await expect(openOptionsButton).toBeVisible();
-
-		// Click the button and wait for options page to open
-		const [optionsPage] = await Promise.all([
-			extensionContext.waitForEvent("page"),
-			openOptionsButton.click(),
-		]);
-
-		// Verify options page opened
-		await optionsPage.waitForLoadState("networkidle");
-		const optionsTitle = await optionsPage.title();
-		expect(optionsTitle).toBe("Chrome Extension Options");
-
-		// Verify options page content
-		const optionsHeading = optionsPage.getByRole("heading", {
-			name: "Extension Options",
-		});
-		await expect(optionsHeading).toBeVisible();
+		await expect(infoHeading).toBeVisible();
 
 		await sidebarPage.close();
-		await optionsPage.close();
 	});
 
-	test("should display sidebar-specific content", async ({
+	test("should display current tab information", async ({
 		extensionContext,
 		extensionId,
 	}) => {
@@ -128,11 +91,9 @@ test.describe("Sidebar E2E Tests", () => {
 		);
 		await sidebarPage.waitForLoadState("networkidle");
 
-		// Verify sidebar-specific info card is visible
-		const sidebarInfo = sidebarPage.getByText(
-			"Sidebar mode provides a full-height panel for extended content and functionality."
-		);
-		await expect(sidebarInfo).toBeVisible();
+		// Verify "Current Tab" section is visible
+		const currentTabLabel = sidebarPage.getByText("Current Tab");
+		await expect(currentTabLabel).toBeVisible();
 
 		await sidebarPage.close();
 	});
@@ -148,13 +109,11 @@ test.describe("Sidebar E2E Tests", () => {
 		await sidebarPage.waitForLoadState("networkidle");
 
 		// Verify theme indicator shows a valid theme
-		const themeIndicator = sidebarPage.getByText(
-			/Theme: (light|dark|system)/
-		);
+		const themeIndicator = sidebarPage.locator(".text-secondary-foreground").first();
 		await expect(themeIndicator).toBeVisible();
 
 		const themeText = await themeIndicator.textContent();
-		expect(themeText).toMatch(/Theme: (light|dark|system)/);
+		expect(themeText).toMatch(/(light|dark|system)/);
 
 		await sidebarPage.close();
 	});

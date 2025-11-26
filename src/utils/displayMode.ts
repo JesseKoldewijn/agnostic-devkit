@@ -8,8 +8,8 @@ const STORAGE_KEY = "displayMode";
  * Get the current display mode from storage
  */
 export async function getDisplayMode(): Promise<DisplayMode> {
-	const result = await browser.storage?.sync.get([STORAGE_KEY]);
-	return (result?.[STORAGE_KEY] as DisplayMode) || "popup";
+	const result = (await browser.storage?.sync.get([STORAGE_KEY])) || {};
+	return result[STORAGE_KEY] || "popup";
 }
 
 /**

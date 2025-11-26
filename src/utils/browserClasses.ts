@@ -131,7 +131,7 @@ export class SidePanelManager {
 /**
  * Display mode type
  */
-type DisplayMode = "popup" | "sidebar";
+export type DisplayMode = "popup" | "sidebar";
 
 /**
  * Display mode management class
@@ -148,8 +148,9 @@ export class DisplayModeManager {
 			return "popup";
 		}
 
-		const result = await chrome.storage.sync.get([this.STORAGE_KEY]);
-		return (result[this.STORAGE_KEY] as DisplayMode) || "popup";
+		const result =
+			(await chrome.storage.sync.get([this.STORAGE_KEY])) || {};
+		return result[this.STORAGE_KEY] || "popup";
 	}
 
 	/**
@@ -207,7 +208,7 @@ export class DisplayModeManager {
 /**
  * Theme type
  */
-type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark" | "system";
 
 /**
  * Theme management class
@@ -223,8 +224,9 @@ export class ThemeManager {
 			return "system";
 		}
 
-		const result = await chrome.storage.sync.get([this.STORAGE_KEY]);
-		return (result[this.STORAGE_KEY] as Theme) || "system";
+		const result =
+			(await chrome.storage.sync.get([this.STORAGE_KEY])) || {};
+		return result[this.STORAGE_KEY] || "system";
 	}
 
 	/**

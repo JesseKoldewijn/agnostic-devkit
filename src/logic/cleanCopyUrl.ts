@@ -1,7 +1,7 @@
 import { showNotification } from "~/utils/browser";
 import { ContextMenuItem } from "~/utils/contextMenu";
 
-const cleanCopyUrl = (url: string) => {
+export const cleanCopyUrl = (url: string) => {
 	try {
 		const isValidUrl = URL.canParse(url);
 		if (!isValidUrl) {
@@ -22,11 +22,13 @@ export const cleanCopyUrlAction = () => {
 
 	return {
 		title: "Clean Copy URL",
-		contexts: ["link", "selection"],
+		contexts: ["link", "selection", "page"],
 		action: async ({ selection, tab }) => {
 			try {
 				const cleanedUrl = cleanCopyUrl(selection ?? "");
 				let finalUrl = cleanedUrl;
+
+				console.debug("Cleaned URL:", cleanedUrl);
 
 				// If the selection is not a valid URL, try to find a link in the page
 				if (cleanedUrl === "") {
@@ -59,13 +61,7 @@ export const cleanCopyUrlAction = () => {
 								return null;
 							});
 
-						console.warn("Anchor elements found:", anchorElements);
-
-						if (anchorElements) {
-							return anchorElements;
-						}
-
-						return null;
+						return anchorElements;
 					};
 
 					const resultByLinkText = await findLinkBySelectionIfNotLink(
@@ -90,6 +86,7 @@ export const cleanCopyUrlAction = () => {
 					cleanedUrl,
 					tab,
 				});
+
 				const result = await chrome.scripting
 					.executeScript({
 						target: {
