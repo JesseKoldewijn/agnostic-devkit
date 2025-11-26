@@ -35,7 +35,7 @@ export const Options: Component = () => {
 		setThemeInput(currentTheme);
 		setSavedDisplayMode(currentDisplayMode);
 		setDisplayModeInput(currentDisplayMode);
-		setNotifications(result?.notifications ?? true);
+		setNotifications((result?.notifications as boolean) ?? true);
 
 		// Check browser support
 		setSidebarSupported(isSidebarSupported());
