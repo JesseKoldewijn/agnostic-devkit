@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "e2e coverage",
-  "message": "pending",
-  "color": "lightgrey"
+  "message": "0%",
+  "color": "red"
 }
-

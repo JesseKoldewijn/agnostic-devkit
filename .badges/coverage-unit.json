@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "unit coverage",
-  "message": "pending",
-  "color": "lightgrey"
+  "message": "0%",
+  "color": "red"
 }
-

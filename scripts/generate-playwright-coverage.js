@@ -36,7 +36,7 @@ console.log(
 const coverageReport = new MCR({
 	name: "Playwright E2E Coverage Report",
 	outputDir: playwrightCoverageDir,
-	reports: ["console-details", "html", "json", "lcov"],
+	reports: ["console-details", "html", "json", "json-summary", "lcov"],
 	// Exclude test files and config files
 	entryFilter: (entry) => {
 		return (

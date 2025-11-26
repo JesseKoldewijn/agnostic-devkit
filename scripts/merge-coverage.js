@@ -24,10 +24,10 @@ mkdirSync(mergedCoverageDir, { recursive: true });
 // Collect coverage files
 const coverageFiles = [];
 
-// Find Vitest coverage files
+// Find Vitest coverage files (only coverage-final.json, not coverage-summary.json)
 if (existsSync(vitestCoverageDir)) {
 	const vitestFiles = readdirSync(vitestCoverageDir).filter(
-		(f) => f.endsWith(".json") && f.includes("coverage")
+		(f) => f === "coverage-final.json"
 	);
 	for (const file of vitestFiles) {
 		coverageFiles.push(resolve(vitestCoverageDir, file));
@@ -35,10 +35,10 @@ if (existsSync(vitestCoverageDir)) {
 	console.log(`Found Vitest coverage: ${vitestFiles.length} file(s)`);
 }
 
-// Find Playwright coverage files
+// Find Playwright coverage files (only coverage-final.json, not coverage-summary.json)
 if (existsSync(playwrightCoverageDir)) {
 	const playwrightFiles = readdirSync(playwrightCoverageDir).filter(
-		(f) => f.endsWith(".json") && f.includes("coverage")
+		(f) => f === "coverage-final.json"
 	);
 	for (const file of playwrightFiles) {
 		coverageFiles.push(resolve(playwrightCoverageDir, file));
@@ -59,7 +59,7 @@ console.log(`\nMerging coverage from ${coverageFiles.length} file(s)...`);
 const coverageReport = new MCR({
 	name: "Combined Coverage Report",
 	outputDir: mergedCoverageDir,
-	reports: ["console-details", "html", "json", "lcov"],
+	reports: ["console-details", "html", "json", "json-summary", "lcov"],
 	// Exclude test files and config files
 	entryFilter: (entry) => {
 		if (!entry.url) return false;
