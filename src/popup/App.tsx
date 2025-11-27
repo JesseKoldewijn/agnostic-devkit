@@ -21,7 +21,7 @@ export const App: Component = () => {
 		// Listen for theme changes
 		browser.storage?.onChanged.addListener((changes, areaName) => {
 			if (areaName === "sync" && changes.theme) {
-				setCurrentTheme(changes.theme.newValue);
+				setCurrentTheme(changes.theme.newValue as Theme);
 			}
 		});
 	});

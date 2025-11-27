@@ -8,6 +8,7 @@ import {
 	type DisplayMode,
 } from "../utils/displayMode";
 import { browser } from "../utils/browser";
+import { version } from "../../package.json";
 
 export const Options: Component = () => {
 	// Current saved values
@@ -35,7 +36,7 @@ export const Options: Component = () => {
 		setThemeInput(currentTheme);
 		setSavedDisplayMode(currentDisplayMode);
 		setDisplayModeInput(currentDisplayMode);
-		setNotifications(result?.notifications ?? true);
+		setNotifications((result?.notifications as boolean) ?? true);
 
 		// Check browser support
 		setSidebarSupported(isSidebarSupported());
@@ -146,6 +147,9 @@ export const Options: Component = () => {
 					</button>
 				</div>
 			</div>
+			<p class="text-xs text-muted-foreground mt-4 w-full text-center">
+				Version: {version}
+			</p>
 		</div>
 	);
 };

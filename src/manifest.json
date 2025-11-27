@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "Chrome Extension",
+	"name": "Agnostic Devkit for Google Chrome",
 	"version": "1.0.0",
-	"description": "A Chromium extension built with Vite, TypeScript, SolidJS, and Tailwind CSS v4",
+	"description": "A platform agnostic devkit for web development",
 	"icons": {
 		"16": "icons/icon-16.png",
 		"48": "icons/icon-48.png",
@@ -38,7 +38,6 @@
 		"tabs",
 		"notifications",
 		"sidePanel",
-		"host_permissions",
 		"contextMenus",
 		"clipboardRead",
 		"clipboardWrite",

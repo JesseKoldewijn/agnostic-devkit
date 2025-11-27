@@ -238,7 +238,7 @@ export function onPresetsChanged(
 		areaName: string
 	) => {
 		if (areaName === "sync" && changes[PRESETS_KEY]) {
-			callback(changes[PRESETS_KEY].newValue ?? []);
+			callback((changes[PRESETS_KEY].newValue as Preset[] | undefined) ?? []);
 		}
 	};
 
@@ -261,7 +261,7 @@ export function onTabPresetStatesChanged(
 		areaName: string
 	) => {
 		if (areaName === "local" && changes[TAB_PRESET_STATES_KEY]) {
-			callback(changes[TAB_PRESET_STATES_KEY].newValue ?? {});
+			callback((changes[TAB_PRESET_STATES_KEY].newValue as Record<string, string[]> | undefined) ?? {});
 		}
 	};
 

@@ -148,9 +148,8 @@ export class DisplayModeManager {
 			return "popup";
 		}
 
-		const result =
-			(await chrome.storage.sync.get([this.STORAGE_KEY])) || {};
-		return result[this.STORAGE_KEY] || "popup";
+		const result = await chrome.storage.sync.get([this.STORAGE_KEY]);
+		return (result[this.STORAGE_KEY] as DisplayMode | undefined) ?? "popup";
 	}
 
 	/**
@@ -224,9 +223,8 @@ export class ThemeManager {
 			return "system";
 		}
 
-		const result =
-			(await chrome.storage.sync.get([this.STORAGE_KEY])) || {};
-		return result[this.STORAGE_KEY] || "system";
+		const result = await chrome.storage.sync.get([this.STORAGE_KEY]);
+		return (result[this.STORAGE_KEY] as Theme | undefined) ?? "system";
 	}
 
 	/**
