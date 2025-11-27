@@ -17,3 +17,4 @@ writeFileSync(manifestPath, JSON.stringify(manifest, null, '\t') + '\n');
 
 console.log(`Updated manifest.json to version ${version}`);
 
+

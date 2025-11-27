@@ -13,7 +13,7 @@
 		[
 			"@semantic-release/exec",
 			{
-				"prepareCmd": "node scripts/sync-manifest-version.js ${nextRelease.version}"
+				"prepareCmd": "node scripts/sync-manifest-version.js ${nextRelease.version} && yarn build && yarn package"
 			}
 		],
 		[
@@ -23,6 +23,17 @@
 				"message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
 			}
 		],
-		"@semantic-release/github"
+		[
+			"@semantic-release/github",
+			{
+				"assets": [
+					{
+						"path": "dist/extension.zip",
+						"label": "Chrome Extension (${nextRelease.version})",
+						"name": "agnostic-devkit-${nextRelease.version}.zip"
+					}
+				]
+			}
+		]
 	]
 }
