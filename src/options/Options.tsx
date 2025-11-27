@@ -8,7 +8,7 @@ import {
 	type DisplayMode,
 } from "../utils/displayMode";
 import { browser } from "../utils/browser";
-import { version } from "../../package.json";
+import { version } from "../manifest.json";
 
 export const Options: Component = () => {
 	// Current saved values
