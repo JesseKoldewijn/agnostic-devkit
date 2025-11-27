@@ -1,4 +1,4 @@
-# agnostic-devkit - Chrome Extension
+# Agnostic Devkit
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
@@ -6,58 +6,64 @@
 [![Unit Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-unit.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 [![E2E Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-e2e.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 
-A modern Chromium extension built with cutting-edge web technologies:
-
--   **Vite** - Fast build tool and dev server
--   **TypeScript** - Type-safe JavaScript
--   **SolidJS** - Reactive UI framework
--   **Tailwind CSS v4** - Utility-first CSS with CSS-based configuration (shadcn-style)
--   **Vitest** - Unit testing framework
--   **Playwright** - End-to-end testing
+A platform-agnostic developer toolkit for web development, built as a modern Chromium extension. Designed to streamline common development tasks with a clean, intuitive interface.
 
 ## Features
 
--   🚀 Fast development with HMR
--   📦 Optimized production builds
--   🎨 Tailwind CSS v4 with shadcn-style theming
--   🔧 TypeScript for type safety
--   ⚡ SolidJS for reactive UIs
--   🧩 Complete extension structure: Popup, Sidebar, Options page, Background service worker, and Content scripts
--   🔀 Configurable display mode (Popup or Sidebar)
--   🌓 Theme system with Light, Dark, and System modes
--   🌐 Cross-browser compatibility layer for extension APIs
--   ✅ Comprehensive testing setup (Unit + E2E)
--   📦 Yarn 4.x with Corepack
+### 🧹 Clean Copy URL
 
-## Project Structure
+Strips tracking parameters and query strings from URLs when copying. Right-click any link or selected text to copy a clean version without UTM parameters, analytics tokens, or other tracking artifacts.
 
-```
-src/
-├── popup/          # Extension popup UI
-├── sidebar/        # Extension sidebar UI
-├── options/        # Options/settings page
-├── background/     # Background service worker
-├── content/        # Content scripts (injected into web pages)
-├── styles/         # Global styles with Tailwind config
-├── utils/          # Utility functions
-│   ├── browser.ts        # Cross-browser compatibility layer
-│   ├── browserClasses.ts # Browser-specific CSS classes
-│   ├── displayMode.ts    # Display mode management (popup/sidebar)
-│   └── theme.ts          # Theme management (light/dark/system)
-├── test/           # Test files
-│   ├── *.test.ts         # Unit tests (Vitest)
-│   ├── setup.ts          # Test setup
-│   └── e2e/              # End-to-end tests (Playwright)
-├── icons/          # Extension icons
-└── manifest.json   # Extension manifest (Chrome MV3)
-```
+### 🎛️ Parameter Presets
+
+Create and manage reusable presets of parameters that can be instantly applied to any tab:
+
+- **Query Parameters** — Add or modify URL query strings
+- **Cookies** — Set browser cookies for the current domain
+- **Local Storage** — Inject localStorage values
+
+Perfect for testing different feature flags, user segments, or debug modes across environments.
+
+### 🖥️ Flexible Display Modes
+
+Choose between two display modes based on your workflow:
+
+- **Popup** — Traditional extension popup for quick access
+- **Sidebar** — Full-height side panel for extended functionality
+
+### 🌓 Theme System
+
+Supports Light, Dark, and System theme modes that persist across sessions.
+
+### 🌐 Cross-Browser Compatibility
+
+Works across all Chromium-based browsers with automatic fallbacks for unsupported features:
+
+- ✅ Chrome 114+
+- ✅ Brave
+- ✅ Edge
+- ✅ Opera
+- ⚠️ Other Chromium browsers (with potential feature limitations)
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Build | [Vite](https://vite.dev) 7.x |
+| Language | [TypeScript](https://www.typescriptlang.org) 5.9 |
+| UI Framework | [SolidJS](https://www.solidjs.com) 1.9 |
+| Styling | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config) |
+| Unit Testing | [Vitest](https://vitest.dev) 4.x |
+| E2E Testing | [Playwright](https://playwright.dev) 1.57 |
+| Package Manager | [Yarn](https://yarnpkg.com) 4.x (via Corepack) |
+| Releases | [semantic-release](https://semantic-release.gitbook.io) |
 
 ## Getting Started
 
 ### Prerequisites
 
--   **Node.js**: 25.0.0 (managed via Volta)
--   **Yarn**: 4.10.3 (managed via Corepack)
+- **Node.js**: 25.0.0 (managed via Volta)
+- **Yarn**: 4.10.3 (managed via Corepack)
 
 Enable Corepack if you haven't already:
 
@@ -65,7 +71,7 @@ Enable Corepack if you haven't already:
 corepack enable
 ```
 
-### Install Dependencies
+### Installation
 
 ```bash
 yarn install
@@ -77,58 +83,93 @@ Build the extension with watch mode:
 
 ```bash
 yarn dev
-# or
-yarn watch
 ```
 
-This will create a `dist` folder and automatically rebuild when you make changes. Load this folder as an unpacked extension in Chrome:
+This creates a `dist` folder that rebuilds automatically on changes. Load it as an unpacked extension:
 
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" in the top right
-3. Click "Load unpacked"
+1. Navigate to `chrome://extensions/`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
 4. Select the `dist` folder
 
-**Note:** You'll need to manually reload the extension in Chrome after making changes (click the reload icon on the extension card).
+> **Note:** After changes, manually reload the extension in Chrome (click the reload icon on the extension card).
 
-### Build for Production
+### Production Build
 
 ```bash
 yarn build
 ```
 
-The production-ready extension will be in the `dist` folder.
+### Packaging
 
-### Testing
-
-Run unit tests with Vitest:
+Create a distributable `.zip` file:
 
 ```bash
-yarn test          # Run in watch mode
-yarn test:ui       # Run with UI
-yarn test:run      # Run once
-yarn test:coverage # Generate coverage report
+yarn package
 ```
 
-Run end-to-end tests with Playwright:
+## Testing
+
+### Unit Tests
 
 ```bash
-yarn test:e2e      # Run E2E tests
-yarn test:e2e:ui   # Run with Playwright UI
+yarn test              # Run once
+yarn test:watch        # Watch mode
+yarn test:ui           # Interactive UI
+yarn test:coverage     # Generate coverage report
 ```
 
-### Type Checking
+### E2E Tests
 
 ```bash
-yarn type-check
+yarn test:e2e          # Run E2E tests
+yarn test:e2e:ui       # Interactive Playwright UI
 ```
+
+### Full Coverage Suite
+
+```bash
+yarn test:all:coverage # Run all tests and merge coverage reports
+```
+
+## Project Structure
+
+```
+src/
+├── popup/              # Extension popup UI
+├── sidebar/            # Extension sidebar UI
+├── options/            # Settings page
+├── background/         # Service worker
+├── content/            # Content scripts (injected into pages)
+├── components/         # Shared UI components
+│   ├── PresetManager.tsx     # Full CRUD interface for presets
+│   └── PresetToggleList.tsx  # Quick preset toggles
+├── logic/              # Business logic
+│   ├── cleanCopyUrl.ts       # URL cleaning logic
+│   └── parameters/           # Preset & parameter management
+├── utils/              # Utility functions
+│   ├── browser.ts            # Cross-browser compatibility
+│   ├── contextMenu.ts        # Context menu helpers
+│   ├── displayMode.ts        # Display mode management
+│   └── theme.ts              # Theme management
+├── styles/             # Global styles & Tailwind config
+├── icons/              # Extension icons
+├── test/               # Test files
+└── manifest.json       # Chrome MV3 manifest
+```
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+- **CI Workflow** — Runs on all branches: type checking, unit tests, E2E tests, and coverage merging
+- **Release Workflow** — Triggered on `main`: semantic versioning, packaging, and Chrome Web Store upload
+
+Coverage badges are automatically updated on each push to `main`.
 
 ## Tailwind CSS v4 Configuration
 
-This project uses Tailwind CSS v4's new CSS-based configuration with shadcn-style design tokens. The configuration is in `src/styles/main.css` using the `@theme` directive.
-
-### Customizing Theme
-
-Edit `src/styles/main.css` to customize colors, spacing, and other design tokens:
+This project uses Tailwind CSS v4's CSS-based configuration with shadcn-style design tokens. Customize the theme in `src/styles/main.css`:
 
 ```css
 @theme {
@@ -138,114 +179,6 @@ Edit `src/styles/main.css` to customize colors, spacing, and other design tokens
 }
 ```
 
-## Extension Features
-
-### Display Modes
-
-The extension supports two display modes, configurable in the Options page:
-
--   **Popup**: Traditional extension popup that appears when clicking the extension icon
--   **Sidebar**: Full-height side panel for extended content and functionality
-
-To switch between modes, open the extension's Options page and select your preferred display mode from the dropdown. The change takes effect immediately.
-
-### Theme System
-
-Three theme modes available:
-
--   **Light**: Light color scheme
--   **Dark**: Dark color scheme
--   **System**: Automatically follows your operating system's theme preference
-
-Themes can be changed in the Options page and persist across sessions.
-
-### Cross-Browser Compatibility
-
-The extension includes a browser compatibility layer (`src/utils/browser.ts`) that provides:
-
--   Unified API for Chrome, Brave, Edge, and other Chromium browsers
--   Automatic fallback for unsupported features
--   Browser detection and capability checking
--   Abstraction over `chrome.sidePanel` and legacy `sidebarAction` APIs
-
-## Extension Components
-
-### Popup (`src/popup/`)
-
-The extension popup shown when clicking the extension icon (when Popup mode is selected). Built with SolidJS and includes:
-
--   Theme indicator
--   Interactive counter example
--   Quick access to options
-
-### Sidebar (`src/sidebar/`)
-
-The extension sidebar shown in the browser's side panel (when Sidebar mode is selected). Provides more space for complex UIs.
-
-### Options (`src/options/`)
-
-Full-page settings interface accessible via right-click menu or from the popup. Allows configuration of:
-
--   Display mode (Popup/Sidebar)
--   Theme preference (Light/Dark/System)
--   Additional settings
-
-### Background (`src/background/`)
-
-Service worker for background tasks and extension lifecycle management. Handles:
-
--   Extension installation
--   Display mode application
--   Browser action click events
--   Sidebar panel management
-
-### Content Scripts (`src/content/`)
-
-Scripts that run in the context of web pages. Configured to run on all URLs with custom styling.
-
-## Technology Stack
-
-### Core
-
--   **Vite** 7.1.11 - Build tool with fast HMR
--   **TypeScript** 5.9.3 - Type safety
--   **SolidJS** 1.9.9 - Reactive UI framework
-
-### Styling
-
--   **Tailwind CSS** 4.1.15 - Utility-first CSS
--   **@tailwindcss/vite** 4.1.15 - Vite integration
--   **vite-plugin-scope-tailwind** 2.0.2 - Scoped Tailwind classes
-
-### Extension Build
-
--   **vite-plugin-web-extension** 4.4.5 - Chrome extension support
--   **vite-plugin-solid** 2.11.10 - SolidJS integration
-
-### Testing
-
--   **Vitest** 4.0.1 - Unit testing with happy-dom environment
--   **Playwright** 1.56.1 - End-to-end testing
--   **@vitest/ui** 4.0.1 - Interactive test UI
-
-### Development Tools
-
--   **@types/chrome** 0.1.24 - Chrome extension API types
--   **Yarn** 4.10.3 - Package manager
--   **Volta** - Node.js version manager
-
-## Browser Support
-
-This extension is built for Chromium-based browsers:
-
--   ✅ Chrome 114+
--   ✅ Brave
--   ✅ Edge
--   ✅ Opera
--   ⚠️ Other Chromium browsers (with potential feature limitations)
-
-The browser compatibility layer automatically detects capabilities and provides fallbacks where needed.
-
 ## License
 
-[MIT License](LICENSE)
+[MIT License](LICENSE) © 2025 Jesse Koldewijn
