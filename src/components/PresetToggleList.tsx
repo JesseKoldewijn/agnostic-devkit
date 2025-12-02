@@ -1,5 +1,5 @@
 import { Component, createSignal, createEffect, For, Show, onMount, onCleanup } from "solid-js";
-import { browser } from "~/utils/browser";
+import { browser } from "@/utils/browser";
 import {
 	type Preset,
 	getPresetsWithActiveState,
@@ -7,7 +7,7 @@ import {
 	onPresetsChanged,
 	onTabPresetStatesChanged,
 	getParameterTypeIcon,
-} from "~/logic/parameters";
+} from "@/logic/parameters";
 
 interface PresetToggleListProps {
 	/** Whether to show expanded details (parameter list) */
@@ -30,6 +30,16 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 
 	// Get the current tab ID
 	const getCurrentTabId = async (): Promise<number | null> => {
+		// Check for test override via URL param (used in e2e tests)
+		const urlParams = new URLSearchParams(window.location.search);
+		const overrideTabId = urlParams.get("targetTabId");
+		if (overrideTabId) {
+			const parsed = parseInt(overrideTabId, 10);
+			if (!isNaN(parsed)) {
+				return parsed;
+			}
+		}
+
 		try {
 			const tabs = await browser.tabs?.query({ active: true, currentWindow: true });
 			return tabs?.[0]?.id ?? null;
@@ -101,13 +111,14 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	});
 
 	return (
-		<div class={`flex flex-col space-y-3 ${props.class ?? ""}`}>
+		<div class={`flex flex-col space-y-3 ${props.class ?? ""}`} data-testid="preset-toggle-list">
 			<div class="flex items-center justify-between">
-				<h2 class="text-sm font-semibold text-foreground">Parameter Presets</h2>
+				<h2 class="text-sm font-semibold text-foreground" data-testid="presets-heading">Parameter Presets</h2>
 				<Show when={props.onManagePresets}>
 					<button
 						onClick={props.onManagePresets}
 						class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+						data-testid="manage-presets-button"
 					>
 						Manage
 					</button>
@@ -116,17 +127,18 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 
 			<Show when={loading()}>
 				<div class="flex items-center justify-center py-4">
-					<div class="text-sm text-muted-foreground">Loading...</div>
+					<div class="text-sm text-muted-foreground" data-testid="loading-indicator">Loading...</div>
 				</div>
 			</Show>
 
 			<Show when={!loading() && presets().length === 0}>
-				<div class="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border">
+				<div class="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border" data-testid="no-presets-message">
 					<p class="text-sm text-muted-foreground">No presets yet</p>
 					<Show when={props.onManagePresets}>
 						<button
 							onClick={props.onManagePresets}
 							class="mt-2 text-xs text-primary hover:underline"
+							data-testid="create-first-preset-button"
 						>
 							Create your first preset
 						</button>
@@ -135,7 +147,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 			</Show>
 
 			<Show when={!loading() && presets().length > 0}>
-				<div class="flex flex-col space-y-2">
+				<div class="flex flex-col space-y-2" data-testid="presets-container">
 					<For each={presets()}>
 						{(preset) => (
 							<div
@@ -144,34 +156,37 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 										? "bg-primary/10 border-primary/30"
 										: "bg-card border-border"
 								}`}
+								data-testid={`preset-toggle-item-${preset.id}`}
 							>
 								<div class="flex items-center justify-between">
 									<div class="flex-1 min-w-0">
 										<button
 											class="text-left w-full"
 											onClick={() => props.expanded && toggleExpanded(preset.id)}
+											data-testid="preset-expand-button"
 										>
-											<div class="font-medium text-sm text-foreground truncate">
+											<div class="font-medium text-sm text-foreground truncate" data-testid="preset-toggle-name">
 												{preset.name}
 											</div>
 											<Show when={preset.description}>
-												<div class="text-xs text-muted-foreground mt-0.5 truncate">
+												<div class="text-xs text-muted-foreground mt-0.5 truncate" data-testid="preset-toggle-description">
 													{preset.description}
 												</div>
 											</Show>
-											<div class="text-xs text-muted-foreground mt-1">
+											<div class="text-xs text-muted-foreground mt-1" data-testid="preset-parameter-count">
 												{preset.parameters.length} parameter{preset.parameters.length !== 1 ? "s" : ""}
 											</div>
 										</button>
 									</div>
 
-									<label class="relative inline-flex items-center cursor-pointer ml-3">
+									<label class="relative inline-flex items-center cursor-pointer ml-3" data-testid="preset-toggle-label">
 										<input
 											type="checkbox"
 											checked={preset.isActive}
 											disabled={togglingPreset() === preset.id}
 											onChange={() => handleToggle(preset.id)}
 											class="sr-only peer"
+											data-testid="preset-toggle-checkbox"
 										/>
 										<div
 											class={`w-9 h-5 bg-muted rounded-full peer 
@@ -188,14 +203,14 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 
 								{/* Expanded parameter list */}
 								<Show when={props.expanded && expandedPresetId() === preset.id}>
-									<div class="mt-3 pt-3 border-t border-border">
+									<div class="mt-3 pt-3 border-t border-border" data-testid="preset-expanded-params">
 										<div class="text-xs font-medium text-muted-foreground mb-2">
 											Parameters:
 										</div>
 										<div class="space-y-1.5">
 											<For each={preset.parameters}>
 												{(param) => (
-													<div class="flex items-center text-xs bg-muted/50 rounded px-2 py-1.5">
+													<div class="flex items-center text-xs bg-muted/50 rounded px-2 py-1.5" data-testid="preset-expanded-param">
 														<span class="mr-1.5">{getParameterTypeIcon(param.type)}</span>
 														<span class="font-mono text-foreground">{param.key}</span>
 														<span class="mx-1 text-muted-foreground">=</span>

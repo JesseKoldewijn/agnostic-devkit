@@ -19,7 +19,7 @@ import {
 	onPresetsChanged,
 	getParameterTypeIcon,
 	createEmptyParameter,
-} from "~/logic/parameters";
+} from "@/logic/parameters";
 
 interface PresetManagerProps {
 	/** Callback when user wants to close the manager */
@@ -219,15 +219,16 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 	// Render the list view
 	const renderListView = () => (
-		<div class="flex flex-col h-full">
+		<div class="flex flex-col h-full" data-testid="preset-manager-list">
 			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-lg font-semibold text-foreground">
+				<h2 class="text-lg font-semibold text-foreground" data-testid="manage-presets-heading">
 					Manage Presets
 				</h2>
 				<div class="flex gap-2">
 					<button
 						onClick={startCreate}
 						class="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+						data-testid="create-preset-button"
 					>
 						+ New Preset
 					</button>
@@ -235,6 +236,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						<button
 							onClick={props.onClose}
 							class="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+							data-testid="close-manager-button"
 						>
 							Close
 						</button>
@@ -244,12 +246,12 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 			<Show when={loading()}>
 				<div class="flex items-center justify-center py-8">
-					<div class="text-sm text-muted-foreground">Loading...</div>
+					<div class="text-sm text-muted-foreground" data-testid="loading-indicator">Loading...</div>
 				</div>
 			</Show>
 
 			<Show when={!loading() && presets().length === 0}>
-				<div class="text-center py-8 px-4 bg-muted/50 rounded-lg border border-border">
+				<div class="text-center py-8 px-4 bg-muted/50 rounded-lg border border-border" data-testid="no-presets-message">
 					<p class="text-muted-foreground mb-2">No presets yet</p>
 					<p class="text-sm text-muted-foreground">
 						Create presets to save groups of parameters that you can
@@ -259,17 +261,17 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			</Show>
 
 			<Show when={!loading() && presets().length > 0}>
-				<div class="flex-1 overflow-y-auto space-y-2">
+				<div class="flex-1 overflow-y-auto space-y-2" data-testid="presets-list">
 					<For each={presets()}>
 						{(preset) => (
-							<div class="p-3 bg-card rounded-lg border border-border">
+							<div class="p-3 bg-card rounded-lg border border-border" data-testid={`preset-item-${preset.id}`}>
 								<div class="flex items-start justify-between">
 									<div class="flex-1 min-w-0">
-										<div class="font-medium text-foreground">
+										<div class="font-medium text-foreground" data-testid="preset-name">
 											{preset.name}
 										</div>
 										<Show when={preset.description}>
-											<div class="text-sm text-muted-foreground mt-0.5">
+											<div class="text-sm text-muted-foreground mt-0.5" data-testid="preset-description">
 												{preset.description}
 											</div>
 										</Show>
@@ -281,7 +283,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												)}
 											>
 												{(param) => (
-													<span class="inline-flex items-center px-1.5 py-0.5 text-xs bg-muted rounded">
+													<span class="inline-flex items-center px-1.5 py-0.5 text-xs bg-muted rounded" data-testid="preset-parameter-badge">
 														<span class="mr-1">
 															{getParameterTypeIcon(
 																param.type
@@ -312,6 +314,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											onClick={() => startEdit(preset)}
 											class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
 											title="Edit preset"
+											data-testid="edit-preset-button"
 										>
 											<svg
 												class="w-4 h-4"
@@ -338,6 +341,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													}
 													class="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
 													title="Delete preset"
+													data-testid="delete-preset-button"
 												>
 													<svg
 														class="w-4 h-4"
@@ -361,6 +365,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														handleDelete(preset.id)
 													}
 													class="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+													data-testid="confirm-delete-button"
 												>
 													Delete
 												</button>
@@ -369,6 +374,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														setConfirmDelete(null)
 													}
 													class="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+													data-testid="cancel-delete-button"
 												>
 													Cancel
 												</button>
@@ -393,11 +399,12 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		return (
 			<form
 				data-preset-form
+				data-testid="preset-form"
 				class="flex flex-col h-full"
 				onSubmit={savePreset}
 			>
 				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-lg font-semibold text-foreground">
+					<h2 class="text-lg font-semibold text-foreground" data-testid="preset-form-heading">
 						{viewMode() === "create"
 							? "Create Preset"
 							: "Edit Preset"}
@@ -406,6 +413,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						type="button"
 						onClick={cancelForm}
 						class="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+						data-testid="cancel-form-button"
 					>
 						Cancel
 					</button>
@@ -426,6 +434,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								if (el && defaultName) el.value = defaultName;
 							}}
 							class="w-full px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+							data-testid="preset-name-input"
 						/>
 					</div>
 
@@ -443,6 +452,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									el.value = defaultDescription;
 							}}
 							class="w-full px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+							data-testid="preset-description-input"
 						/>
 					</div>
 
@@ -456,13 +466,14 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								type="button"
 								onClick={addParameter}
 								class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+								data-testid="add-parameter-button"
 							>
 								+ Add Parameter
 							</button>
 						</div>
 
 						<Show when={parameterIds().length === 0}>
-							<div class="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border">
+							<div class="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border" data-testid="no-parameters-message">
 								<p class="text-sm text-muted-foreground">
 									No parameters yet
 								</p>
@@ -470,13 +481,14 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									type="button"
 									onClick={addParameter}
 									class="mt-2 text-xs text-primary hover:underline"
+									data-testid="add-first-parameter-button"
 								>
 									Add your first parameter
 								</button>
 							</div>
 						</Show>
 
-						<div class="space-y-3">
+						<div class="space-y-3" data-testid="parameters-list">
 							<For each={parameterIds()}>
 								{(paramId, index) => {
 									const param = createMemo(() =>
@@ -484,9 +496,9 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									);
 									const paramData = param();
 									return (
-										<div class="p-3 bg-muted/50 rounded-lg border border-border">
+										<div class="p-3 bg-muted/50 rounded-lg border border-border" data-testid={`parameter-item-${index()}`}>
 											<div class="flex items-center justify-between mb-2">
-												<span class="text-xs font-medium text-muted-foreground">
+												<span class="text-xs font-medium text-muted-foreground" data-testid="parameter-label">
 													Parameter {index() + 1}
 												</span>
 												<button
@@ -498,6 +510,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													}
 													class="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
 													title="Remove parameter"
+													data-testid="remove-parameter-button"
 												>
 													<svg
 														class="w-3.5 h-3.5"
@@ -529,6 +542,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 																el.value =
 																	paramData.type;
 														}}
+														data-testid="parameter-type-select"
 													>
 														<option value="queryParam">
 															🔗 Query Parameter
@@ -557,6 +571,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 																	paramData.key;
 														}}
 														class="w-full px-2 py-1.5 text-sm font-mono bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+														data-testid="parameter-key-input"
 													/>
 												</div>
 
@@ -575,6 +590,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 																	paramData.value;
 														}}
 														class="w-full px-2 py-1.5 text-sm font-mono bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+														data-testid="parameter-value-input"
 													/>
 												</div>
 
@@ -594,6 +610,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 																	"";
 														}}
 														class="w-full px-2 py-1.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+														data-testid="parameter-description-input"
 													/>
 												</div>
 											</div>
@@ -611,6 +628,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						type="submit"
 						disabled={saving()}
 						class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						data-testid="save-preset-button"
 					>
 						{saving()
 							? "Saving..."

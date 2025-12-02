@@ -1,7 +1,7 @@
 // Background service worker for the extension
-import { initDisplayMode } from "~/utils/displayMode";
-import { browser, logBrowserInfo, showNotification } from "~/utils/browser";
-import { cleanupTabState } from "~/logic/parameters";
+import { initDisplayMode } from "@/utils/displayMode";
+import { browser, logBrowserInfo, showNotification } from "@/utils/browser";
+import { cleanupTabState } from "@/logic/parameters";
 
 browser.runtime?.onInstalled.addListener(async () => {
 	console.log("Extension installed");
