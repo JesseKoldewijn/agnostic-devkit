@@ -329,7 +329,6 @@ jobs:
                     "color": "$([ $(echo "${{ steps.coverage.outputs.e2e }} >= 80" | bc -l) -eq 1 ] && echo "brightgreen" || ([ $(echo "${{ steps.coverage.outputs.e2e }} >= 60" | bc -l) -eq 1 ] && echo "yellow" || echo "red"))"
                   }
                   EOF
-
             - name: Commit coverage badges
               if: github.event_name == 'push' && github.ref == 'refs/heads/main'
               run: |
@@ -337,4 +336,5 @@ jobs:
                   git config --local user.name "github-actions[bot]"
                   git add .badges/
                   git diff --staged --quiet || git commit -m "chore: update coverage badges [skip ci]"
+                  git pull --rebase origin main
                   git push
