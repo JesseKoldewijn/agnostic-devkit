@@ -2,7 +2,6 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![Total Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 [![Unit Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-unit.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 [![E2E Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-e2e.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 
@@ -10,17 +9,13 @@ A platform-agnostic developer toolkit for web development, built as a modern Chr
 
 ## Features
 
-### 🧹 Clean Copy URL
-
-Strips tracking parameters and query strings from URLs when copying. Right-click any link or selected text to copy a clean version without UTM parameters, analytics tokens, or other tracking artifacts.
-
 ### 🎛️ Parameter Presets
 
 Create and manage reusable presets of parameters that can be instantly applied to any tab:
 
-- **Query Parameters** — Add or modify URL query strings
-- **Cookies** — Set browser cookies for the current domain
-- **Local Storage** — Inject localStorage values
+-   **Query Parameters** — Add or modify URL query strings
+-   **Cookies** — Set browser cookies for the current domain
+-   **Local Storage** — Inject localStorage values
 
 Perfect for testing different feature flags, user segments, or debug modes across environments.
 
@@ -28,8 +23,8 @@ Perfect for testing different feature flags, user segments, or debug modes acros
 
 Choose between two display modes based on your workflow:
 
-- **Popup** — Traditional extension popup for quick access
-- **Sidebar** — Full-height side panel for extended functionality
+-   **Popup** — Traditional extension popup for quick access
+-   **Sidebar** — Full-height side panel for extended functionality
 
 ### 🌓 Theme System
 
@@ -39,31 +34,31 @@ Supports Light, Dark, and System theme modes that persist across sessions.
 
 Works across all Chromium-based browsers with automatic fallbacks for unsupported features:
 
-- ✅ Chrome 114+
-- ✅ Brave
-- ✅ Edge
-- ✅ Opera
-- ⚠️ Other Chromium browsers (with potential feature limitations)
+-   ✅ Chrome 114+
+-   ✅ Brave
+-   ✅ Edge
+-   ✅ Opera
+-   ⚠️ Other Chromium browsers (with potential feature limitations)
 
 ## Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| Build | [Vite](https://vite.dev) 7.x |
-| Language | [TypeScript](https://www.typescriptlang.org) 5.9 |
-| UI Framework | [SolidJS](https://www.solidjs.com) 1.9 |
-| Styling | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config) |
-| Unit Testing | [Vitest](https://vitest.dev) 4.x |
-| E2E Testing | [Playwright](https://playwright.dev) 1.57 |
-| Package Manager | [Yarn](https://yarnpkg.com) 4.x (via Corepack) |
-| Releases | [semantic-release](https://semantic-release.gitbook.io) |
+| Category        | Technology                                                     |
+| --------------- | -------------------------------------------------------------- |
+| Build           | [Vite](https://vite.dev) 7.x                                   |
+| Language        | [TypeScript](https://www.typescriptlang.org) 5.9               |
+| UI Framework    | [SolidJS](https://www.solidjs.com) 1.9                         |
+| Styling         | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config) |
+| Unit Testing    | [Vitest](https://vitest.dev) 4.x                               |
+| E2E Testing     | [Playwright](https://playwright.dev) 1.57                      |
+| Package Manager | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                 |
+| Releases        | [semantic-release](https://semantic-release.gitbook.io)        |
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Node.js**: 25.0.0 (managed via Volta)
-- **Yarn**: 4.10.3 (managed via Corepack)
+-   **Node.js**: 25.0.0 (managed via Volta)
+-   **Yarn**: 4.10.3 (managed via Corepack)
 
 Enable Corepack if you haven't already:
 
@@ -126,11 +121,34 @@ yarn test:e2e          # Run E2E tests
 yarn test:e2e:ui       # Interactive Playwright UI
 ```
 
-### Full Coverage Suite
+### Coverage Reports
 
 ```bash
-yarn test:all:coverage # Run all tests and merge coverage reports
+# Run all tests with coverage
+yarn test:all:coverage # Runs unit tests, builds with coverage, then E2E tests
+
+# Individual coverage commands
+yarn test:coverage      # Unit test coverage (Vitest) - outputs score
+yarn test:e2e:coverage  # E2E test coverage (Playwright) - outputs score
+
+# Get coverage scores
+yarn coverage:score:vitest      # Display unit test coverage score
+yarn coverage:score:playwright  # Display E2E test coverage score
+
+# Generate coverage badges (for CI/CD)
+yarn coverage:badges  # Generates badge JSON files in .badges/
+
+# View coverage reports
+yarn coverage:open:vitest      # Open Vitest coverage report
+yarn coverage:open:playwright  # Open Playwright coverage report
 ```
+
+Coverage reports are generated separately:
+
+-   **Vitest coverage**: `coverage/vitest/index.html` - Unit test coverage
+-   **Playwright coverage**: `coverage/playwright/index.html` - E2E test coverage
+
+Coverage scores are displayed automatically when running coverage commands and can also be viewed separately using the `coverage:score:*` commands.
 
 ## Project Structure
 
@@ -145,7 +163,6 @@ src/
 │   ├── PresetManager.tsx     # Full CRUD interface for presets
 │   └── PresetToggleList.tsx  # Quick preset toggles
 ├── logic/              # Business logic
-│   ├── cleanCopyUrl.ts       # URL cleaning logic
 │   └── parameters/           # Preset & parameter management
 ├── utils/              # Utility functions
 │   ├── browser.ts            # Cross-browser compatibility
@@ -162,8 +179,8 @@ src/
 
 The project uses GitHub Actions for continuous integration and deployment:
 
-- **CI Workflow** — Runs on all branches: type checking, unit tests, E2E tests, and coverage merging
-- **Release Workflow** — Triggered on `main`: semantic versioning, packaging, and Chrome Web Store upload
+-   **CI Workflow** — Runs on all branches: type checking, unit tests, E2E tests, and coverage badge generation
+-   **Release Workflow** — Triggered on `main`: semantic versioning, packaging, and Chrome Web Store upload
 
 Coverage badges are automatically updated on each push to `main`.
 

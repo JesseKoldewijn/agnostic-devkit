@@ -1,8 +1,6 @@
 // Background service worker for the extension
 import { initDisplayMode } from "~/utils/displayMode";
 import { browser, logBrowserInfo, showNotification } from "~/utils/browser";
-import { cleanCopyUrlAction } from "~/logic/cleanCopyUrl";
-import { ContextMenu } from "~/utils/contextMenu";
 import { cleanupTabState } from "~/logic/parameters";
 
 browser.runtime?.onInstalled.addListener(async () => {
@@ -16,16 +14,6 @@ browser.runtime?.onInstalled.addListener(async () => {
 	const popup = await browser.action?.getPopup({});
 	console.log("[Background] Current popup after init:", popup);
 
-	// Example: Add a context menu item
-	// TODO: Uncomment this when the copy button is ready
-	// new ContextMenu()
-	// 	.mutateContext("add", {
-	// 		title: "Clean Copy URL",
-	// 		action: cleanCopyUrlAction(),
-	// 	})
-	// 	.addToChrome();
-
-	// console.log("[Background] Context menu item added");
 });
 
 // Initialize display mode on startup
@@ -36,16 +24,6 @@ browser.runtime?.onStartup.addListener(async () => {
 	// Check current popup state
 	const popup = await browser.action?.getPopup({});
 	console.log("[Background] Current popup after init:", popup);
-
-	// Example: Add a context menu item
-	new ContextMenu()
-		.mutateContext("add", {
-			title: "Clean Copy URL",
-			action: cleanCopyUrlAction(),
-		})
-		.addToChrome();
-
-	console.log("[Background] Context menu item added");
 });
 
 browser.runtime?.onMessage.addListener((msg, _sender, sendResponse) => {

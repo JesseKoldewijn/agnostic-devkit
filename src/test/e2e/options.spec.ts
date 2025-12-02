@@ -282,4 +282,89 @@ test.describe("Options Page E2E Tests", () => {
 
 		await optionsPage.close();
 	});
+
+	test("should cycle through all theme options", async ({
+		extensionContext,
+		extensionId,
+	}) => {
+		const optionsPage = await openSettingsPage(
+			extensionContext,
+			extensionId
+		);
+		await optionsPage.waitForLoadState("networkidle");
+
+		const themeSelect = optionsPage.locator(
+			'select:has(option[value="light"])'
+		);
+
+		const themes = ["light", "dark", "system"];
+
+		for (const theme of themes) {
+			await themeSelect.selectOption(theme);
+			await expect(themeSelect).toHaveValue(theme);
+
+			// Save settings
+			const saveButton = optionsPage.getByRole("button", {
+				name: "Save Settings",
+			});
+			await saveButton.click();
+
+			// Wait for success message
+			const successMessage = optionsPage.getByText("✓ Settings Saved!");
+			await expect(successMessage).toBeVisible({ timeout: 3000 });
+
+			// Reload and verify
+			await optionsPage.reload();
+			await optionsPage.waitForLoadState("networkidle");
+
+			const reloadedSelect = optionsPage.locator(
+				'select:has(option[value="light"])'
+			);
+			await expect(reloadedSelect).toHaveValue(theme);
+		}
+
+		await optionsPage.close();
+	});
+
+	test("should switch between popup and sidebar display modes", async ({
+		extensionContext,
+		extensionId,
+	}) => {
+		const optionsPage = await openSettingsPage(
+			extensionContext,
+			extensionId
+		);
+		await optionsPage.waitForLoadState("networkidle");
+
+		const displayModeSelect = optionsPage.locator(
+			'select:has(option[value="popup"])'
+		);
+
+		// Test switching to sidebar
+		await displayModeSelect.selectOption("sidebar");
+		const saveButton = optionsPage.getByRole("button", {
+			name: "Save Settings",
+		});
+		await saveButton.click();
+
+		const successMessage = optionsPage.getByText("✓ Settings Saved!");
+		await expect(successMessage).toBeVisible({ timeout: 3000 });
+
+		// Reload and verify sidebar mode
+		await optionsPage.reload();
+		await optionsPage.waitForLoadState("networkidle");
+		await expect(displayModeSelect).toHaveValue("sidebar");
+
+		// Switch back to popup
+		await displayModeSelect.selectOption("popup");
+		await saveButton.click();
+		await expect(successMessage).toBeVisible({ timeout: 3000 });
+
+		// Reload and verify popup mode
+		await optionsPage.reload();
+		await optionsPage.waitForLoadState("networkidle");
+		await expect(displayModeSelect).toHaveValue("popup");
+
+		await optionsPage.close();
+	});
 });
