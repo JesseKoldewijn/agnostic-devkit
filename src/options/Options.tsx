@@ -66,9 +66,9 @@ export const Options: Component = () => {
 	};
 
 	return (
-		<div class="min-h-screen bg-background p-8">
+		<div class="min-h-screen bg-background p-8" data-testid="options-container">
 			<div class="max-w-2xl mx-auto">
-				<h1 class="text-4xl font-bold text-foreground mb-8">
+				<h1 class="text-4xl font-bold text-foreground mb-8" data-testid="options-heading">
 					Extension Options
 				</h1>
 
@@ -85,6 +85,7 @@ export const Options: Component = () => {
 								)
 							}
 							class="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+							data-testid="display-mode-select"
 						>
 							<option value="popup">Popup</option>
 							<option value="sidebar">Sidebar</option>
@@ -93,7 +94,7 @@ export const Options: Component = () => {
 							Choose how to display the extension interface.
 						</p>
 						<Show when={!sidebarSupported()}>
-							<div class="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+							<div class="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-md" data-testid="sidebar-warning">
 								<p class="text-xs text-amber-600 dark:text-amber-400">
 									⚠️ Sidebar mode is not supported in{" "}
 									{browserName()}. The extension will use
@@ -113,6 +114,7 @@ export const Options: Component = () => {
 								setThemeInput(e.target.value as Theme)
 							}
 							class="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+							data-testid="theme-select"
 						>
 							<option value="light">Light</option>
 							<option value="dark">Dark</option>
@@ -130,6 +132,7 @@ export const Options: Component = () => {
 							checked={notifications()}
 							onChange={(e) => setNotifications(e.target.checked)}
 							class="w-4 h-4 text-primary border-input rounded focus:ring-2 focus:ring-ring"
+							data-testid="notifications-checkbox"
 						/>
 						<label
 							for="notifications"
@@ -142,12 +145,13 @@ export const Options: Component = () => {
 					<button
 						onClick={saveSettings}
 						class="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50"
+						data-testid="save-settings-button"
 					>
 						{saved() ? "✓ Settings Saved!" : "Save Settings"}
 					</button>
 				</div>
 			</div>
-			<p class="text-xs text-muted-foreground mt-4 w-full text-center">
+			<p class="text-xs text-muted-foreground mt-4 w-full text-center" data-testid="version-text">
 				Version: {version}
 			</p>
 		</div>

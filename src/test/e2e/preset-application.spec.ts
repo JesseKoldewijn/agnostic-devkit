@@ -47,10 +47,14 @@ test.describe("Preset Application E2E Tests", () => {
 		await popupPage.waitForTimeout(200);
 
 		// Fill in parameter key and value
-		const paramKeyInput = popupPage.locator('input[name^="param-"][name$="-key"]').first();
+		const paramKeyInput = popupPage
+			.locator('input[name^="param-"][name$="-key"]')
+			.first();
 		await paramKeyInput.fill("testParam");
 
-		const paramValueInput = popupPage.locator('input[name^="param-"][name$="-value"]').first();
+		const paramValueInput = popupPage
+			.locator('input[name^="param-"][name$="-value"]')
+			.first();
 		await paramValueInput.fill("testValue");
 
 		// Save the preset
@@ -164,9 +168,13 @@ test.describe("Preset Application E2E Tests", () => {
 		await popupPage.waitForTimeout(200);
 
 		// Fill first parameter
-		const firstParamKeyInput = popupPage.locator('input[name^="param-"][name$="-key"]').first();
+		const firstParamKeyInput = popupPage
+			.locator('input[name^="param-"][name$="-key"]')
+			.first();
 		await firstParamKeyInput.fill("param1");
-		const firstParamValueInput = popupPage.locator('input[name^="param-"][name$="-value"]').first();
+		const firstParamValueInput = popupPage
+			.locator('input[name^="param-"][name$="-value"]')
+			.first();
 		await firstParamValueInput.fill("value1");
 
 		// Add second parameter
@@ -174,9 +182,13 @@ test.describe("Preset Application E2E Tests", () => {
 		await popupPage.waitForTimeout(200);
 
 		// Fill second parameter
-		const secondParamKeyInput = popupPage.locator('input[name^="param-"][name$="-key"]').nth(1);
+		const secondParamKeyInput = popupPage
+			.locator('input[name^="param-"][name$="-key"]')
+			.nth(1);
 		await secondParamKeyInput.fill("param2");
-		const secondParamValueInput = popupPage.locator('input[name^="param-"][name$="-value"]').nth(1);
+		const secondParamValueInput = popupPage
+			.locator('input[name^="param-"][name$="-value"]')
+			.nth(1);
 		await secondParamValueInput.fill("value2");
 
 		// Save preset
@@ -236,7 +248,7 @@ test.describe("Preset Application E2E Tests", () => {
 			name: "Create Preset",
 		});
 		await expect(saveButton).toBeVisible();
-		
+
 		// The save button should not be disabled (HTML5 validation will handle it)
 		// Click it to trigger validation
 		await saveButton.click();
@@ -246,14 +258,16 @@ test.describe("Preset Application E2E Tests", () => {
 		// or if an alert appeared (browser native validation)
 		// The form should still be visible if validation failed
 		const stillOnForm = await createHeading.isVisible().catch(() => false);
-		
+
 		// If still on form, validation worked (either HTML5 or custom)
 		// If we moved to list view, the form might have been submitted (unlikely with empty name)
 		// We'll verify the form is still there or an alert appeared
 		if (stillOnForm) {
 			// Validation prevented submission - good!
 			// Verify name input still exists and is empty
-			const nameInputAfter = popupPage.locator('input[name="preset-name"]');
+			const nameInputAfter = popupPage.locator(
+				'input[name="preset-name"]'
+			);
 			await expect(nameInputAfter).toBeVisible();
 		}
 
@@ -267,4 +281,3 @@ test.describe("Preset Application E2E Tests", () => {
 		await popupPage.close();
 	});
 });
-

@@ -52,7 +52,7 @@ export const App: Component = () => {
 	});
 
 	return (
-		<div class="min-h-screen w-full p-4 bg-background">
+		<div class="min-h-screen w-full p-4 bg-background" data-testid="sidebar-container">
 			<Show
 				when={!showManager()}
 				fallback={
@@ -65,16 +65,16 @@ export const App: Component = () => {
 				<div class="flex flex-col space-y-4">
 					{/* Header */}
 					<div class="flex items-center justify-between">
-						<h1 class="text-xl font-bold text-foreground">
+						<h1 class="text-xl font-bold text-foreground" data-testid="sidebar-heading">
 							Parameter Presets
 						</h1>
-						<div class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground">
+						<div class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground" data-testid="theme-indicator">
 							{currentTheme()}
 						</div>
 					</div>
 
 					{/* Current Tab Info */}
-					<div class="p-3 bg-card rounded-lg border border-border">
+					<div class="p-3 bg-card rounded-lg border border-border" data-testid="current-tab-section">
 						<div class="text-xs text-muted-foreground mb-1">
 							Current Tab
 						</div>
@@ -82,6 +82,7 @@ export const App: Component = () => {
 							<div
 								class="text-sm font-medium text-foreground truncate mb-1"
 								title={currentTabTitle()}
+								data-testid="current-tab-title"
 							>
 								{currentTabTitle()}
 							</div>
@@ -90,6 +91,7 @@ export const App: Component = () => {
 							<div
 								class="text-xs font-mono text-muted-foreground truncate"
 								title={currentUrl()}
+								data-testid="current-tab-url"
 							>
 								{currentUrl()}
 							</div>
@@ -108,8 +110,8 @@ export const App: Component = () => {
 					/>
 
 					{/* Info card */}
-					<div class="p-4 bg-muted/50 border border-border rounded-lg">
-						<h3 class="text-sm font-medium text-foreground mb-1">
+					<div class="p-4 bg-muted/50 border border-border rounded-lg" data-testid="about-presets-card">
+						<h3 class="text-sm font-medium text-foreground mb-1" data-testid="about-presets-heading">
 							About Presets
 						</h3>
 						<p class="text-xs text-muted-foreground">
@@ -125,6 +127,7 @@ export const App: Component = () => {
 						<button
 							onClick={() => browser.runtime?.openOptionsPage()}
 							class="w-full px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+							data-testid="open-options-button"
 						>
 							Open Options
 						</button>

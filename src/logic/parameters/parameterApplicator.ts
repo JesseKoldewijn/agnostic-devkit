@@ -3,7 +3,7 @@
  * Supports queryParam, cookie, and localStorage parameter types
  */
 
-import { browser } from "~/utils/browser";
+import { browser } from "@/utils/browser";
 import type { Parameter, ParameterType } from "./types";
 import {
 	getPresetById,

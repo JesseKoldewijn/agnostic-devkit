@@ -3,7 +3,7 @@
  * All changes sync immediately to chrome.storage.sync
  */
 
-import { browser } from "~/utils/browser";
+import { browser } from "@/utils/browser";
 import type { Preset, Parameter } from "./types";
 
 const PRESETS_KEY = "presets";

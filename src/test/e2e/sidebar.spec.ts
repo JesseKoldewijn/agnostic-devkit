@@ -24,16 +24,13 @@ test.describe("Sidebar E2E Tests", () => {
 		expect(title).toBe("Chrome Extension Sidebar");
 
 		// Verify main heading is visible
-		const heading = sidebarPage.locator("h1").filter({ hasText: "Parameter Presets" });
+		const heading = sidebarPage.locator('[data-testid="sidebar-heading"]');
 		await expect(heading).toBeVisible();
+		await expect(heading).toHaveText("Parameter Presets");
 
 		// Verify "Current Tab" section exists
-		const currentTab = sidebarPage.getByText("Current Tab");
-		await expect(currentTab).toBeVisible();
-
-		// Verify theme indicator is visible
-		const themeIndicator = sidebarPage.locator(".text-secondary-foreground").first();
-		await expect(themeIndicator).toBeVisible();
+		const currentTabSection = sidebarPage.locator('[data-testid="current-tab-section"]');
+		await expect(currentTabSection).toBeVisible();
 
 		await sidebarPage.close();
 	});
@@ -48,7 +45,7 @@ test.describe("Sidebar E2E Tests", () => {
 		);
 
 		// Find and click the Manage button
-		const manageButton = sidebarPage.getByRole("button", { name: "Manage" });
+		const manageButton = sidebarPage.locator('[data-testid="manage-presets-button"]');
 		await expect(manageButton).toBeVisible();
 		await manageButton.click();
 
@@ -56,7 +53,7 @@ test.describe("Sidebar E2E Tests", () => {
 		await sidebarPage.waitForTimeout(500);
 
 		// Verify preset manager UI elements appear
-		const closeButton = sidebarPage.getByRole("button", { name: "Close" });
+		const closeButton = sidebarPage.locator('[data-testid="close-manager-button"]');
 		await expect(closeButton).toBeVisible({ timeout: 5000 });
 
 		await sidebarPage.close();
@@ -73,10 +70,9 @@ test.describe("Sidebar E2E Tests", () => {
 		await sidebarPage.waitForLoadState("networkidle");
 
 		// Verify info card heading is visible
-		const infoHeading = sidebarPage.getByRole("heading", {
-			name: "About Presets",
-		});
+		const infoHeading = sidebarPage.locator('[data-testid="about-presets-heading"]');
 		await expect(infoHeading).toBeVisible();
+		await expect(infoHeading).toHaveText("About Presets");
 
 		await sidebarPage.close();
 	});
@@ -92,8 +88,8 @@ test.describe("Sidebar E2E Tests", () => {
 		await sidebarPage.waitForLoadState("networkidle");
 
 		// Verify "Current Tab" section is visible
-		const currentTabLabel = sidebarPage.getByText("Current Tab");
-		await expect(currentTabLabel).toBeVisible();
+		const currentTabSection = sidebarPage.locator('[data-testid="current-tab-section"]');
+		await expect(currentTabSection).toBeVisible();
 
 		await sidebarPage.close();
 	});
@@ -109,11 +105,10 @@ test.describe("Sidebar E2E Tests", () => {
 		await sidebarPage.waitForLoadState("networkidle");
 
 		// Verify theme indicator shows a valid theme
-		const themeIndicator = sidebarPage.locator(".text-secondary-foreground").first();
+		const themeIndicator = sidebarPage.locator('[data-testid="theme-indicator"]');
 		await expect(themeIndicator).toBeVisible();
-
 		const themeText = await themeIndicator.textContent();
-		expect(themeText).toMatch(/(light|dark|system)/);
+		expect(themeText).toMatch(/(light|dark|system)/i);
 
 		await sidebarPage.close();
 	});
@@ -128,9 +123,17 @@ test.describe("Sidebar E2E Tests", () => {
 		);
 		await sidebarPage.waitForLoadState("networkidle");
 
-		// Verify the main container has min-height class for full height
-		const mainContainer = sidebarPage.locator(".min-h-screen");
-		await expect(mainContainer).toBeVisible();
+		// Verify the sidebar container is rendered
+		const sidebarContainer = sidebarPage.locator('[data-testid="sidebar-container"]');
+		await expect(sidebarContainer).toBeVisible();
+
+		// Verify the main heading exists
+		const heading = sidebarPage.locator('[data-testid="sidebar-heading"]');
+		await expect(heading).toBeVisible();
+
+		// Verify the page has content (sidebar should fill height)
+		const body = sidebarPage.locator("body");
+		await expect(body).toBeVisible();
 
 		await sidebarPage.close();
 	});
