@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.0...v1.1.1) (2025-12-02)
+
+
+### Bug Fixes
+
+* removal of automated upload to CWS, to be refined later [skip ci] ([999e77c](https://github.com/JesseKoldewijn/agnostic-devkit/commit/999e77c346f23550ab6b84a9a1c4760d3c5bab83))
+
 # [1.1.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.0.0...v1.1.0) (2025-12-02)
 
 
