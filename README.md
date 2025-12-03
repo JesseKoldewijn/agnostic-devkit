@@ -166,8 +166,9 @@ src/
 │   └── parameters/           # Preset & parameter management
 ├── utils/              # Utility functions
 │   ├── browser.ts            # Cross-browser compatibility
-│   ├── contextMenu.ts        # Context menu helpers
+│   ├── browserClasses.ts     # Browser class helpers
 │   ├── displayMode.ts        # Display mode management
+│   ├── dom.ts                # DOM utilities
 │   └── theme.ts              # Theme management
 ├── styles/             # Global styles & Tailwind config
 ├── icons/              # Extension icons
@@ -180,7 +181,7 @@ src/
 The project uses GitHub Actions for continuous integration and deployment:
 
 -   **CI Workflow** — Runs on all branches: type checking, unit tests, E2E tests, and coverage badge generation
--   **Release Workflow** — Triggered on `main`: semantic versioning, packaging, and Chrome Web Store upload
+-   **Release Workflow** — Triggered on `main`: semantic versioning and packaging
 
 Coverage badges are automatically updated on each push to `main`.
 
