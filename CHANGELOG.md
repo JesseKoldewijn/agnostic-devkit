@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.2...v1.1.3) (2025-12-03)
+
+
+### Bug Fixes
+
+* update of documentation + package update push of currentTab sync fix ([7136acd](https://github.com/JesseKoldewijn/agnostic-devkit/commit/7136acd939ce28ebad073cbe9e10323b1477cfdd))
+
 ## [1.1.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.1...v1.1.2) (2025-12-03)
 
 
