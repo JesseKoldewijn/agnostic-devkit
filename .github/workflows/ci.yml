@@ -90,8 +90,7 @@ jobs:
               if: always()
               with:
                   name: coverage-report
-                  path: |
-                      coverage/
+                  path: coverage/
                   retention-days: 7
 
     build:
@@ -249,17 +248,36 @@ jobs:
 
             - name: Download Vitest coverage
               uses: actions/download-artifact@v4
-              continue-on-error: true
               with:
                   name: coverage-report
                   path: coverage/
 
             - name: Download Playwright coverage
               uses: actions/download-artifact@v4
-              continue-on-error: true
               with:
                   name: playwright-coverage
                   path: coverage/playwright/
+
+            - name: Debug coverage files
+              run: |
+                  echo "=== Coverage directory structure ==="
+                  find coverage -type f -name "*.json" 2>/dev/null || echo "No JSON files found"
+                  echo ""
+                  echo "=== Vitest coverage summary ==="
+                  if [ -f "coverage/vitest/coverage-summary.json" ]; then
+                    cat coverage/vitest/coverage-summary.json | head -5
+                  else
+                    echo "ERROR: coverage/vitest/coverage-summary.json not found!"
+                    ls -la coverage/ 2>/dev/null || echo "coverage/ directory does not exist"
+                  fi
+                  echo ""
+                  echo "=== Playwright coverage summary ==="
+                  if [ -f "coverage/playwright/coverage-summary.json" ]; then
+                    cat coverage/playwright/coverage-summary.json | head -5
+                  else
+                    echo "WARNING: coverage/playwright/coverage-summary.json not found"
+                    ls -la coverage/playwright/ 2>/dev/null || echo "coverage/playwright/ directory does not exist"
+                  fi
 
             - name: Generate coverage badges
               run: yarn coverage:badges
