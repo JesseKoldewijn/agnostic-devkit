@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.1...v1.1.2) (2025-12-03)
+
+
+### Bug Fixes
+
+* improve CI coverage artifact handling and add debugging ([9dcc2ad](https://github.com/JesseKoldewijn/agnostic-devkit/commit/9dcc2ad0ce7fd3e3289f5e21016d5496de8f2290))
+
 ## [1.1.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.0...v1.1.1) (2025-12-02)
 
 
