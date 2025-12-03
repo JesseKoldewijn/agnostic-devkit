@@ -52,19 +52,23 @@ export async function openPopupPage(
 /**
  * Helper function to open sidebar page
  * With launchPersistentContext, direct navigation works per Playwright docs
+ * @param context - Browser context
+ * @param extensionId - Extension ID
+ * @param targetTabId - Optional tab ID to pass to the sidebar for testing parameter application
  */
 export async function openSidebarPage(
 	context: BrowserContext,
-	extensionId: string
+	extensionId: string,
+	targetTabId?: number
 ): Promise<Page> {
 	const page = await context.newPage();
-	await page.goto(
-		`chrome-extension://${extensionId}/src/sidebar/index.html`,
-		{
-			waitUntil: "domcontentloaded",
-			timeout: 15000,
-		}
-	);
+	const url = targetTabId
+		? `chrome-extension://${extensionId}/src/sidebar/index.html?targetTabId=${targetTabId}`
+		: `chrome-extension://${extensionId}/src/sidebar/index.html`;
+	await page.goto(url, {
+		waitUntil: "domcontentloaded",
+		timeout: 15000,
+	});
 	await page.waitForSelector("#root", { timeout: 10000, state: "attached" });
 	await page
 		.waitForLoadState("networkidle", { timeout: 15000 })

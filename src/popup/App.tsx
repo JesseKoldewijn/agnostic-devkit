@@ -13,7 +13,10 @@ export const App: Component = () => {
 		setCurrentTheme(theme);
 
 		// Get current tab URL
-		const tabs = await browser.tabs?.query({ active: true, currentWindow: true });
+		const tabs = await browser.tabs?.query({
+			active: true,
+			currentWindow: true,
+		});
 		if (tabs?.[0]?.url) {
 			setCurrentUrl(tabs[0].url);
 		}
@@ -24,10 +27,31 @@ export const App: Component = () => {
 				setCurrentTheme(changes.theme.newValue as Theme);
 			}
 		});
+
+		// Listen for tab changes (in case popup stays open during tab switch)
+		browser.tabs?.onActivated.addListener(async (activeInfo) => {
+			const tab = await browser.tabs?.get(activeInfo.tabId);
+			if (tab?.url) {
+				setCurrentUrl(tab.url);
+			}
+		});
+
+		browser.tabs?.onUpdated.addListener(async (tabId, _changeInfo, tab) => {
+			const currentTabs = await browser.tabs?.query({
+				active: true,
+				currentWindow: true,
+			});
+			if (currentTabs?.[0]?.id === tabId && tab.url) {
+				setCurrentUrl(tab.url);
+			}
+		});
 	});
 
 	return (
-		<div class="w-96 min-h-96 p-4 bg-background" data-testid="popup-container">
+		<div
+			class="w-96 min-h-96 p-4 bg-background"
+			data-testid="popup-container"
+		>
 			<Show
 				when={!showManager()}
 				fallback={
@@ -40,19 +64,34 @@ export const App: Component = () => {
 				<div class="flex flex-col space-y-4">
 					{/* Header */}
 					<div class="flex items-center justify-between">
-						<h1 class="text-lg font-bold text-foreground" data-testid="popup-heading">
+						<h1
+							class="text-lg font-bold text-foreground"
+							data-testid="popup-heading"
+						>
 							Parameters
 						</h1>
-						<div class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground" data-testid="theme-indicator">
+						<div
+							class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground"
+							data-testid="theme-indicator"
+						>
 							{currentTheme()}
 						</div>
 					</div>
 
 					{/* Current URL display */}
 					<Show when={currentUrl()}>
-						<div class="px-3 py-2 bg-muted/50 rounded-lg border border-border" data-testid="current-tab-section">
-							<div class="text-xs text-muted-foreground mb-1">Current Tab</div>
-							<div class="text-xs font-mono text-foreground truncate" title={currentUrl()} data-testid="current-tab-url">
+						<div
+							class="px-3 py-2 bg-muted/50 rounded-lg border border-border"
+							data-testid="current-tab-section"
+						>
+							<div class="text-xs text-muted-foreground mb-1">
+								Current Tab
+							</div>
+							<div
+								class="text-xs font-mono text-foreground truncate"
+								title={currentUrl()}
+								data-testid="current-tab-url"
+							>
 								{currentUrl()}
 							</div>
 						</div>

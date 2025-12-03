@@ -342,11 +342,39 @@ export const test = base.extend<{
 
 	extensionId: async ({ extensionContext }, use) => {
 		// For manifest v3: get extension ID from service worker
-		// Following official Playwright pattern
-		let serviceWorker = extensionContext.serviceWorkers()[0];
+		// Following official Playwright pattern with improved reliability
+		
+		// Helper to get service worker with retries
+		const getServiceWorker = async (maxRetries = 5, delayMs = 500): Promise<any> => {
+			for (let attempt = 0; attempt < maxRetries; attempt++) {
+				// Check for existing service workers first
+				const workers = extensionContext.serviceWorkers();
+				if (workers.length > 0) {
+					return workers[0];
+				}
+
+				// If no workers yet, wait for the event or a short delay
+				if (attempt < maxRetries - 1) {
+					try {
+						const worker = await Promise.race([
+							extensionContext.waitForEvent("serviceworker"),
+							new Promise<null>((resolve) =>
+								setTimeout(() => resolve(null), delayMs)
+							),
+						]);
+						if (worker) return worker;
+					} catch {
+						// Continue to next attempt
+					}
+				}
+			}
+			return null;
+		};
+
+		let serviceWorker = await getServiceWorker();
 
 		if (!serviceWorker) {
-			// Wait for service worker with timeout to avoid hanging
+			// Final attempt: wait longer for the service worker event
 			try {
 				serviceWorker = await Promise.race([
 					extensionContext.waitForEvent("serviceworker"),
@@ -358,13 +386,12 @@ export const test = base.extend<{
 										"Timeout waiting for service worker"
 									)
 								),
-							10000
+							15000
 						)
 					),
 				]);
 			} catch (error: any) {
-				// If we timeout, try one more time to get existing service workers
-				// (it may have registered while we were waiting)
+				// Last check for existing service workers
 				const workers = extensionContext.serviceWorkers();
 				if (workers.length > 0) {
 					serviceWorker = workers[0];

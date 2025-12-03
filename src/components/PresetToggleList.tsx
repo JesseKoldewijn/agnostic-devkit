@@ -28,9 +28,8 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	const [togglingPreset, setTogglingPreset] = createSignal<string | null>(null);
 	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
 
-	// Get the current tab ID
-	const getCurrentTabId = async (): Promise<number | null> => {
-		// Check for test override via URL param (used in e2e tests)
+	// Check if there's a test override for the target tab ID
+	const getTestOverrideTabId = (): number | null => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const overrideTabId = urlParams.get("targetTabId");
 		if (overrideTabId) {
@@ -38,6 +37,16 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 			if (!isNaN(parsed)) {
 				return parsed;
 			}
+		}
+		return null;
+	};
+
+	// Get the current tab ID
+	const getCurrentTabId = async (): Promise<number | null> => {
+		// Check for test override via URL param (used in e2e tests)
+		const overrideId = getTestOverrideTabId();
+		if (overrideId !== null) {
+			return overrideId;
 		}
 
 		try {
@@ -92,9 +101,46 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 		} else {
 			setLoading(false);
 		}
+
+		// Don't set up tab change listeners if using a test override
+		// (test override should remain fixed to the specified tab)
+		const hasTestOverride = getTestOverrideTabId() !== null;
+		if (hasTestOverride) {
+			return;
+		}
+
+		// Listen for tab activation changes to update currentTabId
+		const handleTabActivated = async (activeInfo: { tabId: number; windowId: number }) => {
+			// Update to the newly activated tab
+			setCurrentTabId(activeInfo.tabId);
+			await loadPresets();
+		};
+
+		// Listen for tab updates (URL changes in the current tab)
+		const handleTabUpdated = async (
+			tabId: number,
+			_changeInfo: { status?: string; url?: string },
+			_tab: { id?: number; url?: string }
+		) => {
+			// Only care about updates to the currently tracked tab
+			if (tabId === currentTabId()) {
+				// Reload presets to reflect any URL changes
+				await loadPresets();
+			}
+		};
+
+		// Add listeners
+		browser.tabs?.onActivated.addListener(handleTabActivated);
+		browser.tabs?.onUpdated.addListener(handleTabUpdated);
+
+		// Store handlers for cleanup
+		onCleanup(() => {
+			browser.tabs?.onActivated.removeListener(handleTabActivated);
+			browser.tabs?.onUpdated.removeListener(handleTabUpdated);
+		});
 	});
 
-	// Subscribe to changes
+	// Subscribe to storage changes
 	createEffect(() => {
 		const unsubPresets = onPresetsChanged(() => {
 			loadPresets();
