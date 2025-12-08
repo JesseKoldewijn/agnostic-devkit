@@ -26,12 +26,8 @@
 	},
 	"content_scripts": [
 		{
-			"matches": [
-				"<all_urls>"
-			],
-			"js": [
-				"src/content/index.ts"
-			],
+			"matches": ["<all_urls>"],
+			"js": ["src/content/index.ts"],
 			"run_at": "document_end"
 		}
 	],
@@ -42,21 +38,13 @@
 		"tabs",
 		"notifications",
 		"sidePanel",
-		"contextMenus",
-		"clipboardWrite",
 		"cookies"
 	],
-	"host_permissions": [
-		"*://*/*"
-	],
+	"host_permissions": ["*://*/*"],
 	"web_accessible_resources": [
 		{
-			"resources": [
-				"/*"
-			],
-			"matches": [
-				"<all_urls>"
-			]
+			"resources": ["/*"],
+			"matches": ["<all_urls>"]
 		}
 	]
 }
