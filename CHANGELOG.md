@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.3...v1.1.4) (2025-12-08)
+
+
+### Bug Fixes
+
+* removal of unused permission set ([a6f851a](https://github.com/JesseKoldewijn/agnostic-devkit/commit/a6f851ac0f6a0c9937999bc55c6ce28f8cabb709))
+
 ## [1.1.3](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.2...v1.1.3) (2025-12-03)
 
 
