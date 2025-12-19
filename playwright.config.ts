@@ -1,11 +1,11 @@
-import { defineConfig, devices } from "@playwright/test";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig, devices } from "@playwright/test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const extensionPath = resolve(__dirname, ".output/chrome-mv3");
+const extensionPath = resolve(__dirname, "build-output/chrome-mv3");
 
 // Verify extension path exists (but don't build - expect it to be built already)
 if (!existsSync(extensionPath)) {
@@ -35,10 +35,6 @@ export default defineConfig({
 		trace: "on-first-retry",
 	},
 	projects: [
-		// {
-		// 	name: "chromium",
-		// 	use: { ...devices["Desktop Chrome"] },
-		// },
 		{
 			name: "chromium-extension",
 			use: {

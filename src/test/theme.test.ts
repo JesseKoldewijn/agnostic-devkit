@@ -1,12 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-	getTheme,
-	setTheme,
-	getEffectiveTheme,
-	applyTheme,
-	initTheme,
-} from "../utils/theme";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
+import { applyTheme, getEffectiveTheme, getTheme, initTheme, setTheme } from "../utils/theme";
 
 describe("theme utilities", () => {
 	let mockMatchMedia: any;
@@ -17,18 +11,18 @@ describe("theme utilities", () => {
 
 		// Mock matchMedia
 		mockMatchMedia = vi.fn().mockImplementation(() => ({
+			addEventListener: vi.fn(),
+			addListener: vi.fn(),
+			dispatchEvent: vi.fn(),
 			matches: false,
 			media: "(prefers-color-scheme: dark)",
 			onchange: null,
-			addListener: vi.fn(),
-			removeListener: vi.fn(),
-			addEventListener: vi.fn(),
 			removeEventListener: vi.fn(),
-			dispatchEvent: vi.fn(),
+			removeListener: vi.fn(),
 		}));
 		Object.defineProperty(globalThis, "matchMedia", {
-			writable: true,
 			value: mockMatchMedia,
+			writable: true,
 		});
 
 		// Mock document.documentElement
@@ -41,8 +35,8 @@ describe("theme utilities", () => {
 			},
 		};
 		Object.defineProperty(globalThis, "document", {
-			writable: true,
 			value: mockDocument,
+			writable: true,
 		});
 	});
 
@@ -121,48 +115,29 @@ describe("theme utilities", () => {
 		it("should add light class when theme is light", () => {
 			applyTheme("light");
 
-			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith(
-				"light",
-				"dark"
-			);
-			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
-				"light"
-			);
-			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith(
-				"system"
-			);
+			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith("light", "dark");
+			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith("light");
+			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith("system");
 		});
 
 		it("should add dark class when theme is dark", () => {
 			applyTheme("dark");
 
-			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith(
-				"light",
-				"dark"
-			);
-			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
-				"dark"
-			);
-			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith(
-				"system"
-			);
+			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith("light", "dark");
+			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith("dark");
+			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith("system");
 		});
 
 		it("should add system class when theme is system", () => {
 			applyTheme("system");
 
-			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith(
-				"light",
-				"dark"
-			);
+			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith("light", "dark");
 			expect(mockDocument.documentElement.classList.remove).toHaveBeenCalledWith(
 				"light",
 				"dark",
 				"system"
 			);
-			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
-				"system"
-			);
+			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith("system");
 		});
 	});
 
@@ -172,17 +147,13 @@ describe("theme utilities", () => {
 
 			await initTheme();
 
-			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
-				"dark"
-			);
+			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith("dark");
 		});
 
 		it("should apply system theme when none stored", async () => {
 			await initTheme();
 
-			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
-				"system"
-			);
+			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith("system");
 		});
 
 		it("should set up system theme change listener", async () => {
@@ -206,9 +177,7 @@ describe("theme utilities", () => {
 			// Wait a tick
 			await new Promise((resolve) => setTimeout(resolve, 0));
 
-			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
-				"light"
-			);
+			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith("light");
 		});
 
 		it("should ignore storage changes for other keys", async () => {

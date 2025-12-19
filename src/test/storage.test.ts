@@ -1,25 +1,25 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-	getPresets,
-	savePresets,
-	getPresetById,
-	addPreset,
-	updatePreset,
-	deletePreset,
-	addParameter,
-	updateParameter,
-	removeParameter,
-	getTabPresetStates,
-	saveTabPresetStates,
-	getActivePresetsForTab,
-	updateTabPresetState,
-	addActivePresetToTab,
-	removeActivePresetFromTab,
-	isPresetActiveOnTab,
-	cleanupTabState,
-} from "../logic/parameters/storage";
-import type { Preset, Parameter } from "../logic/parameters/types";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
+import {
+	addActivePresetToTab,
+	addParameter,
+	addPreset,
+	cleanupTabState,
+	deletePreset,
+	getActivePresetsForTab,
+	getPresetById,
+	getPresets,
+	getTabPresetStates,
+	isPresetActiveOnTab,
+	removeActivePresetFromTab,
+	removeParameter,
+	savePresets,
+	saveTabPresetStates,
+	updateParameter,
+	updatePreset,
+	updateTabPresetState,
+} from "../logic/parameters/storage";
+import type { Parameter, Preset } from "../logic/parameters/types";
 
 describe("storage", () => {
 	beforeEach(() => {
@@ -29,23 +29,23 @@ describe("storage", () => {
 	describe("getPresets", () => {
 		it("should return empty array when no presets exist", async () => {
 			const presets = await getPresets();
-			expect(presets).toEqual([]);
+			expect(presets).toStrictEqual([]);
 		});
 
 		it("should return stored presets", async () => {
 			const mockPresets: Preset[] = [
 				{
+					createdAt: Date.now(),
 					id: "1",
 					name: "Test Preset",
 					parameters: [],
-					createdAt: Date.now(),
 					updatedAt: Date.now(),
 				},
 			];
 			await fakeBrowser.storage.sync.set({ presets: mockPresets });
 
 			const presets = await getPresets();
-			expect(presets).toEqual(mockPresets);
+			expect(presets).toStrictEqual(mockPresets);
 		});
 	});
 
@@ -53,17 +53,17 @@ describe("storage", () => {
 		it("should save presets to storage", async () => {
 			const mockPresets: Preset[] = [
 				{
+					createdAt: Date.now(),
 					id: "1",
 					name: "Test Preset",
 					parameters: [],
-					createdAt: Date.now(),
 					updatedAt: Date.now(),
 				},
 			];
 
 			await savePresets(mockPresets);
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets).toEqual(mockPresets);
+			expect(result.presets).toStrictEqual(mockPresets);
 		});
 	});
 
@@ -95,7 +95,7 @@ describe("storage", () => {
 
 			await addPreset(newPreset);
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets.length).toBe(1);
+			expect(result.presets).toHaveLength(1);
 			expect(result.presets[0].name).toBe("New Preset");
 		});
 
@@ -165,7 +165,7 @@ describe("storage", () => {
 
 			await deletePreset("1");
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets.length).toBe(1);
+			expect(result.presets).toHaveLength(1);
 			expect(result.presets[0].id).toBe("2");
 		});
 
@@ -182,8 +182,8 @@ describe("storage", () => {
 
 			await deletePreset("1");
 			const result = await fakeBrowser.storage.local.get("tabPresetStates");
-			expect(result.tabPresetStates["123"]).toEqual(["2"]);
-			expect(result.tabPresetStates["456"]).toEqual([]);
+			expect(result.tabPresetStates["123"]).toStrictEqual(["2"]);
+			expect(result.tabPresetStates["456"]).toStrictEqual([]);
 		});
 	});
 
@@ -195,14 +195,14 @@ describe("storage", () => {
 
 			const param: Parameter = {
 				id: "p1",
-				type: "queryParam",
 				key: "test",
+				type: "queryParam",
 				value: "value",
 			};
 
 			await addParameter("1", param);
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets[0].parameters.length).toBe(1);
+			expect(result.presets[0].parameters).toHaveLength(1);
 			expect(result.presets[0].parameters[0].key).toBe("test");
 		});
 	});
@@ -214,9 +214,7 @@ describe("storage", () => {
 					{
 						id: "1",
 						name: "Preset",
-						parameters: [
-							{ id: "p1", type: "queryParam", key: "original", value: "val" },
-						],
+						parameters: [{ id: "p1", key: "original", type: "queryParam", value: "val" }],
 						updatedAt: 1000,
 					},
 				],
@@ -236,8 +234,8 @@ describe("storage", () => {
 						id: "1",
 						name: "Preset",
 						parameters: [
-							{ id: "p1", type: "queryParam", key: "key1", value: "val1" },
-							{ id: "p2", type: "queryParam", key: "key2", value: "val2" },
+							{ id: "p1", key: "key1", type: "queryParam", value: "val1" },
+							{ id: "p2", key: "key2", type: "queryParam", value: "val2" },
 						],
 					},
 				],
@@ -245,7 +243,7 @@ describe("storage", () => {
 
 			await removeParameter("1", "p1");
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets[0].parameters.length).toBe(1);
+			expect(result.presets[0].parameters).toHaveLength(1);
 			expect(result.presets[0].parameters[0].id).toBe("p2");
 		});
 	});
@@ -253,7 +251,7 @@ describe("storage", () => {
 	describe("getTabPresetStates", () => {
 		it("should return empty object when no states exist", async () => {
 			const states = await getTabPresetStates();
-			expect(states).toEqual({});
+			expect(states).toStrictEqual({});
 		});
 
 		it("should return stored tab states", async () => {
@@ -262,7 +260,7 @@ describe("storage", () => {
 			});
 
 			const states = await getTabPresetStates();
-			expect(states["123"]).toEqual(["preset1", "preset2"]);
+			expect(states["123"]).toStrictEqual(["preset1", "preset2"]);
 		});
 	});
 
@@ -271,14 +269,14 @@ describe("storage", () => {
 			const states = { "123": ["preset1"] };
 			await saveTabPresetStates(states);
 			const result = await fakeBrowser.storage.local.get("tabPresetStates");
-			expect(result.tabPresetStates).toEqual(states);
+			expect(result.tabPresetStates).toStrictEqual(states);
 		});
 	});
 
 	describe("getActivePresetsForTab", () => {
 		it("should return empty array when tab has no active presets", async () => {
 			const activePresets = await getActivePresetsForTab(123);
-			expect(activePresets).toEqual([]);
+			expect(activePresets).toStrictEqual([]);
 		});
 
 		it("should return active preset IDs for a tab", async () => {
@@ -287,7 +285,7 @@ describe("storage", () => {
 			});
 
 			const activePresets = await getActivePresetsForTab(123);
-			expect(activePresets).toEqual(["preset1", "preset2"]);
+			expect(activePresets).toStrictEqual(["preset1", "preset2"]);
 		});
 	});
 
@@ -295,7 +293,7 @@ describe("storage", () => {
 		it("should update active presets for a tab", async () => {
 			await updateTabPresetState(123, ["preset1", "preset2"]);
 			const result = await fakeBrowser.storage.local.get("tabPresetStates");
-			expect(result.tabPresetStates["123"]).toEqual(["preset1", "preset2"]);
+			expect(result.tabPresetStates["123"]).toStrictEqual(["preset1", "preset2"]);
 		});
 
 		it("should remove tab entry when presets array is empty", async () => {
@@ -325,7 +323,7 @@ describe("storage", () => {
 
 			await removeActivePresetFromTab(123, "preset1");
 			const result = await fakeBrowser.storage.local.get("tabPresetStates");
-			expect(result.tabPresetStates["123"]).toEqual(["preset2"]);
+			expect(result.tabPresetStates["123"]).toStrictEqual(["preset2"]);
 		});
 	});
 
@@ -336,7 +334,7 @@ describe("storage", () => {
 			});
 
 			const isActive = await isPresetActiveOnTab(123, "preset1");
-			expect(isActive).toBe(true);
+			expect(isActive).toBeTruthy();
 		});
 	});
 
@@ -352,7 +350,7 @@ describe("storage", () => {
 			await cleanupTabState(123);
 			const result = await fakeBrowser.storage.local.get("tabPresetStates");
 			expect(result.tabPresetStates["123"]).toBeUndefined();
-			expect(result.tabPresetStates["456"]).toEqual(["preset3"]);
+			expect(result.tabPresetStates["456"]).toStrictEqual(["preset3"]);
 		});
 	});
 });
