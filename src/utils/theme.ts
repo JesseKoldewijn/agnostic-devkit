@@ -1,4 +1,4 @@
-import { browser } from "./browser";
+import { browser } from "wxt/browser";
 
 export type Theme = "light" | "dark" | "system";
 

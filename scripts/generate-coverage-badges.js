@@ -62,6 +62,7 @@ function generateBadgeJson(score, label) {
 // Get coverage scores
 const vitestScore = getCoverageScore("vitest");
 const playwrightScore = getCoverageScore("playwright");
+const combinedScore = getCoverageScore("combined");
 
 // Generate badge JSON files
 if (vitestScore !== null) {
@@ -84,5 +85,16 @@ if (playwrightScore !== null) {
 	console.log(`✅ Generated E2E coverage badge: ${playwrightScore}%`);
 } else {
 	console.warn("⚠️  No Playwright coverage data found");
+}
+
+if (combinedScore !== null) {
+	const badge = generateBadgeJson(combinedScore, "Total Coverage");
+	writeFileSync(
+		resolve(badgesDir, "coverage-total.json"),
+		JSON.stringify(badge, null, 2)
+	);
+	console.log(`✅ Generated total coverage badge: ${combinedScore}%`);
+} else {
+	console.warn("⚠️  No combined coverage data found");
 }
 

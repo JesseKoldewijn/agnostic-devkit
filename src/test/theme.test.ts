@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
 	getTheme,
 	setTheme,
@@ -6,43 +6,14 @@ import {
 	applyTheme,
 	initTheme,
 } from "../utils/theme";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 
 describe("theme utilities", () => {
-	let mockSyncStorage: Record<string, any>;
 	let mockMatchMedia: any;
 	let mockDocument: { documentElement: { classList: { add: any; remove: any } } };
-	let storageChangeListeners: Array<(changes: any, areaName: string) => void>;
 
 	beforeEach(() => {
-		mockSyncStorage = {};
-		storageChangeListeners = [];
-
-		// Mock chrome.storage.sync.get
-		(globalThis.chrome.storage.sync.get as any).mockImplementation(
-			async (keys: string[]) => {
-				const result: Record<string, any> = {};
-				for (const key of keys) {
-					if (mockSyncStorage[key] !== undefined) {
-						result[key] = mockSyncStorage[key];
-					}
-				}
-				return result;
-			}
-		);
-
-		// Mock chrome.storage.sync.set
-		(globalThis.chrome.storage.sync.set as any).mockImplementation(
-			async (data: Record<string, any>) => {
-				Object.assign(mockSyncStorage, data);
-			}
-		);
-
-		// Mock storage.onChanged
-		(globalThis.chrome.storage.onChanged.addListener as any).mockImplementation(
-			(listener: (changes: any, areaName: string) => void) => {
-				storageChangeListeners.push(listener);
-			}
-		);
+		fakeBrowser.reset();
 
 		// Mock matchMedia
 		mockMatchMedia = vi.fn().mockImplementation(() => ({
@@ -75,10 +46,6 @@ describe("theme utilities", () => {
 		});
 	});
 
-	afterEach(() => {
-		vi.clearAllMocks();
-	});
-
 	describe("getTheme", () => {
 		it("should return system as default when no theme is stored", async () => {
 			const theme = await getTheme();
@@ -86,13 +53,13 @@ describe("theme utilities", () => {
 		});
 
 		it("should return stored theme", async () => {
-			mockSyncStorage.theme = "dark";
+			await fakeBrowser.storage.sync.set({ theme: "dark" });
 			const theme = await getTheme();
 			expect(theme).toBe("dark");
 		});
 
 		it("should return light theme when stored", async () => {
-			mockSyncStorage.theme = "light";
+			await fakeBrowser.storage.sync.set({ theme: "light" });
 			const theme = await getTheme();
 			expect(theme).toBe("light");
 		});
@@ -101,17 +68,20 @@ describe("theme utilities", () => {
 	describe("setTheme", () => {
 		it("should store theme in sync storage", async () => {
 			await setTheme("dark");
-			expect(mockSyncStorage.theme).toBe("dark");
+			const result = await fakeBrowser.storage.sync.get("theme");
+			expect(result.theme).toBe("dark");
 		});
 
 		it("should store light theme", async () => {
 			await setTheme("light");
-			expect(mockSyncStorage.theme).toBe("light");
+			const result = await fakeBrowser.storage.sync.get("theme");
+			expect(result.theme).toBe("light");
 		});
 
 		it("should store system theme", async () => {
 			await setTheme("system");
-			expect(mockSyncStorage.theme).toBe("system");
+			const result = await fakeBrowser.storage.sync.get("theme");
+			expect(result.theme).toBe("system");
 		});
 	});
 
@@ -198,7 +168,7 @@ describe("theme utilities", () => {
 
 	describe("initTheme", () => {
 		it("should load and apply theme on init", async () => {
-			mockSyncStorage.theme = "dark";
+			await fakeBrowser.storage.sync.set({ theme: "dark" });
 
 			await initTheme();
 
@@ -222,12 +192,6 @@ describe("theme utilities", () => {
 			expect(mockMatchMedia).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
 		});
 
-		it("should set up storage change listener", async () => {
-			await initTheme();
-
-			expect(chrome.storage.onChanged.addListener).toHaveBeenCalled();
-		});
-
 		it("should apply new theme when storage changes", async () => {
 			await initTheme();
 
@@ -236,9 +200,11 @@ describe("theme utilities", () => {
 			mockDocument.documentElement.classList.remove.mockClear();
 
 			// Simulate storage change
-			storageChangeListeners.forEach((listener) => {
-				listener({ theme: { newValue: "light" } }, "sync");
-			});
+			await fakeBrowser.storage.sync.set({ theme: "light" });
+
+			// Wait for listener to be called (fake-browser storage is async and triggers listeners)
+			// Wait a tick
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			expect(mockDocument.documentElement.classList.add).toHaveBeenCalledWith(
 				"light"
@@ -252,9 +218,8 @@ describe("theme utilities", () => {
 			mockDocument.documentElement.classList.remove.mockClear();
 
 			// Simulate storage change for different key
-			storageChangeListeners.forEach((listener) => {
-				listener({ otherKey: { newValue: "value" } }, "sync");
-			});
+			await fakeBrowser.storage.sync.set({ otherKey: "value" });
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			// Should not have been called again
 			expect(mockDocument.documentElement.classList.add).not.toHaveBeenCalled();
@@ -267,13 +232,11 @@ describe("theme utilities", () => {
 			mockDocument.documentElement.classList.remove.mockClear();
 
 			// Simulate storage change from local
-			storageChangeListeners.forEach((listener) => {
-				listener({ theme: { newValue: "dark" } }, "local");
-			});
+			await fakeBrowser.storage.local.set({ theme: "dark" });
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			// Should not have been called again
 			expect(mockDocument.documentElement.classList.add).not.toHaveBeenCalled();
 		});
 	});
 });
-
