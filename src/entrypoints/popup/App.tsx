@@ -1,7 +1,14 @@
 import { Component, createSignal, onMount, Show } from "solid-js";
-import { getTheme, type Theme } from "@/utils/theme";
 import { browser } from "wxt/browser";
-import { PresetToggleList, PresetManager } from "@/components";
+import { PresetManager } from "@/components/PresetManager";
+import { PresetToggleList } from "@/components/PresetToggleList";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Layout } from "@/components/ui-shared/Layout";
+import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { cn } from "@/utils/cn";
+import type { Theme } from "@/utils/theme";
+import { getTheme } from "@/utils/theme";
 
 export const App: Component = () => {
 	const [currentTheme, setCurrentTheme] = createSignal<Theme>("system");
@@ -44,8 +51,10 @@ export const App: Component = () => {
 
 		// Listen for tab changes (in case popup stays open during tab switch)
 		browser.tabs?.onActivated.addListener(async (activeInfo) => {
-			const hasTestOverride = !!urlParams.get("targetTabId");
-			if (hasTestOverride) return;
+			const hasTestOverride = Boolean(urlParams.get("targetTabId"));
+			if (hasTestOverride) {
+				return;
+			}
 
 			const tab = await browser.tabs?.get(activeInfo.tabId);
 			if (tab?.url) {
@@ -54,7 +63,7 @@ export const App: Component = () => {
 		});
 
 		browser.tabs?.onUpdated.addListener(async (tabId, _changeInfo, tab) => {
-			const hasTestOverride = !!urlParams.get("targetTabId");
+			const hasTestOverride = Boolean(urlParams.get("targetTabId"));
 			const targetId = hasTestOverride ? parseInt(urlParams.get("targetTabId")!, 10) : null;
 
 			if (hasTestOverride) {
@@ -75,74 +84,68 @@ export const App: Component = () => {
 	});
 
 	return (
-		<div
-			class="w-96 min-h-96 p-4 bg-background"
-			data-testid="popup-container"
-		>
+		<Layout class={cn("!p-4 min-h-[400px] w-[400px]")} data-testid="popup-container">
 			<Show
 				when={!showManager()}
 				fallback={
 					<div data-testid="preset-manager-container">
-						<PresetManager
-							onClose={() => setShowManager(false)}
-							class="h-[400px]"
-						/>
+						<PresetManager onClose={() => setShowManager(false)} class={cn("min-h-[400px]")} />
 					</div>
 				}
 			>
-				<div class="flex flex-col space-y-4">
-					{/* Header */}
-					<div class="flex items-center justify-between">
-						<h1
-							class="text-lg font-bold text-foreground"
-							data-testid="popup-heading"
-						>
-							Parameters
-						</h1>
-						<div
-							class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground"
-							data-testid="theme-indicator"
-						>
-							{currentTheme()}
-						</div>
-					</div>
+				<div class={cn("flex flex-col space-y-5")}>
+					<PageHeader
+						title="Devkit"
+						subtitle="Active Presets"
+						theme={currentTheme()}
+						titleTestId="popup-heading"
+					/>
 
 					{/* Current URL display */}
 					<Show when={currentUrl()}>
-						<div
-							class="px-3 py-2 bg-muted/50 rounded-lg border border-border"
+						<Card
+							class={cn("border-border/50 bg-muted/30 shadow-none")}
 							data-testid="current-tab-section"
 						>
-							<div class="text-xs text-muted-foreground mb-1">
-								Current Tab
-							</div>
-							<div
-								class="text-xs font-mono text-foreground truncate"
-								title={currentUrl()}
-								data-testid="current-tab-url"
-							>
-								{currentUrl()}
-							</div>
-						</div>
+							<CardContent class={cn("p-4")}>
+								<div
+									class={cn(
+										"mb-1.5 font-black text-[10px] text-muted-foreground uppercase tracking-widest opacity-70"
+									)}
+								>
+									Active Tab
+								</div>
+								<div
+									class={cn("truncate font-mono text-[12px] text-foreground")}
+									title={currentUrl()}
+									data-testid="current-tab-url"
+								>
+									{currentUrl()}
+								</div>
+							</CardContent>
+						</Card>
 					</Show>
 
 					{/* Preset Toggle List */}
-					<PresetToggleList
-						onManagePresets={() => setShowManager(true)}
-					/>
+					<PresetToggleList onManagePresets={() => setShowManager(true)} />
 
-					{/* Footer buttons */}
-					<div class="pt-2 border-t border-border">
-						<button
-							onClick={() => browser.runtime?.openOptionsPage()}
-							class="w-full px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+					{/* Footer */}
+					<div class={cn("pt-3")}>
+						<Button
+							variant="secondary"
+							class={cn("h-10 w-full")}
+							onClick={() =>
+								browser.tabs.create({
+									url: (browser.runtime as any).getURL("settings.html"),
+								})
+							}
 							data-testid="open-options-button"
 						>
-							Open Options
-						</button>
+							Open Settings
+						</Button>
 					</div>
 				</div>
 			</Show>
-		</div>
+		</Layout>
 	);
 };

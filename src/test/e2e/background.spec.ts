@@ -1,5 +1,5 @@
-import { test, expect } from "./core/fixtures";
-import { openPopupPage, createTestPage, getTabId } from "./core/helpers";
+import { expect, test } from "./core/fixtures";
+import { createTestPage, getTabId, openPopupPage } from "./core/helpers";
 
 /**
  * E2E tests for background service worker functionality
@@ -7,10 +7,7 @@ import { openPopupPage, createTestPage, getTabId } from "./core/helpers";
  */
 
 test.describe("Background Script E2E Tests", () => {
-	test("should initialize extension on installation", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should initialize extension on installation", async ({ context, extensionId }) => {
 		// Create a new page to test background script
 		const page = await context.newPage();
 
@@ -29,10 +26,7 @@ test.describe("Background Script E2E Tests", () => {
 		await page.close();
 	});
 
-	test("should initialize display mode on startup", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should initialize display mode on startup", async ({ context, extensionId }) => {
 		// Create a new page
 		const page = await context.newPage();
 		await page.goto("about:blank");
@@ -61,8 +55,8 @@ test.describe("Background Script E2E Tests", () => {
 
 		// Navigate to a URL to trigger tab update
 		await page.goto("https://example.com", {
+			timeout: 15_000,
 			waitUntil: "networkidle",
-			timeout: 15000,
 		});
 
 		// Wait a bit for background script to process
@@ -75,15 +69,12 @@ test.describe("Background Script E2E Tests", () => {
 		await page.close();
 	});
 
-	test("should clean up tab state on tab close", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should clean up tab state on tab close", async ({ context, extensionId }) => {
 		// Create a test page
 		const page = await context.newPage();
 		await page.goto("https://example.com", {
+			timeout: 15_000,
 			waitUntil: "networkidle",
-			timeout: 15000,
 		});
 
 		// Get the tab ID (we can't directly access it, but we can verify cleanup happens)
@@ -107,13 +98,10 @@ test.describe("Background Script E2E Tests", () => {
 	});
 
 	test.describe("Tab State and Cleanup", () => {
-		test("should clean up preset state when tab is closed", async ({
-			context,
-			extensionId,
-		}) => {
+		test("should clean up preset state when tab is closed", async ({ context, extensionId }) => {
 			// Create a test page first
 			const testPage = await createTestPage(context, "https://example.com");
-			
+
 			// Get the tab ID for the test page
 			const tabId = await getTabId(context, testPage);
 
@@ -184,7 +172,7 @@ test.describe("Background Script E2E Tests", () => {
 			// Create two test pages
 			const testPage1 = await createTestPage(context, "https://example.com");
 			const testPage2 = await createTestPage(context, "https://example.com");
-			
+
 			// Get the tab ID for the first test page
 			const tabId1 = await getTabId(context, testPage1);
 
@@ -223,7 +211,7 @@ test.describe("Background Script E2E Tests", () => {
 		}) => {
 			// Create a test page first
 			const testPage = await createTestPage(context, "https://example.com");
-			
+
 			// Get the tab ID for the test page
 			const tabId = await getTabId(context, testPage);
 
@@ -243,8 +231,8 @@ test.describe("Background Script E2E Tests", () => {
 
 				// Navigate to a different URL
 				await testPage.goto("https://example.org", {
+					timeout: 15_000,
 					waitUntil: "networkidle",
-					timeout: 15000,
 				});
 
 				// Wait a bit for preset to reapply
@@ -260,82 +248,43 @@ test.describe("Background Script E2E Tests", () => {
 		});
 	});
 
-	test("should listen for storage changes", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should listen for storage changes", async ({ context, extensionId }) => {
 		// Open options page to change settings
 		const optionsPage = await context.newPage();
-		await optionsPage.goto(
-			`chrome-extension://${extensionId}/options.html`,
-			{ waitUntil: "domcontentloaded", timeout: 15000 }
-		);
-		await optionsPage.waitForSelector("#root", { timeout: 10000 });
+		await optionsPage.goto(`chrome-extension://${extensionId}/settings.html`, {
+			timeout: 15_000,
+			waitUntil: "domcontentloaded",
+		});
+		await optionsPage.waitForSelector("#root", { timeout: 10_000 });
 		await optionsPage.waitForLoadState("networkidle");
 
 		// Change display mode (this triggers storage change)
 		const displayModeSelect = optionsPage.locator('[data-testid="display-mode-select"]');
 		await displayModeSelect.selectOption("popup");
+		await displayModeSelect.evaluate((el) =>
+			el.dispatchEvent(new Event("change", { bubbles: true }))
+		);
 
-		// Save settings
-		const saveButton = optionsPage.locator('[data-testid="save-settings-button"]');
-		await saveButton.click();
-		await optionsPage.waitForTimeout(1000);
-
-		// Verify settings were saved (background script should have processed the change)
-		const successMessage = optionsPage.getByText("✓ Settings Saved!");
-		await expect(successMessage).toBeVisible({ timeout: 3000 });
+		// Verify settings were saved (indicator should appear)
+		const savedIndicator = optionsPage.locator('[data-testid="settings-saved-indicator"]');
+		await expect(savedIndicator).toBeVisible({ timeout: 5000 });
 
 		await optionsPage.close();
 	});
 
-	test("should register context menu on startup", async ({
-		context,
-		extensionId,
-	}) => {
-		// Create a test page
-		const page = await context.newPage();
-		await page.goto("https://example.com", {
-			waitUntil: "networkidle",
-			timeout: 15000,
-		});
-
-		// Wait for background script to initialize
-		await page.waitForTimeout(2000);
-
-		// Verify extension is functional (context menu registration happens in background)
-		// We can verify by checking that the extension works correctly
-		const popupPage = await context.newPage();
-		await popupPage.goto(
-			`chrome-extension://${extensionId}/popup.html`,
-			{ waitUntil: "domcontentloaded", timeout: 15000 }
-		);
-		await popupPage.waitForSelector("#root", { timeout: 10000 });
-
-		// If popup loads, background script initialized correctly
-		const heading = popupPage.locator('[data-testid="popup-heading"]');
-		await expect(heading).toBeVisible({ timeout: 5000 });
-
-		await popupPage.close();
-		await page.close();
-	});
-
-	test("should handle multiple tab updates", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should handle multiple tab updates", async ({ context, extensionId }) => {
 		// Create multiple pages to simulate multiple tabs
 		const page1 = await context.newPage();
 		const page2 = await context.newPage();
 
 		// Navigate both pages
 		await page1.goto("https://example.com", {
+			timeout: 15_000,
 			waitUntil: "networkidle",
-			timeout: 15000,
 		});
 		await page2.goto("https://example.com", {
+			timeout: 15_000,
 			waitUntil: "networkidle",
-			timeout: 15000,
 		});
 
 		// Wait for background script to process
@@ -355,119 +304,16 @@ test.describe("Background Script E2E Tests", () => {
 
 		// Verify extension still works after multiple tab operations
 		const popupPage = await context.newPage();
-		await popupPage.goto(
-			`chrome-extension://${extensionId}/popup.html`,
-			{ waitUntil: "domcontentloaded", timeout: 15000 }
-		);
-		await popupPage.waitForSelector("#root", { timeout: 10000 });
+		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
+			timeout: 15_000,
+			waitUntil: "domcontentloaded",
+		});
+		await popupPage.waitForSelector("#root", { timeout: 10_000 });
 
 		const heading = popupPage.locator('[data-testid="popup-heading"]');
 		await expect(heading).toBeVisible({ timeout: 5000 });
 
 		await popupPage.close();
-	});
-
-	test.describe("Context Menu", () => {
-		test("should register context menu items on startup", async ({
-			context,
-			extensionId,
-		}) => {
-			// Create a test page
-			const page = await context.newPage();
-			await page.goto("https://example.com", {
-				waitUntil: "networkidle",
-				timeout: 15000,
-			});
-
-			// Wait for background script to initialize
-			await page.waitForTimeout(2000);
-
-			// Verify extension is functional (context menu registration happens in background)
-			// We can verify by checking that the extension works correctly
-			const popupPage = await context.newPage();
-			await popupPage.goto(
-				`chrome-extension://${extensionId}/popup.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await popupPage.waitForSelector("#root", { timeout: 10000 });
-
-			// If popup loads, background script initialized correctly including context menu
-			const heading = popupPage.locator('[data-testid="popup-heading"]');
-			await expect(heading).toBeVisible({ timeout: 5000 });
-
-			await popupPage.close();
-			await page.close();
-		});
-
-		test("should handle context menu clicks", async ({
-			context,
-			extensionId,
-		}) => {
-			// Create a test page
-			const page = await context.newPage();
-			await page.goto("https://example.com", {
-				waitUntil: "networkidle",
-				timeout: 15000,
-			});
-
-			// Wait for background script to initialize
-			await page.waitForTimeout(2000);
-
-			// Right-click on the page to trigger context menu
-			// Note: Playwright doesn't directly support context menu interaction,
-			// but we can verify the extension handles context menu events
-			await page.click("body", { button: "right" });
-			await page.waitForTimeout(500);
-
-			// Verify page is still functional after context menu interaction
-			const body = page.locator("body");
-			await expect(body).toBeVisible();
-
-			// Verify extension still works
-			const popupPage = await context.newPage();
-			await popupPage.goto(
-				`chrome-extension://${extensionId}/popup.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await popupPage.waitForSelector("#root", { timeout: 10000 });
-
-			const heading = popupPage.locator('[data-testid="popup-heading"]');
-			await expect(heading).toBeVisible({ timeout: 5000 });
-
-			await popupPage.close();
-			await page.close();
-		});
-
-		test("should process context menu actions", async ({
-			context,
-			extensionId,
-		}) => {
-			// Create a test page
-			const page = await context.newPage();
-			await page.goto("https://example.com", {
-				waitUntil: "networkidle",
-				timeout: 15000,
-			});
-
-			// Wait for background script to initialize
-			await page.waitForTimeout(2000);
-
-			// Context menu actions are handled by background script
-			// We can verify the background script is responsive by checking extension functionality
-			const popupPage = await context.newPage();
-			await popupPage.goto(
-				`chrome-extension://${extensionId}/popup.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await popupPage.waitForSelector("#root", { timeout: 10000 });
-
-			// Verify extension is functional (background script processes context menu)
-			const heading = popupPage.locator('[data-testid="popup-heading"]');
-			await expect(heading).toBeVisible({ timeout: 5000 });
-
-			await popupPage.close();
-			await page.close();
-		});
 	});
 
 	test.describe("Notifications", () => {
@@ -477,30 +323,30 @@ test.describe("Background Script E2E Tests", () => {
 		}) => {
 			// Enable notifications in options first
 			const optionsPage = await context.newPage();
-			await optionsPage.goto(
-				`chrome-extension://${extensionId}/options.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await optionsPage.waitForSelector("#root", { timeout: 10000 });
+			await optionsPage.goto(`chrome-extension://${extensionId}/settings.html`, {
+				timeout: 15_000,
+				waitUntil: "domcontentloaded",
+			});
+			await optionsPage.waitForSelector("#root", { timeout: 10_000 });
 			await optionsPage.waitForLoadState("networkidle");
 
-			// Enable notifications
+			// Enable notifications (force toggle to ensure a save is triggered)
 			const notificationsCheckbox = optionsPage.locator('[data-testid="notifications-checkbox"]');
-			if (!(await notificationsCheckbox.isChecked())) {
-				await notificationsCheckbox.click();
-			}
+			await notificationsCheckbox.evaluate((el) => {
+				(el as HTMLInputElement).checked = true;
+				el.dispatchEvent(new Event("change", { bubbles: true }));
+			});
 
-			// Save settings
-			const saveButton = optionsPage.locator('[data-testid="save-settings-button"]');
-			await saveButton.click();
-			await optionsPage.waitForTimeout(1000);
+			// Verify settings were saved
+			const savedIndicator = optionsPage.locator('[data-testid="settings-saved-indicator"]');
+			await expect(savedIndicator).toBeVisible({ timeout: 10_000 });
 			await optionsPage.close();
 
 			// Create a test page and navigate to trigger tab update
 			const page = await context.newPage();
 			await page.goto("https://example.com", {
+				timeout: 15_000,
 				waitUntil: "networkidle",
-				timeout: 15000,
 			});
 
 			// Wait for notification to potentially appear
@@ -514,36 +360,35 @@ test.describe("Background Script E2E Tests", () => {
 			await page.close();
 		});
 
-		test("should not show notification when disabled", async ({
-			context,
-			extensionId,
-		}) => {
+		test("should not show notification when disabled", async ({ context, extensionId }) => {
 			// Disable notifications in options
 			const optionsPage = await context.newPage();
-			await optionsPage.goto(
-				`chrome-extension://${extensionId}/options.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await optionsPage.waitForSelector("#root", { timeout: 10000 });
+			await optionsPage.goto(`chrome-extension://${extensionId}/settings.html`, {
+				timeout: 15_000,
+				waitUntil: "domcontentloaded",
+			});
+			await optionsPage.waitForSelector("#root", { timeout: 10_000 });
 			await optionsPage.waitForLoadState("networkidle");
 
 			// Disable notifications
 			const notificationsCheckbox = optionsPage.locator('[data-testid="notifications-checkbox"]');
 			if (await notificationsCheckbox.isChecked()) {
-				await notificationsCheckbox.click();
+				await notificationsCheckbox.evaluate((el) => {
+					(el as HTMLInputElement).checked = false;
+					el.dispatchEvent(new Event("change", { bubbles: true }));
+				});
 			}
 
-			// Save settings
-			const saveButton = optionsPage.locator('[data-testid="save-settings-button"]');
-			await saveButton.click();
-			await optionsPage.waitForTimeout(1000);
+			// Verify settings were saved
+			const savedIndicator = optionsPage.locator('[data-testid="settings-saved-indicator"]');
+			await expect(savedIndicator).toBeVisible({ timeout: 5000 });
 			await optionsPage.close();
 
 			// Create a test page and navigate
 			const page = await context.newPage();
 			await page.goto("https://example.com", {
+				timeout: 15_000,
 				waitUntil: "networkidle",
-				timeout: 15000,
 			});
 
 			// Wait a bit
@@ -556,34 +401,32 @@ test.describe("Background Script E2E Tests", () => {
 			await page.close();
 		});
 
-		test("should show correct notification content", async ({
-			context,
-			extensionId,
-		}) => {
+		test("should show correct notification content", async ({ context, extensionId }) => {
 			// Enable notifications
 			const optionsPage = await context.newPage();
-			await optionsPage.goto(
-				`chrome-extension://${extensionId}/options.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await optionsPage.waitForSelector("#root", { timeout: 10000 });
+			await optionsPage.goto(`chrome-extension://${extensionId}/settings.html`, {
+				timeout: 15_000,
+				waitUntil: "domcontentloaded",
+			});
+			await optionsPage.waitForSelector("#root", { timeout: 10_000 });
 			await optionsPage.waitForLoadState("networkidle");
 
 			const notificationsCheckbox = optionsPage.locator('[data-testid="notifications-checkbox"]');
-			if (!(await notificationsCheckbox.isChecked())) {
-				await notificationsCheckbox.click();
-			}
+			await notificationsCheckbox.evaluate((el) => {
+				(el as HTMLInputElement).checked = true;
+				el.dispatchEvent(new Event("change", { bubbles: true }));
+			});
 
-			const saveButton = optionsPage.locator('[data-testid="save-settings-button"]');
-			await saveButton.click();
-			await optionsPage.waitForTimeout(1000);
+			// Verify settings were saved
+			const savedIndicator = optionsPage.locator('[data-testid="settings-saved-indicator"]');
+			await expect(savedIndicator).toBeVisible({ timeout: 10_000 });
 			await optionsPage.close();
 
 			// Navigate to a page - notification should show the URL
 			const page = await context.newPage();
 			await page.goto("https://example.com", {
+				timeout: 15_000,
 				waitUntil: "networkidle",
-				timeout: 15000,
 			});
 
 			// Wait for notification

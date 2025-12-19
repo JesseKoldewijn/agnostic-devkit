@@ -1,5 +1,5 @@
 import { browser } from "wxt/browser";
-import { isSidebarSupported, getBrowserName } from "@/utils/browser";
+import { getBrowserName, isSidebarSupported } from "@/utils/browser";
 
 export type DisplayMode = "popup" | "sidebar";
 
@@ -21,11 +21,6 @@ export async function setDisplayMode(mode: DisplayMode): Promise<void> {
 }
 
 /**
- * Check if sidebar is supported (re-export for convenience)
- */
-export { isSidebarSupported };
-
-/**
  * Apply the display mode by updating the extension's action
  * Uses browser compatibility layer for cross-browser support
  */
@@ -33,7 +28,7 @@ export async function applyDisplayMode(mode: DisplayMode): Promise<void> {
 	console.log(`[DisplayMode] Applying mode: ${mode}`);
 	console.log(`[DisplayMode] Browser: ${getBrowserName()}`);
 	console.log(`[DisplayMode] Sidebar supported: ${isSidebarSupported()}`);
-	console.log(`[DisplayMode] browser.sidePanel:`, !!browser.sidePanel);
+	console.log(`[DisplayMode] browser.sidePanel:`, Boolean(browser.sidePanel));
 
 	if (mode === "sidebar") {
 		// Check if sidebar is supported
@@ -55,35 +50,26 @@ export async function applyDisplayMode(mode: DisplayMode): Promise<void> {
 
 		// Set panel behavior to open on action click
 		if (browser.sidePanel?.setPanelBehavior) {
-			console.log(
-				`[DisplayMode] Setting panel behavior to openPanelOnActionClick`
-			);
+			console.log(`[DisplayMode] Setting panel behavior to openPanelOnActionClick`);
 			try {
 				await browser.sidePanel.setPanelBehavior({
 					openPanelOnActionClick: true,
 				});
 				console.log(`[DisplayMode] ✓ Panel behavior set successfully`);
 			} catch (error) {
-				console.warn(
-					`[DisplayMode] Could not set panel behavior:`,
-					error
-				);
+				console.warn(`[DisplayMode] Could not set panel behavior:`, error);
 			}
 		}
 
 		// Disable popup when sidebar is active - this is CRITICAL for action.onClicked to fire
-		console.log(
-			`[DisplayMode] Clearing popup (setting to empty string "")`
-		);
+		console.log(`[DisplayMode] Clearing popup (setting to empty string "")`);
 		await browser.action?.setPopup({ popup: "" });
 
 		// Verify the popup was cleared
 		const verifyPopup = await browser.action?.getPopup({});
 		console.log(`[DisplayMode] Popup after clearing: "${verifyPopup}"`);
 		if (verifyPopup && verifyPopup !== "") {
-			console.error(
-				`[DisplayMode] ERROR: Popup was NOT cleared! Value: "${verifyPopup}"`
-			);
+			console.error(`[DisplayMode] ERROR: Popup was NOT cleared! Value: "${verifyPopup}"`);
 		} else {
 			console.log(`[DisplayMode] ✓ Popup cleared successfully`);
 		}

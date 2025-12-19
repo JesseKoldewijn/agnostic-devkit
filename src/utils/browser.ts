@@ -12,12 +12,24 @@ import { browser } from "wxt/browser";
  */
 export function getBrowserName(): string {
 	const userAgent = navigator.userAgent;
-	if (userAgent.includes("Edg")) return "Edge";
-	if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
-	if ((navigator as any).brave) return "Brave";
-	if (userAgent.includes("Chrome")) return "Chrome";
-	if (userAgent.includes("Firefox")) return "Firefox";
-	if (userAgent.includes("Safari")) return "Safari";
+	if (userAgent.includes("Edg")) {
+		return "Edge";
+	}
+	if (userAgent.includes("OPR") || userAgent.includes("Opera")) {
+		return "Opera";
+	}
+	if ((navigator as any).brave) {
+		return "Brave";
+	}
+	if (userAgent.includes("Chrome")) {
+		return "Chrome";
+	}
+	if (userAgent.includes("Firefox")) {
+		return "Firefox";
+	}
+	if (userAgent.includes("Safari")) {
+		return "Safari";
+	}
 	return "Unknown";
 }
 
@@ -25,7 +37,7 @@ export function getBrowserName(): string {
  * Check if sidebar/sidePanel is supported
  */
 export function isSidebarSupported(): boolean {
-	return !!browser.sidePanel;
+	return Boolean(browser.sidePanel);
 }
 
 /**
@@ -46,7 +58,9 @@ export function logBrowserInfo(): void {
 }
 
 export const isNotificationDisabled = async (): Promise<boolean> => {
-	if (!isNotificationsSupported()) return true;
+	if (!isNotificationsSupported()) {
+		return true;
+	}
 
 	const result = await browser.storage.sync.get(["notifications"]);
 	return result?.notifications === false;
@@ -60,13 +74,15 @@ export async function showNotification(
 	message: string,
 	force?: boolean
 ): Promise<string> {
-	if ((await isNotificationDisabled()) && !force) return "";
-	const iconUrl = browser.runtime.getURL("/icons/icon-48.png");
+	if ((await isNotificationDisabled()) && !force) {
+		return "";
+	}
+	const iconUrl = (browser.runtime as any).getURL("/icons/icon-48.png");
 	const options: any = {
-		type: "basic",
 		iconUrl,
-		title,
 		message,
+		title,
+		type: "basic",
 	};
 
 	return await browser.notifications.create(undefined as any, options);
@@ -81,15 +97,17 @@ export async function showNotificationWithButtons(
 	buttons: { title: string }[],
 	force?: boolean
 ): Promise<string> {
-	if ((await isNotificationDisabled()) && !force) return "";
-	const iconUrl = browser.runtime.getURL("/icons/icon-48.png");
+	if ((await isNotificationDisabled()) && !force) {
+		return "";
+	}
+	const iconUrl = (browser.runtime as any).getURL("/icons/icon-48.png");
 	const options: any = {
-		type: "basic",
-		title,
+		buttons,
 		iconUrl,
 		message,
-		buttons,
-		requireInteraction: true, // Keep notification visible until user interacts
+		requireInteraction: true,
+		title,
+		type: "basic", // Keep notification visible until user interacts
 	};
 
 	return await browser.notifications.create(undefined as any, options);

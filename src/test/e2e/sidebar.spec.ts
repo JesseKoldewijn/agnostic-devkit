@@ -1,4 +1,4 @@
-import { test, expect } from "./core/fixtures";
+import { expect, test } from "./core/fixtures";
 
 /**
  * E2E tests for the Sidebar/SidePanel interface
@@ -7,11 +7,11 @@ import { test, expect } from "./core/fixtures";
 test.describe("Sidebar/SidePanel E2E Tests", () => {
 	test.beforeEach(async ({ context, extensionId }) => {
 		const sidebarPage = await context.newPage();
-		await sidebarPage.goto(
-			`chrome-extension://${extensionId}/sidepanel.html`,
-			{ waitUntil: "domcontentloaded", timeout: 15000 }
-		);
-		await sidebarPage.waitForSelector("#root", { timeout: 10000 });
+		await sidebarPage.goto(`chrome-extension://${extensionId}/sidepanel.html`, {
+			timeout: 15_000,
+			waitUntil: "domcontentloaded",
+		});
+		await sidebarPage.waitForSelector("#root", { timeout: 10_000 });
 		(context as any).sidebarPage = sidebarPage;
 	});
 
@@ -25,7 +25,7 @@ test.describe("Sidebar/SidePanel E2E Tests", () => {
 		const sidebarPage = (context as any).sidebarPage;
 		const heading = sidebarPage.locator('[data-testid="sidebar-heading"]');
 		await expect(heading).toBeVisible();
-		await expect(heading).toContainText("Parameter Presets");
+		await expect(heading).toContainText("Side Panel");
 	});
 
 	test("should display sidebar specific container attribute", async ({ context }) => {
@@ -37,17 +37,15 @@ test.describe("Sidebar/SidePanel E2E Tests", () => {
 	test("should open options page from sidebar", async ({ context, extensionId }) => {
 		const sidebarPage = (context as any).sidebarPage;
 		const openOptionsButton = sidebarPage.locator('[data-testid="open-options-button"]');
-		
-		const [newPage] = await Promise.all([
-			context.waitForEvent("page"),
-			openOptionsButton.click(),
-		]);
-		
+
+		const [newPage] = await Promise.all([context.waitForEvent("page"), openOptionsButton.click()]);
+
 		await newPage.waitForLoadState("networkidle");
 		const url = newPage.url();
-		const isOptionsUrl = url.includes(extensionId) && (url.includes("options.html") || url.includes("options="));
+		const isOptionsUrl =
+			url.includes(extensionId) && (url.includes("settings.html") || url.includes("options="));
 		expect(isOptionsUrl).toBe(true);
-		
+
 		await newPage.close();
 	});
 });

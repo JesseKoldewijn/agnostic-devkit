@@ -1,5 +1,5 @@
-import { readFileSync, existsSync, mkdirSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,24 +15,32 @@ function getCoverageScore(type) {
 	}
 
 	try {
-		const summary = JSON.parse(readFileSync(summaryFile, "utf-8"));
-		
+		const summary = JSON.parse(readFileSync(summaryFile, "utf8"));
+
 		// Handle different summary formats
 		// Vitest format: { total: { lines: { pct: ... } } }
 		// Monocart format: { total: { lines: { pct: ... } } }
 		if (summary.total && summary.total.lines && typeof summary.total.lines.pct === "number") {
 			return Math.round(summary.total.lines.pct);
 		}
-		
+
 		// Fallback: try to find any coverage percentage
 		if (summary.total) {
 			const totals = summary.total;
-			if (totals.lines?.pct !== undefined) return Math.round(totals.lines.pct);
-			if (totals.statements?.pct !== undefined) return Math.round(totals.statements.pct);
-			if (totals.branches?.pct !== undefined) return Math.round(totals.branches.pct);
-			if (totals.functions?.pct !== undefined) return Math.round(totals.functions.pct);
+			if (totals.lines?.pct !== undefined) {
+				return Math.round(totals.lines.pct);
+			}
+			if (totals.statements?.pct !== undefined) {
+				return Math.round(totals.statements.pct);
+			}
+			if (totals.branches?.pct !== undefined) {
+				return Math.round(totals.branches.pct);
+			}
+			if (totals.functions?.pct !== undefined) {
+				return Math.round(totals.functions.pct);
+			}
 		}
-		
+
 		return null;
 	} catch (error) {
 		console.error(`Error reading coverage summary for ${type}:`, error.message);
@@ -54,4 +62,3 @@ if (score === null) {
 
 console.log(score);
 process.exit(0);
-

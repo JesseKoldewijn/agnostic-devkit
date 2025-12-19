@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 import {
 	applyParameter,
-	removeParameter,
 	applyPreset,
-	removePreset,
-	getParameterTypeLabel,
 	getParameterTypeIcon,
+	getParameterTypeLabel,
+	removeParameter,
+	removePreset,
+	syncParameter,
 	verifyParameter,
 	verifyPreset,
-	syncParameter,
 } from "../logic/parameters/parameterApplicator";
 import type { Parameter, Preset } from "../logic/parameters/types";
-import { fakeBrowser } from "wxt/testing/fake-browser";
 
 describe("parameterApplicator", () => {
 	let mockTabUrl: string;
@@ -26,14 +26,12 @@ describe("parameterApplicator", () => {
 			url: mockTabUrl,
 		}));
 
-		(fakeBrowser.tabs.update as any) = vi.fn(
-			async (tabId: number, updateProperties: any) => {
-				if (updateProperties.url) {
-					mockTabUrl = updateProperties.url;
-				}
-				return { id: tabId, url: mockTabUrl };
+		(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, updateProperties: any) => {
+			if (updateProperties.url) {
+				mockTabUrl = updateProperties.url;
 			}
-		);
+			return { id: tabId, url: mockTabUrl };
+		});
 
 		// Setup fake cookies
 		(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
@@ -42,19 +40,33 @@ describe("parameterApplicator", () => {
 
 		// Setup fake scripting
 		(fakeBrowser.scripting.executeScript as any) = vi.fn(async () => [{ result: undefined }]);
+
+		// Setup fake runtime.sendMessage for LS operations
+		(fakeBrowser.runtime.sendMessage as any) = vi.fn(async (msg: any) => {
+			if (msg.type === "APPLY_LS") {
+				return { success: true };
+			}
+			if (msg.type === "REMOVE_LS") {
+				return { success: true };
+			}
+			if (msg.type === "GET_LS") {
+				return { success: true, value: msg.key === "storageKey" ? "storageValue" : null };
+			}
+			return { success: true };
+		});
 	});
 
 	describe("applyParameter", () => {
 		it("should apply a query parameter to the URL", async () => {
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "testKey",
+				type: "queryParam",
 				value: "testValue",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 			expect(fakeBrowser.tabs.update).toHaveBeenCalledWith(123, {
 				url: expect.stringContaining("testKey=testValue"),
 			});
@@ -63,44 +75,50 @@ describe("parameterApplicator", () => {
 		it("should apply a cookie", async () => {
 			const param: Parameter = {
 				id: "1",
-				type: "cookie",
 				key: "cookieKey",
+				type: "cookie",
 				value: "cookieValue",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 			expect(fakeBrowser.cookies.set).toHaveBeenCalledWith({
-				url: "https://example.com",
 				name: "cookieKey",
-				value: "cookieValue",
 				path: "/",
+				url: "https://example.com",
+				value: "cookieValue",
 			});
 		});
 
 		it("should apply a localStorage item", async () => {
 			const param: Parameter = {
 				id: "1",
-				type: "localStorage",
 				key: "storageKey",
+				type: "localStorage",
 				value: "storageValue",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(true);
-			expect(fakeBrowser.scripting.executeScript).toHaveBeenCalled();
+			expect(result).toBeTruthy();
+			expect(fakeBrowser.runtime.sendMessage).toHaveBeenCalledWith(
+				expect.objectContaining({
+					key: "storageKey",
+					type: "APPLY_LS",
+					value: "storageValue",
+				})
+			);
 		});
 
 		it("should return false for unknown parameter type", async () => {
 			const param = {
 				id: "1",
-				type: "unknown" as any,
 				key: "key",
+				type: "unknown" as any,
 				value: "value",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 
 		it("should return false when tab URL is not available", async () => {
@@ -108,13 +126,13 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "key",
+				type: "queryParam",
 				value: "value",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 
 		it("should handle errors gracefully for query params", async () => {
@@ -122,13 +140,13 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "key",
+				type: "queryParam",
 				value: "value",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 
 		it("should handle errors gracefully for cookies", async () => {
@@ -136,29 +154,27 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "cookie",
 				key: "key",
+				type: "cookie",
 				value: "value",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 
 		it("should handle errors gracefully for localStorage", async () => {
-			(fakeBrowser.scripting.executeScript as any).mockRejectedValueOnce(
-				new Error("Script error")
-			);
+			(fakeBrowser.runtime.sendMessage as any).mockRejectedValueOnce(new Error("Script error"));
 
 			const param: Parameter = {
 				id: "1",
-				type: "localStorage",
 				key: "key",
+				type: "localStorage",
 				value: "value",
 			};
 
 			const result = await applyParameter(123, param);
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 	});
 
@@ -168,13 +184,13 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "testKey",
+				type: "queryParam",
 				value: "testValue",
 			};
 
 			const result = await removeParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 			expect(fakeBrowser.tabs.update).toHaveBeenCalledWith(123, {
 				url: expect.not.stringContaining("testKey="),
 			});
@@ -185,42 +201,47 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "nonexistent",
+				type: "queryParam",
 				value: "value",
 			};
 
 			const result = await removeParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should remove a cookie", async () => {
 			const param: Parameter = {
 				id: "1",
-				type: "cookie",
 				key: "cookieKey",
+				type: "cookie",
 				value: "cookieValue",
 			};
 
 			const result = await removeParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 			expect(fakeBrowser.cookies.remove).toHaveBeenCalledWith({
-				url: "https://example.com",
 				name: "cookieKey",
+				url: "https://example.com",
 			});
 		});
 
 		it("should remove a localStorage item", async () => {
 			const param: Parameter = {
 				id: "1",
-				type: "localStorage",
 				key: "storageKey",
+				type: "localStorage",
 				value: "storageValue",
 			};
 
 			const result = await removeParameter(123, param);
-			expect(result).toBe(true);
-			expect(fakeBrowser.scripting.executeScript).toHaveBeenCalled();
+			expect(result).toBeTruthy();
+			expect(fakeBrowser.runtime.sendMessage).toHaveBeenCalledWith(
+				expect.objectContaining({
+					key: "storageKey",
+					type: "REMOVE_LS",
+				})
+			);
 		});
 	});
 
@@ -230,21 +251,21 @@ describe("parameterApplicator", () => {
 				id: "preset1",
 				name: "Test Preset",
 				parameters: [
-					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
-					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
+					{ id: "p1", key: "qp1", type: "queryParam", value: "v1" },
+					{ id: "p2", key: "ck1", type: "cookie", value: "cv1" },
 				],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await applyPreset(123, "preset1");
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should return false when preset not found", async () => {
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
 			const result = await applyPreset(123, "nonexistent");
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 
 		it("should batch apply query parameters", async () => {
@@ -252,8 +273,8 @@ describe("parameterApplicator", () => {
 				id: "preset1",
 				name: "Test Preset",
 				parameters: [
-					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
-					{ id: "p2", type: "queryParam", key: "qp2", value: "v2" },
+					{ id: "p1", key: "qp1", type: "queryParam", value: "v1" },
+					{ id: "p2", key: "qp2", type: "queryParam", value: "v2" },
 				],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
@@ -273,14 +294,12 @@ describe("parameterApplicator", () => {
 			const preset: Preset = {
 				id: "preset1",
 				name: "Test Preset",
-				parameters: [
-					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
-				],
+				parameters: [{ id: "p1", key: "qp1", type: "queryParam", value: "v1" }],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await applyPreset(123, "preset1");
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 	});
 
@@ -290,8 +309,8 @@ describe("parameterApplicator", () => {
 				id: "preset1",
 				name: "Test Preset",
 				parameters: [
-					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
-					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
+					{ id: "p1", key: "qp1", type: "queryParam", value: "v1" },
+					{ id: "p2", key: "ck1", type: "cookie", value: "cv1" },
 				],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
@@ -299,23 +318,19 @@ describe("parameterApplicator", () => {
 			mockTabUrl = "https://example.com/page?qp1=v1";
 
 			const result = await removePreset(123, "preset1");
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should not remove parameters used by other active presets", async () => {
 			const preset1: Preset = {
 				id: "preset1",
 				name: "Preset 1",
-				parameters: [
-					{ id: "p1", type: "queryParam", key: "shared", value: "v1" },
-				],
+				parameters: [{ id: "p1", key: "shared", type: "queryParam", value: "v1" }],
 			};
 			const preset2: Preset = {
 				id: "preset2",
 				name: "Preset 2",
-				parameters: [
-					{ id: "p2", type: "queryParam", key: "shared", value: "v1" },
-				],
+				parameters: [{ id: "p2", key: "shared", type: "queryParam", value: "v1" }],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset1, preset2] });
 			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["preset2"] } });
@@ -370,13 +385,13 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "testKey",
+				type: "queryParam",
 				value: "testValue",
 			};
 
 			const result = await verifyParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should return false when query parameter has wrong value", async () => {
@@ -384,13 +399,13 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "testKey",
+				type: "queryParam",
 				value: "testValue",
 			};
 
 			const result = await verifyParameter(123, param);
-			expect(result).toBe(false);
+			expect(result).toBeFalsy();
 		});
 
 		it("should verify cookie is set correctly", async () => {
@@ -400,27 +415,31 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "cookie",
 				key: "cookieKey",
+				type: "cookie",
 				value: "cookieValue",
 			};
 
 			const result = await verifyParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should verify localStorage is set correctly", async () => {
-			(fakeBrowser.scripting.executeScript as any).mockResolvedValueOnce([{ result: "storageValue" }]);
-
 			const param: Parameter = {
 				id: "1",
-				type: "localStorage",
 				key: "storageKey",
+				type: "localStorage",
 				value: "storageValue",
 			};
 
 			const result = await verifyParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
+			expect(fakeBrowser.runtime.sendMessage).toHaveBeenCalledWith(
+				expect.objectContaining({
+					key: "storageKey",
+					type: "GET_LS",
+				})
+			);
 		});
 	});
 
@@ -433,16 +452,16 @@ describe("parameterApplicator", () => {
 				id: "preset1",
 				name: "Test Preset",
 				parameters: [
-					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
-					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
+					{ id: "p1", key: "qp1", type: "queryParam", value: "v1" },
+					{ id: "p2", key: "ck1", type: "cookie", value: "cv1" },
 				],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await verifyPreset(123, "preset1");
-			expect(result.allVerified).toBe(true);
-			expect(result.results.length).toBe(2);
-			expect(result.results.every((r) => r.verified)).toBe(true);
+			expect(result.allVerified).toBeTruthy();
+			expect(result.results).toHaveLength(2);
+			expect(result.results.every((r) => r.verified)).toBeTruthy();
 		});
 	});
 
@@ -452,40 +471,38 @@ describe("parameterApplicator", () => {
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "testKey",
+				type: "queryParam",
 				value: "testValue",
 			};
 
 			const result = await syncParameter(123, param);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should retry once when verification fails", async () => {
 			mockTabUrl = "https://example.com/page";
 			let callCount = 0;
 
-			(fakeBrowser.tabs.update as any).mockImplementation(
-				async (tabId: number, props: any) => {
-					callCount++;
-					// First call fails verification, second succeeds
-					if (callCount >= 2) {
-						mockTabUrl = props.url;
-					}
-					return { id: tabId, url: mockTabUrl };
+			(fakeBrowser.tabs.update as any).mockImplementation(async (tabId: number, props: any) => {
+				callCount++;
+				// First call fails verification, second succeeds
+				if (callCount >= 2) {
+					mockTabUrl = props.url;
 				}
-			);
+				return { id: tabId, url: mockTabUrl };
+			});
 
 			const param: Parameter = {
 				id: "1",
-				type: "queryParam",
 				key: "testKey",
+				type: "queryParam",
 				value: "testValue",
 			};
 
 			const result = await syncParameter(123, param);
 			expect(callCount).toBe(2);
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 	});
 });

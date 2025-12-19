@@ -20,4 +20,11 @@ declare module '#imports' {
   export { createStore, produce, reconcile, createMutable } from 'solid-js/store';
   export { Dynamic, hydrate, render, renderToString, renderToStringAsync, renderToStream, isServer, Portal } from 'solid-js/web';
   export { fakeBrowser } from 'wxt/testing';
+  export { PresetManager } from '../src/components/PresetManager';
+  export { PresetToggleList } from '../src/components/PresetToggleList';
+  export { getBrowserName, isSidebarSupported, isNotificationsSupported, logBrowserInfo, isNotificationDisabled, showNotification, showNotificationWithButtons } from '../src/utils/browser';
+  export { cn } from '../src/utils/cn';
+  export { getDisplayMode, setDisplayMode, applyDisplayMode, initDisplayMode, DisplayMode } from '../src/utils/displayMode';
+  export { createIsolatedElement } from '../src/utils/dom';
+  export { getTheme, setTheme, getEffectiveTheme, applyTheme, initTheme, Theme } from '../src/utils/theme';
 }

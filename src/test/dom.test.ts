@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createIsolatedElement } from "../utils/dom";
 
 describe("dom utilities", () => {
@@ -7,8 +7,8 @@ describe("dom utilities", () => {
 	beforeEach(() => {
 		// Create a mock shadow root
 		mockShadowRoot = {
-			mode: "open",
 			appendChild: vi.fn(),
+			mode: "open",
 			querySelector: vi.fn(),
 			querySelectorAll: vi.fn(),
 		};
@@ -16,18 +16,18 @@ describe("dom utilities", () => {
 		// Mock document.createElement
 		vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
 			const element = {
-				tagName: tagName.toUpperCase(),
-				className: "",
+				appendChild: vi.fn(),
+				attachShadow: vi.fn().mockReturnValue(mockShadowRoot),
 				classList: {
 					add: vi.fn(),
-					remove: vi.fn(),
 					contains: vi.fn(),
+					remove: vi.fn(),
 				},
-				attachShadow: vi.fn().mockReturnValue(mockShadowRoot),
-				appendChild: vi.fn(),
-				setAttribute: vi.fn(),
+				className: "",
 				getAttribute: vi.fn(),
+				setAttribute: vi.fn(),
 				style: {},
+				tagName: tagName.toUpperCase(),
 			} as any;
 
 			return element;
@@ -62,7 +62,7 @@ describe("dom utilities", () => {
 		it("should create isolated elements for CSS encapsulation", () => {
 			// Reset the mock count before this specific test
 			(document.createElement as any).mockClear();
-			
+
 			// Create two isolated elements to verify independent creation
 			createIsolatedElement();
 			createIsolatedElement();
@@ -81,4 +81,3 @@ describe("dom utilities", () => {
 		});
 	});
 });
-

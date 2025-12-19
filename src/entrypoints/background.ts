@@ -1,7 +1,8 @@
-import { initDisplayMode } from "@/utils/displayMode";
 import { browser } from "wxt/browser";
-import { logBrowserInfo, showNotification } from "@/utils/browser";
+import { defineBackground } from "wxt/utils/define-background";
 import { cleanupTabState } from "@/logic/parameters";
+import { logBrowserInfo } from "@/utils/browser";
+import { initDisplayMode } from "@/utils/displayMode";
 
 export default defineBackground(() => {
 	browser.runtime?.onInstalled.addListener(async () => {
@@ -27,8 +28,80 @@ export default defineBackground(() => {
 	});
 
 	browser.runtime?.onMessage.addListener((msg, _sender, sendResponse) => {
-		// Handle context menu actions
-		sendResponse({ success: true, msg });
+		console.log(`[Background] Received message:`, JSON.stringify(msg));
+
+		if (msg.type === "APPLY_LS") {
+			const { tabId, key, value } = msg;
+			if (!browser.scripting) {
+				sendResponse({
+					error: "browser.scripting not available",
+					success: false,
+				});
+				return true;
+			}
+
+			browser.scripting
+				.executeScript({
+					args: [key, value],
+					func: (k: string, v: string) => {
+						console.log(`[ContentScript] Setting LS (MAIN): ${k}=${v}`);
+						localStorage.setItem(k, v);
+					},
+					target: { tabId },
+					world: "MAIN",
+				})
+				.then(() => sendResponse({ success: true }))
+				.catch((error) => sendResponse({ error: error.message, success: false }));
+			return true;
+		}
+
+		if (msg.type === "REMOVE_LS") {
+			const { tabId, key } = msg;
+			if (!browser.scripting) {
+				sendResponse({
+					error: "browser.scripting not available",
+					success: false,
+				});
+				return true;
+			}
+
+			browser.scripting
+				.executeScript({
+					args: [key],
+					func: (k: string) => {
+						console.log(`[ContentScript] Removing LS (MAIN): ${k}`);
+						localStorage.removeItem(k);
+					},
+					target: { tabId },
+					world: "MAIN",
+				})
+				.then(() => sendResponse({ success: true }))
+				.catch((error) => sendResponse({ error: error.message, success: false }));
+			return true;
+		}
+
+		if (msg.type === "GET_LS") {
+			const { tabId, key } = msg;
+			if (!browser.scripting) {
+				sendResponse({
+					error: "browser.scripting not available",
+					success: false,
+				});
+				return true;
+			}
+			browser.scripting
+				.executeScript({
+					args: [key],
+					func: (k: string) => localStorage.getItem(k),
+					target: { tabId },
+					world: "MAIN",
+				})
+				.then((results: any) => sendResponse({ success: true, value: results[0]?.result }))
+				.catch((error) => sendResponse({ error: error.message, success: false }));
+			return true;
+		}
+
+		sendResponse({ msg, success: true });
 
 		return true;
 	});
@@ -48,15 +121,6 @@ export default defineBackground(() => {
 		}
 	});
 
-	// Example: Listen for tab updates
-	browser.tabs?.onUpdated.addListener((_tabId, changeInfo, tab) => {
-		if (changeInfo.status === "complete" && tab.url) {
-			console.log("Tab updated:", tab.url);
-			// send a browser notification
-			showNotification("Tab Updated", `You have opened: ${tab.url}`);
-		}
-	});
-
 	// Clean up tab preset states when tabs are closed
 	browser.tabs?.onRemoved.addListener(async (tabId, _removeInfo) => {
 		console.log("[Background] Tab closed, cleaning up preset state:", tabId);
@@ -67,4 +131,3 @@ export default defineBackground(() => {
 		}
 	});
 });
-

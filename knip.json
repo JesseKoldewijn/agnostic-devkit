@@ -1,11 +1,12 @@
 {
 	"$schema": "https://unpkg.com/knip@latest/schema.json",
 	"entry": [
-		"src/background/index.ts",
-		"src/content/index.ts",
-		"src/popup/index.tsx",
-		"src/sidebar/index.tsx",
-		"src/options/index.tsx"
+		"src/entrypoints/background.ts",
+		"src/entrypoints/content.ts",
+		"src/entrypoints/popup/main.tsx",
+		"src/entrypoints/options/main.tsx",
+		"src/entrypoints/sidepanel/main.tsx",
+		"wxt.config.ts"
 	],
 	"project": ["src/**/*.{ts,tsx}"],
 	"ignore": [

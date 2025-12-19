@@ -14,9 +14,8 @@ try {
 		stdio: "inherit",
 	});
 	console.log("\n✅ No unused code detected!");
-} catch (error) {
+} catch {
 	// knip exits with code 1 when it finds issues
 	console.log("\n⚠️  Unused code detected. Review the items above.");
 	process.exit(1);
 }
-

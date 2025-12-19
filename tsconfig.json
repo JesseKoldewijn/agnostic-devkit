@@ -6,7 +6,6 @@
 		"module": "ESNext",
 		"lib": ["ES2020", "DOM", "DOM.Iterable"],
 		"skipLibCheck": true,
-		"types": ["vite/client", "chrome", "playwright", "node"],
 
 		/* Bundler mode */
 		"moduleResolution": "bundler",
@@ -19,7 +18,15 @@
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"noFallthroughCasesInSwitch": true
+		"noFallthroughCasesInSwitch": true,
+
+		/* Paths */
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"jsx": "preserve",
+		"jsxImportSource": "solid-js"
 	},
-	"include": ["src"]
+	"include": ["src", ".wxt", "scripts"]
 }

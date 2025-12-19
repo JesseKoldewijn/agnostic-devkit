@@ -1,22 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 import {
-	togglePreset,
 	activatePreset,
-	deactivatePreset,
-	getPresetsWithActiveState,
-	createPreset,
-	updatePreset,
-	deletePreset,
 	addParameterToPreset,
-	updateParameterInPreset,
-	removeParameterFromPreset,
+	createPreset,
+	deactivatePreset,
+	deletePreset,
 	duplicatePreset,
-	reorderParameters,
 	exportPresets,
+	getPresetsWithActiveState,
 	importPresets,
+	removeParameterFromPreset,
+	reorderParameters,
+	togglePreset,
+	updateParameterInPreset,
+	updatePreset,
 } from "../logic/parameters/presetManager";
 import type { Preset } from "../logic/parameters/types";
-import { fakeBrowser } from "wxt/testing/fake-browser";
 
 describe("presetManager", () => {
 	let mockTabUrl: string;
@@ -31,12 +31,12 @@ describe("presetManager", () => {
 			url: mockTabUrl,
 		}));
 
-		(fakeBrowser.tabs.update as any) = vi.fn(
-			async (tabId: number, props: any) => {
-				if (props.url) mockTabUrl = props.url;
-				return { id: tabId, url: mockTabUrl };
+		(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, props: any) => {
+			if (props.url) {
+				mockTabUrl = props.url;
 			}
-		);
+			return { id: tabId, url: mockTabUrl };
+		});
 
 		// Setup fake cookies
 		(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
@@ -57,8 +57,8 @@ describe("presetManager", () => {
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await togglePreset(123, "preset1");
-			expect(result.active).toBe(true);
-			expect(result.success).toBe(true);
+			expect(result.active).toBeTruthy();
+			expect(result.success).toBeTruthy();
 		});
 
 		it("should deactivate an active preset", async () => {
@@ -68,11 +68,13 @@ describe("presetManager", () => {
 				parameters: [],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
-			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["preset1"] } });
+			await fakeBrowser.storage.local.set({
+				tabPresetStates: { "123": ["preset1"] },
+			});
 
 			const result = await togglePreset(123, "preset1");
-			expect(result.active).toBe(false);
-			expect(result.success).toBe(true);
+			expect(result.active).toBeFalsy();
+			expect(result.success).toBeTruthy();
 		});
 
 		it("should update tab preset state when activating", async () => {
@@ -95,7 +97,9 @@ describe("presetManager", () => {
 				parameters: [],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
-			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["preset1"] } });
+			await fakeBrowser.storage.local.set({
+				tabPresetStates: { "123": ["preset1"] },
+			});
 
 			await togglePreset(123, "preset1");
 			const result = await fakeBrowser.storage.local.get("tabPresetStates");
@@ -113,7 +117,7 @@ describe("presetManager", () => {
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await activatePreset(123, "preset1");
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should return true if preset is already active", async () => {
@@ -123,10 +127,12 @@ describe("presetManager", () => {
 				parameters: [],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
-			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["preset1"] } });
+			await fakeBrowser.storage.local.set({
+				tabPresetStates: { "123": ["preset1"] },
+			});
 
 			const result = await activatePreset(123, "preset1");
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should update tab preset state", async () => {
@@ -151,10 +157,12 @@ describe("presetManager", () => {
 				parameters: [],
 			};
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
-			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["preset1"] } });
+			await fakeBrowser.storage.local.set({
+				tabPresetStates: { "123": ["preset1"] },
+			});
 
 			const result = await deactivatePreset(123, "preset1");
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 
 		it("should return true if preset is already inactive", async () => {
@@ -166,28 +174,38 @@ describe("presetManager", () => {
 			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await deactivatePreset(123, "preset1");
-			expect(result).toBe(true);
+			expect(result).toBeTruthy();
 		});
 	});
 
 	describe("getPresetsWithActiveState", () => {
 		it("should return presets with isActive flag", async () => {
-			const preset1: Preset = { id: "p1", name: "Preset 1", parameters: [] };
-			const preset2: Preset = { id: "p2", name: "Preset 2", parameters: [] };
+			const preset1: Preset = {
+				id: "p1",
+				name: "Preset 1",
+				parameters: [],
+			};
+			const preset2: Preset = {
+				id: "p2",
+				name: "Preset 2",
+				parameters: [],
+			};
 			await fakeBrowser.storage.sync.set({ presets: [preset1, preset2] });
-			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["p1"] } });
+			await fakeBrowser.storage.local.set({
+				tabPresetStates: { "123": ["p1"] },
+			});
 
 			const result = await getPresetsWithActiveState(123);
-			expect(result.length).toBe(2);
-			expect(result.find((p) => p.id === "p1")?.isActive).toBe(true);
-			expect(result.find((p) => p.id === "p2")?.isActive).toBe(false);
+			expect(result).toHaveLength(2);
+			expect(result.find((p) => p.id === "p1")?.isActive).toBeTruthy();
+			expect(result.find((p) => p.id === "p2")?.isActive).toBeFalsy();
 		});
 
 		it("should return empty array when no presets exist", async () => {
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
 			const result = await getPresetsWithActiveState(123);
-			expect(result).toEqual([]);
+			expect(result).toStrictEqual([]);
 		});
 	});
 
@@ -203,7 +221,7 @@ describe("presetManager", () => {
 			expect(preset.name).toBe("New Preset");
 			expect(preset.id).toBeTruthy();
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets.length).toBe(1);
+			expect(result.presets).toHaveLength(1);
 		});
 
 		it("should generate unique ID", async () => {
@@ -225,8 +243,8 @@ describe("presetManager", () => {
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
 			const preset = await createPreset({
-				name: "Preset",
 				description: "Test description",
+				name: "Preset",
 				parameters: [],
 			});
 
@@ -267,7 +285,7 @@ describe("presetManager", () => {
 
 			await deletePreset("p1");
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets.length).toBe(1);
+			expect(result.presets).toHaveLength(1);
 			expect(result.presets[0].id).toBe("p2");
 		});
 	});
@@ -279,15 +297,15 @@ describe("presetManager", () => {
 			});
 
 			const param = await addParameterToPreset("p1", {
-				type: "queryParam",
 				key: "test",
+				type: "queryParam",
 				value: "value",
 			});
 
 			expect(param.id).toBeTruthy();
 			expect(param.key).toBe("test");
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets[0].parameters.length).toBe(1);
+			expect(result.presets[0].parameters).toHaveLength(1);
 		});
 
 		it("should generate unique parameter ID", async () => {
@@ -296,13 +314,13 @@ describe("presetManager", () => {
 			});
 
 			const param1 = await addParameterToPreset("p1", {
-				type: "queryParam",
 				key: "key1",
+				type: "queryParam",
 				value: "val1",
 			});
 			const param2 = await addParameterToPreset("p1", {
-				type: "queryParam",
 				key: "key2",
+				type: "queryParam",
 				value: "val2",
 			});
 
@@ -318,7 +336,12 @@ describe("presetManager", () => {
 						id: "p1",
 						name: "Preset",
 						parameters: [
-							{ id: "param1", type: "queryParam", key: "original", value: "v" },
+							{
+								id: "param1",
+								key: "original",
+								type: "queryParam",
+								value: "v",
+							},
 						],
 					},
 				],
@@ -338,8 +361,18 @@ describe("presetManager", () => {
 						id: "p1",
 						name: "Preset",
 						parameters: [
-							{ id: "param1", type: "queryParam", key: "key1", value: "v1" },
-							{ id: "param2", type: "queryParam", key: "key2", value: "v2" },
+							{
+								id: "param1",
+								key: "key1",
+								type: "queryParam",
+								value: "v1",
+							},
+							{
+								id: "param2",
+								key: "key2",
+								type: "queryParam",
+								value: "v2",
+							},
 						],
 					},
 				],
@@ -347,7 +380,7 @@ describe("presetManager", () => {
 
 			await removeParameterFromPreset("p1", "param1");
 			const result = await fakeBrowser.storage.sync.get("presets");
-			expect(result.presets[0].parameters.length).toBe(1);
+			expect(result.presets[0].parameters).toHaveLength(1);
 			expect(result.presets[0].parameters[0].id).toBe("param2");
 		});
 	});
@@ -357,11 +390,16 @@ describe("presetManager", () => {
 			await fakeBrowser.storage.sync.set({
 				presets: [
 					{
+						description: "Test desc",
 						id: "p1",
 						name: "Original",
-						description: "Test desc",
 						parameters: [
-							{ id: "param1", type: "queryParam", key: "key", value: "val" },
+							{
+								id: "param1",
+								key: "key",
+								type: "queryParam",
+								value: "val",
+							},
 						],
 					},
 				],
@@ -390,7 +428,12 @@ describe("presetManager", () => {
 						id: "p1",
 						name: "Original",
 						parameters: [
-							{ id: "param1", type: "queryParam", key: "key", value: "val" },
+							{
+								id: "param1",
+								key: "key",
+								type: "queryParam",
+								value: "val",
+							},
 						],
 					},
 				],
@@ -416,9 +459,24 @@ describe("presetManager", () => {
 						id: "p1",
 						name: "Preset",
 						parameters: [
-							{ id: "a", type: "queryParam", key: "keyA", value: "valA" },
-							{ id: "b", type: "queryParam", key: "keyB", value: "valB" },
-							{ id: "c", type: "queryParam", key: "keyC", value: "valC" },
+							{
+								id: "a",
+								key: "keyA",
+								type: "queryParam",
+								value: "valA",
+							},
+							{
+								id: "b",
+								key: "keyB",
+								type: "queryParam",
+								value: "valB",
+							},
+							{
+								id: "c",
+								key: "keyC",
+								type: "queryParam",
+								value: "valC",
+							},
 						],
 					},
 				],
@@ -440,8 +498,18 @@ describe("presetManager", () => {
 						id: "p1",
 						name: "Preset",
 						parameters: [
-							{ id: "a", type: "queryParam", key: "keyA", value: "valA" },
-							{ id: "b", type: "queryParam", key: "keyB", value: "valB" },
+							{
+								id: "a",
+								key: "keyA",
+								type: "queryParam",
+								value: "valA",
+							},
+							{
+								id: "b",
+								key: "keyB",
+								type: "queryParam",
+								value: "valB",
+							},
 						],
 					},
 				],
@@ -451,7 +519,7 @@ describe("presetManager", () => {
 
 			const result = await fakeBrowser.storage.sync.get("presets");
 			const params = result.presets[0].parameters;
-			expect(params.length).toBe(2);
+			expect(params).toHaveLength(2);
 			expect(params[0].id).toBe("b");
 			expect(params[1].id).toBe("a");
 		});
@@ -468,7 +536,7 @@ describe("presetManager", () => {
 			const json = await exportPresets();
 			const parsed = JSON.parse(json);
 
-			expect(parsed.length).toBe(2);
+			expect(parsed).toHaveLength(2);
 			expect(parsed[0].name).toBe("Preset 1");
 		});
 
@@ -478,7 +546,7 @@ describe("presetManager", () => {
 			const json = await exportPresets();
 			const parsed = JSON.parse(json);
 
-			expect(parsed).toEqual([]);
+			expect(parsed).toStrictEqual([]);
 		});
 
 		it("should pretty print JSON", async () => {
@@ -497,15 +565,13 @@ describe("presetManager", () => {
 				presets: [{ id: "existing", name: "Existing", parameters: [] }],
 			});
 
-			const json = JSON.stringify([
-				{ name: "Imported", parameters: [] },
-			]);
+			const json = JSON.stringify([{ name: "Imported", parameters: [] }]);
 
 			const result = await importPresets(json, true);
 			expect(result.imported).toBe(1);
-			expect(result.errors.length).toBe(0);
+			expect(result.errors).toHaveLength(0);
 			const storage = await fakeBrowser.storage.sync.get("presets");
-			expect(storage.presets.length).toBe(2);
+			expect(storage.presets).toHaveLength(2);
 		});
 
 		it("should import presets from JSON (replace mode)", async () => {
@@ -513,23 +579,19 @@ describe("presetManager", () => {
 				presets: [{ id: "existing", name: "Existing", parameters: [] }],
 			});
 
-			const json = JSON.stringify([
-				{ name: "Imported", parameters: [] },
-			]);
+			const json = JSON.stringify([{ name: "Imported", parameters: [] }]);
 
 			const result = await importPresets(json, false);
 			expect(result.imported).toBe(1);
 			const storage = await fakeBrowser.storage.sync.get("presets");
-			expect(storage.presets.length).toBe(1);
+			expect(storage.presets).toHaveLength(1);
 			expect(storage.presets[0].name).toBe("Imported");
 		});
 
 		it("should generate new IDs for imported presets", async () => {
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
-			const json = JSON.stringify([
-				{ id: "original-id", name: "Imported", parameters: [] },
-			]);
+			const json = JSON.stringify([{ id: "original-id", name: "Imported", parameters: [] }]);
 
 			await importPresets(json, true);
 			const storage = await fakeBrowser.storage.sync.get("presets");
@@ -561,7 +623,7 @@ describe("presetManager", () => {
 
 			const result = await importPresets(json, true);
 			expect(result.imported).toBe(2);
-			expect(result.errors.length).toBe(1);
+			expect(result.errors).toHaveLength(1);
 		});
 
 		it("should assign default type to parameters without type", async () => {
@@ -582,9 +644,7 @@ describe("presetManager", () => {
 		it("should use existing ID if not already in use", async () => {
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
-			const json = JSON.stringify([
-				{ id: "unique-id", name: "Preset", parameters: [] },
-			]);
+			const json = JSON.stringify([{ id: "unique-id", name: "Preset", parameters: [] }]);
 
 			await importPresets(json, true);
 			const storage = await fakeBrowser.storage.sync.get("presets");
@@ -596,16 +656,12 @@ describe("presetManager", () => {
 				presets: [{ id: "existing-id", name: "Existing", parameters: [] }],
 			});
 
-			const json = JSON.stringify([
-				{ id: "existing-id", name: "Imported", parameters: [] },
-			]);
+			const json = JSON.stringify([{ id: "existing-id", name: "Imported", parameters: [] }]);
 
 			await importPresets(json, true);
 
 			const storage = await fakeBrowser.storage.sync.get("presets");
-			const importedPreset = storage.presets.find(
-				(p: Preset) => p.name === "Imported"
-			);
+			const importedPreset = storage.presets.find((p: Preset) => p.name === "Imported");
 			expect(importedPreset?.id).not.toBe("existing-id");
 		});
 
@@ -613,9 +669,7 @@ describe("presetManager", () => {
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
 			const before = Date.now();
-			const json = JSON.stringify([
-				{ name: "Preset", parameters: [] },
-			]);
+			const json = JSON.stringify([{ name: "Preset", parameters: [] }]);
 
 			await importPresets(json, true);
 			const after = Date.now();

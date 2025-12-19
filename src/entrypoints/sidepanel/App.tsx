@@ -1,7 +1,14 @@
 import { Component, createSignal, onMount, Show } from "solid-js";
-import { getTheme, type Theme } from "@/utils/theme";
 import { browser } from "wxt/browser";
-import { PresetToggleList, PresetManager } from "@/components";
+import { PresetManager } from "@/components/PresetManager";
+import { PresetToggleList } from "@/components/PresetToggleList";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Layout } from "@/components/ui-shared/Layout";
+import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { cn } from "@/utils/cn";
+import type { Theme } from "@/utils/theme";
+import { getTheme } from "@/utils/theme";
 
 export const App: Component = () => {
 	const [currentTheme, setCurrentTheme] = createSignal<Theme>("system");
@@ -52,88 +59,103 @@ export const App: Component = () => {
 	});
 
 	return (
-		<div class="min-h-screen w-full p-4 bg-background" data-testid="sidebar-container">
+		<Layout class={cn("!p-5 min-h-screen w-full")} data-testid="sidebar-container">
 			<Show
 				when={!showManager()}
 				fallback={
-					<PresetManager
-						onClose={() => setShowManager(false)}
-						class="min-h-[500px]"
-					/>
+					<PresetManager onClose={() => setShowManager(false)} class={cn("min-h-[500px]")} />
 				}
 			>
-				<div class="flex flex-col space-y-4">
-					{/* Header */}
-					<div class="flex items-center justify-between">
-						<h1 class="text-xl font-bold text-foreground" data-testid="sidebar-heading">
-							Parameter Presets
-						</h1>
-						<div class="px-2 py-0.5 bg-secondary rounded text-xs text-secondary-foreground" data-testid="theme-indicator">
-							{currentTheme()}
-						</div>
-					</div>
-
-					{/* Current Tab Info */}
-					<div class="p-3 bg-card rounded-lg border border-border" data-testid="current-tab-section">
-						<div class="text-xs text-muted-foreground mb-1">
-							Current Tab
-						</div>
-						<Show when={currentTabTitle()}>
-							<div
-								class="text-sm font-medium text-foreground truncate mb-1"
-								title={currentTabTitle()}
-								data-testid="current-tab-title"
-							>
-								{currentTabTitle()}
-							</div>
-						</Show>
-						<Show when={currentUrl()}>
-							<div
-								class="text-xs font-mono text-muted-foreground truncate"
-								title={currentUrl()}
-								data-testid="current-tab-url"
-							>
-								{currentUrl()}
-							</div>
-						</Show>
-						<Show when={!currentUrl()}>
-							<div class="text-sm text-muted-foreground">
-								No active tab
-							</div>
-						</Show>
-					</div>
-
-					{/* Preset Toggle List - Expanded view for sidebar */}
-					<PresetToggleList
-						expanded={true}
-						onManagePresets={() => setShowManager(true)}
+				<div class={cn("flex flex-col space-y-5")}>
+					<PageHeader
+						title="Side Panel"
+						subtitle="Active Control"
+						theme={currentTheme()}
+						titleTestId="sidebar-heading"
 					/>
 
-					{/* Info card */}
-					<div class="p-4 bg-muted/50 border border-border rounded-lg" data-testid="about-presets-card">
-						<h3 class="text-sm font-medium text-foreground mb-1" data-testid="about-presets-heading">
-							About Presets
-						</h3>
-						<p class="text-xs text-muted-foreground">
-							Presets allow you to quickly apply groups of URL
-							parameters, cookies, and localStorage values to any
-							tab. Toggle presets on/off to apply or remove their
-							parameters.
-						</p>
-					</div>
+					{/* Current Tab Info */}
+					<Card
+						class={cn("border-border/50 bg-muted/30 shadow-none")}
+						data-testid="current-tab-section"
+					>
+						<CardContent class={cn("p-4")}>
+							<div
+								class={cn(
+									"mb-2.5 font-black text-[10px] text-muted-foreground uppercase tracking-widest opacity-70"
+								)}
+							>
+								Active Tab
+							</div>
+							<Show when={currentTabTitle()}>
+								<div
+									class={cn("mb-1 truncate font-black text-[13px] text-foreground")}
+									title={currentTabTitle()}
+									data-testid="current-tab-title"
+								>
+									{currentTabTitle()}
+								</div>
+							</Show>
+							<Show
+								when={currentUrl()}
+								fallback={
+									<div class={cn("text-[11px] text-muted-foreground italic")}>
+										No active tab detected
+									</div>
+								}
+							>
+								<div
+									class={cn("truncate font-mono text-[11px] text-muted-foreground/80")}
+									title={currentUrl()}
+									data-testid="current-tab-url"
+								>
+									{currentUrl()}
+								</div>
+							</Show>
+						</CardContent>
+					</Card>
+
+					{/* Preset Toggle List - Expanded view for sidebar */}
+					<PresetToggleList expanded={true} onManagePresets={() => setShowManager(true)} />
+
+					{/* About Card */}
+					<Card
+						class={cn("border-primary/20 bg-primary/5 shadow-none")}
+						data-testid="about-presets-card"
+					>
+						<CardContent class={cn("p-4")}>
+							<h3
+								class={cn(
+									"mb-1.5 font-black text-[10px] text-primary uppercase tracking-widest opacity-80"
+								)}
+								data-testid="about-presets-heading"
+							>
+								Quick Guide
+							</h3>
+							<p class={cn("font-bold text-[12px] text-foreground/70 leading-relaxed")}>
+								Toggle presets to apply URL parameters, cookies, and storage values. Changes are
+								applied immediately to the target tab.
+							</p>
+						</CardContent>
+					</Card>
 
 					{/* Footer */}
-					<div class="pt-2 border-t border-border">
-						<button
-							onClick={() => browser.runtime?.openOptionsPage()}
-							class="w-full px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+					<div class={cn("pt-3")}>
+						<Button
+							variant="secondary"
+							class={cn("h-10 w-full")}
+							onClick={() =>
+								browser.tabs.create({
+									url: (browser.runtime as any).getURL("settings.html"),
+								})
+							}
 							data-testid="open-options-button"
 						>
-							Open Options
-						</button>
+							Open Settings
+						</Button>
 					</div>
 				</div>
 			</Show>
-		</div>
+		</Layout>
 	);
 };

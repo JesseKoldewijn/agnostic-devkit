@@ -1,16 +1,16 @@
-import { test as base, chromium, type BrowserContext } from "@playwright/test";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { BrowserContext } from "@playwright/test";
+import { test as base, chromium } from "@playwright/test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const extensionPath = resolve(__dirname, "../../../../.output/chrome-mv3");
+const extensionPath = resolve(__dirname, "../../../../build-output/chrome-mv3");
 
 const isCoverage = process.env.CI_COVERAGE === "true";
 const projectRoot = resolve(__dirname, "../../../../");
-const coverageDir = resolve(projectRoot, "coverage/playwright");
 const rawCoverageDir = resolve(projectRoot, "coverage/raw-playwright");
 
 /**
@@ -20,26 +20,24 @@ class CoverageCollector {
 	private accumulatedCoverage: Record<string, any> = {};
 
 	merge(newCoverage: Record<string, any>): void {
-		if (!newCoverage) return;
+		if (!newCoverage) {
+			return;
+		}
 		for (const [key, value] of Object.entries(newCoverage)) {
 			if (!this.accumulatedCoverage[key]) {
-				this.accumulatedCoverage[key] = JSON.parse(
-					JSON.stringify(value)
-				);
+				this.accumulatedCoverage[key] = JSON.parse(JSON.stringify(value));
 			} else {
 				const existing = this.accumulatedCoverage[key];
 				// Merge statement coverage
 				if (value.s && existing.s) {
 					for (const [sKey, sValue] of Object.entries(value.s)) {
-						existing.s[sKey] =
-							(existing.s[sKey] || 0) + (sValue as number);
+						existing.s[sKey] = (existing.s[sKey] || 0) + (sValue as number);
 					}
 				}
 				// Merge function coverage
 				if (value.f && existing.f) {
 					for (const [fKey, fValue] of Object.entries(value.f)) {
-						existing.f[fKey] =
-							(existing.f[fKey] || 0) + (fValue as number);
+						existing.f[fKey] = (existing.f[fKey] || 0) + (fValue as number);
 					}
 				}
 				// Merge branch coverage
@@ -48,14 +46,8 @@ class CoverageCollector {
 						if (!existing.b[bKey]) {
 							existing.b[bKey] = [...(bValue as number[])];
 						} else {
-							for (
-								let i = 0;
-								i < (bValue as number[]).length;
-								i++
-							) {
-								existing.b[bKey][i] =
-									(existing.b[bKey][i] || 0) +
-									(bValue as number[])[i];
+							for (let i = 0; i < (bValue as number[]).length; i++) {
+								existing.b[bKey][i] = (existing.b[bKey][i] || 0) + (bValue as number[])[i];
 							}
 						}
 					}
@@ -80,49 +72,74 @@ export const test = base.extend<{
 	extensionId: string;
 }>({
 	context: async ({ headless }, use) => {
-		const isCI = !!process.env.CI;
-		const noHeadless = !!process.env.NO_HEADLESS;
+		const isCI = Boolean(process.env.CI);
+		const noHeadless = Boolean(process.env.NO_HEADLESS);
 		const useHeadless = headless ?? (isCI ? true : !noHeadless);
 
-		// Chrome extensions with Manifest V3 and background service workers
-		// now support the new headless mode (--headless=new)
-		// For Playwright to load the extension, we usually need headless: false
-		// but we can pass --headless=new in args for actual headless execution
 		const context = await chromium.launchPersistentContext("", {
-			headless: false, // Must be false for extensions to load properly in older PW, but we use flags
 			args: [
 				`--disable-extensions-except=${extensionPath}`,
 				`--load-extension=${extensionPath}`,
 				...(useHeadless ? ["--headless=new"] : []),
 			],
+			headless: false,
+		});
+
+		// Mock notifications API to prevent CI hangs/flakiness
+		await context.addInitScript(() => {
+			// oxlint-disable-next-line no-typeof-undefined
+			if (typeof (globalThis as any).chrome !== "undefined") {
+				(globalThis as any).chrome.notifications = {
+					...(globalThis as any).chrome.notifications,
+					create: (...args: any[]) => {
+						console.log("[Mock] chrome.notifications.create called", args);
+						// oxlint-disable-next-line prefer-at
+						const callback = args[args.length - 1];
+						if (typeof callback === "function") {
+							callback("mock-notification-id");
+						}
+						return Promise.resolve("mock-notification-id");
+					},
+					clear: (...args: any[]) => {
+						console.log("[Mock] chrome.notifications.clear called", args);
+						// oxlint-disable-next-line prefer-at
+						const callback = args[args.length - 1];
+						if (typeof callback === "function") {
+							callback(true);
+						}
+						return Promise.resolve(true);
+					},
+					getAll: (...args: any[]) => {
+						// oxlint-disable-next-line prefer-at
+						const callback = args[args.length - 1];
+						if (typeof callback === "function") {
+							callback({});
+						}
+						return Promise.resolve({});
+					},
+				};
+			}
 		});
 
 		const collector = new CoverageCollector();
 
 		if (isCoverage) {
-			console.log("[Coverage] Initializing coverage collection...");
-			if (!existsSync(coverageDir)) {
-				mkdirSync(coverageDir, { recursive: true });
-			}
-			if (!existsSync(rawCoverageDir)) {
-				mkdirSync(rawCoverageDir, { recursive: true });
-			}
-
 			context.on("page", (page) => {
-				page.on("close", async () => {
+				page.on("load", async () => {
 					try {
-						const coverage = await page.evaluate(
-							() => (window as any).__coverage__
-						);
+						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
-							console.debug(
-								`[Coverage] Collected coverage from closed page: ${page.url()}`
-							);
 							collector.merge(coverage);
 						}
-					} catch {
-						// Page might already be closed/gone
-					}
+					} catch {}
+				});
+				page.on("close", async () => {
+					try {
+						const coverage = await page.evaluate(() => (window as any).__coverage__);
+						if (coverage) {
+							collector.merge(coverage);
+						}
+					} catch {}
 				});
 			});
 		}
@@ -130,77 +147,88 @@ export const test = base.extend<{
 		await use(context);
 
 		if (isCoverage) {
-			console.log("[Coverage] Merging remaining coverage...");
+			console.log("[Coverage] Collecting final coverage...");
 			let totalCollected = 0;
 
+			// Collect from all pages BEFORE closing context
 			for (const page of context.pages()) {
 				try {
-					const coverage = await page.evaluate(
-						() => (window as any).__coverage__
-					);
+					if (page.url() === "about:blank") {
+						continue;
+					}
+					const coverage = await page.evaluate(() => (window as any).__coverage__);
 					if (coverage) {
-						console.debug(
-							`[Coverage] Collected coverage from active page: ${page.url()}`
-						);
+						console.log(`[Coverage] Collected from page: ${page.url()}`);
 						collector.merge(coverage);
 						totalCollected++;
-					} else {
-						console.warn(
-							`[Coverage] No coverage found on page: ${page.url()}. Is the extension built with coverage?`
-						);
 					}
-				} catch (e: any) {
-					console.debug(
-						`[Coverage] Failed to collect from page ${page.url()}:`,
-						e.message
-					);
-				}
+				} catch {}
 			}
 
+			// Collect from service workers
 			for (const worker of context.serviceWorkers()) {
 				try {
-					const coverage = await worker.evaluate(
-						() => (globalThis as any).__coverage__
-					);
+					const coverage = await worker.evaluate(() => (globalThis as any).__coverage__);
 					if (coverage) {
-						console.debug(
-							`[Coverage] Collected coverage from service worker: ${worker.url()}`
-						);
+						console.log(`[Coverage] Collected from service worker: ${worker.url()}`);
 						collector.merge(coverage);
 						totalCollected++;
-					} else {
-						console.warn(
-							`[Coverage] No coverage found in service worker: ${worker.url()}. Is the extension built with coverage?`
-						);
 					}
-				} catch (e: any) {
-					console.debug(
-						`[Coverage] Failed to collect from service worker ${worker.url()}:`,
-						e.message
-					);
-				}
+				} catch {}
 			}
 
 			if (totalCollected > 0) {
-				const filename = resolve(
-					rawCoverageDir,
-					`coverage-${randomBytes(4).toString("hex")}.json`
-				);
+				const filename = resolve(rawCoverageDir, `coverage-${randomBytes(4).toString("hex")}.json`);
 				collector.save(filename);
 				console.log(`[Coverage] Saved coverage data to ${filename}`);
-			} else {
-				console.error(
-					"[Coverage] ❌ No coverage data was collected! Make sure you ran 'yarn build:coverage' before running E2E tests."
-				);
 			}
 		}
 
 		await context.close();
 	},
 	extensionId: async ({ context }, use) => {
-		let [background] = context.serviceWorkers();
+		const findBackground = () => {
+			const workers = context.serviceWorkers();
+			console.log(
+				`[Fixture] Found ${workers.length} service workers:`,
+				workers.map((w) => w.url())
+			);
+			return workers.find(
+				(sw) => sw.url().includes("background") || sw.url().includes("event-page")
+			);
+		};
+
+		let background = findBackground();
 		if (!background) {
-			background = await context.waitForEvent("serviceworker");
+			for (let i = 0; i < 3; i++) {
+				try {
+					background = await context.waitForEvent("serviceworker", {
+						timeout: 10_000,
+					});
+					if (background) {
+						break;
+					}
+				} catch {
+					background = findBackground();
+					if (background) {
+						break;
+					}
+				}
+			}
+		}
+
+		if (!background) {
+			for (const page of context.pages()) {
+				const url = page.url();
+				if (url.startsWith("chrome-extension://")) {
+					const id = url.split("/")[2];
+					if (id) {
+						await use(id);
+						return;
+					}
+				}
+			}
+			throw new Error("Extension background service worker not found");
 		}
 
 		const extensionId = background.url().split("/")[2];

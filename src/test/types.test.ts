@@ -1,12 +1,6 @@
-import { describe, it, expect } from "vitest";
-import {
-	generateId,
-	createEmptyParameter,
-	createEmptyPreset,
-	type Parameter,
-	type Preset,
-	type ParameterType,
-} from "../logic/parameters/types";
+import { describe, expect, it } from "vitest";
+import type { Parameter, ParameterType, Preset } from "../logic/parameters/types";
+import { createEmptyParameter, createEmptyPreset, generateId } from "../logic/parameters/types";
 
 describe("types", () => {
 	describe("generateId", () => {
@@ -42,7 +36,7 @@ describe("types", () => {
 			const parts = id.split("-");
 
 			// Should have timestamp and random part
-			expect(parts.length).toBe(2);
+			expect(parts).toHaveLength(2);
 			expect(parts[1].length).toBeGreaterThan(0);
 		});
 	});
@@ -99,8 +93,8 @@ describe("types", () => {
 		it("should create a preset with empty parameters array", () => {
 			const preset = createEmptyPreset();
 
-			expect(preset.parameters).toEqual([]);
-			expect(Array.isArray(preset.parameters)).toBe(true);
+			expect(preset.parameters).toStrictEqual([]);
+			expect(Array.isArray(preset.parameters)).toBeTruthy();
 		});
 
 		it("should generate a unique ID", () => {
@@ -134,9 +128,7 @@ describe("types", () => {
 			const preset = createEmptyPreset();
 
 			// They should be very close (within a few ms)
-			expect(
-				Math.abs((preset.createdAt ?? 0) - (preset.updatedAt ?? 0))
-			).toBeLessThan(10);
+			expect(Math.abs((preset.createdAt ?? 0) - (preset.updatedAt ?? 0))).toBeLessThan(10);
 		});
 
 		it("should not include description by default", () => {
@@ -148,11 +140,7 @@ describe("types", () => {
 
 	describe("type definitions", () => {
 		it("should allow valid ParameterType values", () => {
-			const types: ParameterType[] = [
-				"queryParam",
-				"cookie",
-				"localStorage",
-			];
+			const types: ParameterType[] = ["queryParam", "cookie", "localStorage"];
 
 			types.forEach((type) => {
 				const param = createEmptyParameter(type);
@@ -162,11 +150,11 @@ describe("types", () => {
 
 		it("should create valid Parameter objects", () => {
 			const param: Parameter = {
-				id: "test-id",
-				type: "queryParam",
-				key: "testKey",
-				value: "testValue",
 				description: "Test description",
+				id: "test-id",
+				key: "testKey",
+				type: "queryParam",
+				value: "testValue",
 			};
 
 			expect(param.id).toBe("test-id");
@@ -178,24 +166,24 @@ describe("types", () => {
 
 		it("should create valid Preset objects", () => {
 			const preset: Preset = {
+				createdAt: Date.now(),
+				description: "Test description",
 				id: "preset-id",
 				name: "Test Preset",
-				description: "Test description",
 				parameters: [
 					{
 						id: "param-1",
-						type: "queryParam",
 						key: "key1",
+						type: "queryParam",
 						value: "value1",
 					},
 				],
-				createdAt: Date.now(),
 				updatedAt: Date.now(),
 			};
 
 			expect(preset.id).toBe("preset-id");
 			expect(preset.name).toBe("Test Preset");
-			expect(preset.parameters.length).toBe(1);
+			expect(preset.parameters).toHaveLength(1);
 		});
 	});
 });

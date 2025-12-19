@@ -4,7 +4,7 @@
  */
 
 import { browser } from "wxt/browser";
-import type { Preset, Parameter } from "./types";
+import type { Parameter, Preset } from "./types";
 
 const PRESETS_KEY = "presets";
 const TAB_PRESET_STATES_KEY = "tabPresetStates";
@@ -84,10 +84,7 @@ export async function deletePreset(presetId: string): Promise<void> {
 /**
  * Add a parameter to a preset and sync immediately
  */
-export async function addParameter(
-	presetId: string,
-	parameter: Parameter
-): Promise<void> {
+export async function addParameter(presetId: string, parameter: Parameter): Promise<void> {
 	const presets = await getPresets();
 	const index = presets.findIndex((p) => p.id === presetId);
 	if (index !== -1) {
@@ -108,9 +105,7 @@ export async function updateParameter(
 	const presets = await getPresets();
 	const presetIndex = presets.findIndex((p) => p.id === presetId);
 	if (presetIndex !== -1) {
-		const paramIndex = presets[presetIndex].parameters.findIndex(
-			(p) => p.id === parameterId
-		);
+		const paramIndex = presets[presetIndex].parameters.findIndex((p) => p.id === parameterId);
 		if (paramIndex !== -1) {
 			presets[presetIndex].parameters[paramIndex] = {
 				...presets[presetIndex].parameters[paramIndex],
@@ -125,10 +120,7 @@ export async function updateParameter(
 /**
  * Remove a parameter from a preset and sync immediately
  */
-export async function removeParameter(
-	presetId: string,
-	parameterId: string
-): Promise<void> {
+export async function removeParameter(presetId: string, parameterId: string): Promise<void> {
 	const presets = await getPresets();
 	const presetIndex = presets.findIndex((p) => p.id === presetId);
 	if (presetIndex !== -1) {
@@ -151,9 +143,7 @@ export async function getTabPresetStates(): Promise<Record<string, string[]>> {
 /**
  * Save tab preset states to browser.storage.local
  */
-export async function saveTabPresetStates(
-	states: Record<string, string[]>
-): Promise<void> {
+export async function saveTabPresetStates(states: Record<string, string[]>): Promise<void> {
 	await browser.storage?.local.set({ [TAB_PRESET_STATES_KEY]: states });
 }
 
@@ -168,10 +158,7 @@ export async function getActivePresetsForTab(tabId: number): Promise<string[]> {
 /**
  * Update active presets for a specific tab
  */
-export async function updateTabPresetState(
-	tabId: number,
-	presetIds: string[]
-): Promise<void> {
+export async function updateTabPresetState(tabId: number, presetIds: string[]): Promise<void> {
 	const states = await getTabPresetStates();
 	if (presetIds.length === 0) {
 		delete states[tabId.toString()];
@@ -184,10 +171,7 @@ export async function updateTabPresetState(
 /**
  * Add a preset to a tab's active presets
  */
-export async function addActivePresetToTab(
-	tabId: number,
-	presetId: string
-): Promise<void> {
+export async function addActivePresetToTab(tabId: number, presetId: string): Promise<void> {
 	const activePresets = await getActivePresetsForTab(tabId);
 	if (!activePresets.includes(presetId)) {
 		activePresets.push(presetId);
@@ -198,10 +182,7 @@ export async function addActivePresetToTab(
 /**
  * Remove a preset from a tab's active presets
  */
-export async function removeActivePresetFromTab(
-	tabId: number,
-	presetId: string
-): Promise<void> {
+export async function removeActivePresetFromTab(tabId: number, presetId: string): Promise<void> {
 	const activePresets = await getActivePresetsForTab(tabId);
 	const filtered = activePresets.filter((id) => id !== presetId);
 	await updateTabPresetState(tabId, filtered);
@@ -210,10 +191,7 @@ export async function removeActivePresetFromTab(
 /**
  * Check if a preset is active on a specific tab
  */
-export async function isPresetActiveOnTab(
-	tabId: number,
-	presetId: string
-): Promise<boolean> {
+export async function isPresetActiveOnTab(tabId: number, presetId: string): Promise<boolean> {
 	const activePresets = await getActivePresetsForTab(tabId);
 	return activePresets.includes(presetId);
 }
@@ -230,13 +208,8 @@ export async function cleanupTabState(tabId: number): Promise<void> {
 /**
  * Subscribe to preset changes
  */
-export function onPresetsChanged(
-	callback: (presets: Preset[]) => void
-): () => void {
-	const listener = (
-		changes: { [key: string]: browser.storage.StorageChange },
-		areaName: string
-	) => {
+export function onPresetsChanged(callback: (presets: Preset[]) => void): () => void {
+	const listener = (changes: Record<string, any>, areaName: string) => {
 		if (areaName === "sync" && changes[PRESETS_KEY]) {
 			callback((changes[PRESETS_KEY].newValue as Preset[] | undefined) ?? []);
 		}
@@ -256,12 +229,11 @@ export function onPresetsChanged(
 export function onTabPresetStatesChanged(
 	callback: (states: Record<string, string[]>) => void
 ): () => void {
-	const listener = (
-		changes: { [key: string]: browser.storage.StorageChange },
-		areaName: string
-	) => {
+	const listener = (changes: Record<string, any>, areaName: string) => {
 		if (areaName === "local" && changes[TAB_PRESET_STATES_KEY]) {
-			callback((changes[TAB_PRESET_STATES_KEY].newValue as Record<string, string[]> | undefined) ?? {});
+			callback(
+				(changes[TAB_PRESET_STATES_KEY].newValue as Record<string, string[]> | undefined) ?? {}
+			);
 		}
 	};
 
@@ -272,4 +244,3 @@ export function onTabPresetStatesChanged(
 		browser.storage?.onChanged.removeListener(listener);
 	};
 }
-

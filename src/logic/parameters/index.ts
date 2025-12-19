@@ -2,75 +2,47 @@
  * Parameters module - exports all types and functions for parameter management
  */
 
-// Types
-export type {
-	ParameterType,
-	Parameter,
-	Preset,
-	TabPresetState,
-	SyncStorageSchema,
-	LocalStorageSchema,
-	ParameterMessage,
-	ParameterMessageResponse,
-} from "./types";
-
+// Parameter Applicator
 export {
-	generateId,
-	createEmptyParameter,
-	createEmptyPreset,
-} from "./types";
+	applyPreset,
+	getParameterTypeIcon,
+	getParameterTypeLabel,
+	removePreset,
+	syncParameter,
+	verifyParameter,
+	verifyPreset,
+} from "./parameterApplicator";
+// Preset Manager (high-level operations)
+export {
+	createPreset,
+	duplicatePreset,
+	exportPresets,
+	getPresetsWithActiveState,
+	importPresets,
+	togglePreset,
+	updatePreset,
+	updatePreset as updatePresetData,
+} from "./presetManager";
 
 // Storage
 export {
-	getPresets,
-	savePresets,
-	getPresetById,
-	addPreset,
-	updatePreset,
-	deletePreset,
-	addParameter,
-	updateParameter,
-	removeParameter,
-	getTabPresetStates,
-	saveTabPresetStates,
-	getActivePresetsForTab,
-	updateTabPresetState,
 	addActivePresetToTab,
-	removeActivePresetFromTab,
-	isPresetActiveOnTab,
 	cleanupTabState,
+	deletePreset,
+	getActivePresetsForTab,
+	getPresets,
 	onPresetsChanged,
 	onTabPresetStatesChanged,
 } from "./storage";
-
-// Parameter Applicator
-export {
-	applyParameter,
-	removeParameter as removeParameterFromTab,
-	applyPreset,
-	removePreset,
-	getParameterTypeLabel,
-	getParameterTypeIcon,
-	verifyParameter,
-	verifyPreset,
-	syncParameter,
-} from "./parameterApplicator";
-
-// Preset Manager (high-level operations)
-export {
-	togglePreset,
-	activatePreset,
-	deactivatePreset,
-	getPresetsWithActiveState,
-	createPreset,
-	updatePreset as updatePresetData,
-	deletePreset as deletePresetData,
-	addParameterToPreset,
-	updateParameterInPreset,
-	removeParameterFromPreset,
-	duplicatePreset,
-	reorderParameters,
-	exportPresets,
-	importPresets,
-} from "./presetManager";
-
+// Types
+export type {
+	LocalStorageSchema,
+	Parameter,
+	ParameterMessage,
+	ParameterMessageResponse,
+	ParameterType,
+	Preset,
+	SyncStorageSchema,
+	TabPresetState,
+} from "./types";
+export { createEmptyParameter } from "./types";

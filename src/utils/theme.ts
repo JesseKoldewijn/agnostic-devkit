@@ -24,9 +24,7 @@ export async function setTheme(theme: Theme): Promise<void> {
  */
 export function getEffectiveTheme(theme: Theme): "light" | "dark" {
 	if (theme === "system") {
-		return globalThis.matchMedia("(prefers-color-scheme: dark)").matches
-			? "dark"
-			: "light";
+		return globalThis.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 	}
 	return theme;
 }
@@ -61,14 +59,12 @@ export async function initTheme(): Promise<void> {
 	applyTheme(theme);
 
 	// Listen for system theme changes when in system mode
-	globalThis
-		.matchMedia("(prefers-color-scheme: dark)")
-		.addEventListener("change", async () => {
-			const currentTheme = await getTheme();
-			if (currentTheme === "system") {
-				applyTheme("system");
-			}
-		});
+	globalThis.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", async () => {
+		const currentTheme = await getTheme();
+		if (currentTheme === "system") {
+			applyTheme("system");
+		}
+	});
 
 	// Listen for theme changes from storage
 	browser.storage?.onChanged.addListener((changes, areaName) => {

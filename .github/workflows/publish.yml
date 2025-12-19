@@ -66,6 +66,15 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
+            - name: Lint (Oxlint)
+              run: yarn lint
+
+            - name: Format Check (Biome)
+              run: yarn check
+
+            - name: Type Check
+              run: yarn type-check
+
             - name: Semantic Release
               id: semantic
               env:
@@ -109,13 +118,16 @@ jobs:
               run: yarn install --immutable
 
             - name: Build
-              run: yarn build
+              run: yarn build:all
+
+            - name: "Debug: List build artifacts"
+              run: ls -R build-output/
 
             - name: Upload build artifact
               uses: actions/upload-artifact@v4
               with:
                   name: build
-                  path: dist/
+                  path: build-output/
 
     test:
         name: Test
@@ -164,7 +176,7 @@ jobs:
               run: yarn playwright install --with-deps chromium
 
             - name: Build
-              run: yarn build
+              run: yarn build:all
 
             - name: Test (Unit/Integration)
               run: yarn test
@@ -207,9 +219,6 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Build
-              run: yarn build
-
             - name: Package
               run: yarn package
 
@@ -217,4 +226,4 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: extension-package
-                  path: dist/*.zip
+                  path: build-output/*.zip

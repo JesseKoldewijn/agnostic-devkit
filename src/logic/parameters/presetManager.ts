@@ -3,27 +3,27 @@
  * Combines storage and applicator functionality for toggling presets
  */
 
-import type { Preset, Parameter } from "./types";
-import { generateId, createEmptyPreset } from "./types";
-import {
-	getPresets,
-	getPresetById,
-	addPreset as addPresetToStorage,
-	updatePreset as updatePresetInStorage,
-	deletePreset as deletePresetFromStorage,
-	addParameter as addParameterToStorage,
-	updateParameter as updateParameterInStorage,
-	removeParameter as removeParameterFromStorage,
-	getActivePresetsForTab,
-	addActivePresetToTab,
-	removeActivePresetFromTab,
-	isPresetActiveOnTab,
-	savePresets as savePresetsToStorage,
-} from "./storage";
 import {
 	applyPreset as applyPresetToTab,
 	removePreset as removePresetFromTab,
 } from "./parameterApplicator";
+import {
+	addActivePresetToTab,
+	addParameter as addParameterToStorage,
+	addPreset as addPresetToStorage,
+	deletePreset as deletePresetFromStorage,
+	getActivePresetsForTab,
+	getPresetById,
+	getPresets,
+	isPresetActiveOnTab,
+	removeActivePresetFromTab,
+	removeParameter as removeParameterFromStorage,
+	savePresets as savePresetsToStorage,
+	updateParameter as updateParameterInStorage,
+	updatePreset as updatePresetInStorage,
+} from "./storage";
+import type { Parameter, Preset } from "./types";
+import { createEmptyPreset, generateId } from "./types";
 
 /**
  * Toggle a preset on/off for a specific tab
@@ -37,38 +37,42 @@ export async function togglePreset(
 	const isActive = await isPresetActiveOnTab(tabId, presetId);
 
 	if (isActive) {
-		// Toggling off - remove the preset
+		// Toggling off - remove the preset parameters first, then mark as inactive
+		// This ensures shared parameters are kept if other active presets need them
 		const success = await removePresetFromTab(tabId, presetId);
 		if (success) {
 			await removeActivePresetFromTab(tabId, presetId);
 		}
 		return { active: false, success };
-	} else {
-		// Toggling on - apply the preset first, then mark as active
-		const success = await applyPresetToTab(tabId, presetId);
-
-		if (success) {
-			await addActivePresetToTab(tabId, presetId);
-		}
-
-		return { active: success, success };
 	}
+	// Toggling on - mark as active first, then apply parameters
+	// This ensures that if another preset is removed during application,
+	// it sees this preset as active and doesn't remove shared parameters.
+	await addActivePresetToTab(tabId, presetId);
+	const success = await applyPresetToTab(tabId, presetId);
+
+	if (!success) {
+		// If application failed, revert the active state
+		await removeActivePresetFromTab(tabId, presetId);
+	}
+
+	return { active: success, success };
 }
 
 /**
  * Apply a preset to a tab (without toggling)
  */
-export async function activatePreset(
-	tabId: number,
-	presetId: string
-): Promise<boolean> {
+export async function activatePreset(tabId: number, presetId: string): Promise<boolean> {
 	const isActive = await isPresetActiveOnTab(tabId, presetId);
-	if (isActive) return true; // Already active
+	if (isActive) {
+		return true;
+	} // Already active
 
+	await addActivePresetToTab(tabId, presetId);
 	const success = await applyPresetToTab(tabId, presetId);
 
-	if (success) {
-		await addActivePresetToTab(tabId, presetId);
+	if (!success) {
+		await removeActivePresetFromTab(tabId, presetId);
 	}
 
 	return success;
@@ -77,12 +81,11 @@ export async function activatePreset(
 /**
  * Remove a preset from a tab (without toggling)
  */
-export async function deactivatePreset(
-	tabId: number,
-	presetId: string
-): Promise<boolean> {
+export async function deactivatePreset(tabId: number, presetId: string): Promise<boolean> {
 	const isActive = await isPresetActiveOnTab(tabId, presetId);
-	if (!isActive) return true; // Already inactive
+	if (!isActive) {
+		return true;
+	} // Already inactive
 
 	const success = await removePresetFromTab(tabId, presetId);
 	if (success) {
@@ -96,7 +99,7 @@ export async function deactivatePreset(
  */
 export async function getPresetsWithActiveState(
 	tabId: number
-): Promise<Array<Preset & { isActive: boolean }>> {
+): Promise<(Preset & { isActive: boolean })[]> {
 	const presets = await getPresets();
 	const activePresetIds = await getActivePresetsForTab(tabId);
 
@@ -178,12 +181,11 @@ export async function removeParameterFromPreset(
 /**
  * Duplicate a preset with a new name
  */
-export async function duplicatePreset(
-	presetId: string,
-	newName?: string
-): Promise<Preset | null> {
+export async function duplicatePreset(presetId: string, newName?: string): Promise<Preset | null> {
 	const original = await getPresetById(presetId);
-	if (!original) return null;
+	if (!original) {
+		return null;
+	}
 
 	const duplicate: Preset = {
 		...createEmptyPreset(),
@@ -202,12 +204,11 @@ export async function duplicatePreset(
 /**
  * Reorder parameters within a preset
  */
-export async function reorderParameters(
-	presetId: string,
-	parameterIds: string[]
-): Promise<void> {
+export async function reorderParameters(presetId: string, parameterIds: string[]): Promise<void> {
 	const preset = await getPresetById(presetId);
-	if (!preset) return;
+	if (!preset) {
+		return;
+	}
 
 	// Create a map for quick lookup
 	const paramMap = new Map(preset.parameters.map((p) => [p.id, p]));
@@ -235,7 +236,7 @@ export async function exportPresets(): Promise<string> {
  */
 export async function importPresets(
 	json: string,
-	merge: boolean = true
+	merge = true
 ): Promise<{ imported: number; errors: string[] }> {
 	const errors: string[] = [];
 	let imported = 0;
@@ -245,8 +246,8 @@ export async function importPresets(
 
 		if (!Array.isArray(data)) {
 			return {
-				imported: 0,
 				errors: ["Invalid format: expected an array"],
+				imported: 0,
 			};
 		}
 
@@ -257,47 +258,39 @@ export async function importPresets(
 			try {
 				// Validate basic structure
 				if (!item.name || !Array.isArray(item.parameters)) {
-					errors.push(
-						`Invalid preset: ${JSON.stringify(item).slice(
-							0,
-							50
-						)}...`
-					);
+					errors.push(`Invalid preset: ${JSON.stringify(item).slice(0, 50)}...`);
 					continue;
 				}
 
 				// Assign new ID if it already exists or is missing
 				const preset: Preset = {
-					id:
-						item.id && !existingIds.has(item.id)
-							? item.id
-							: generateId(),
-					name: item.name,
-					description: item.description,
-					parameters: item.parameters.map((p: any) => ({
-						id: generateId(),
-						type: p.type ?? "queryParam",
-						key: p.key ?? "",
-						value: p.value ?? "",
-						description: p.description,
-					})),
 					createdAt: Date.now(),
+					description: item.description,
+					id: item.id && !existingIds.has(item.id) ? item.id : generateId(),
+					name: item.name,
+					parameters: item.parameters.map((p: any) => ({
+						description: p.description,
+						id: generateId(),
+						key: p.key ?? "",
+						type: p.type ?? "queryParam",
+						value: p.value ?? "",
+					})),
 					updatedAt: Date.now(),
 				};
 
 				existingPresets.push(preset);
 				existingIds.add(preset.id);
 				imported++;
-			} catch (e) {
-				errors.push(`Failed to import preset: ${e}`);
+			} catch (error) {
+				errors.push(`Failed to import preset: ${error}`);
 			}
 		}
 
 		// Save all presets
 		await savePresetsToStorage(existingPresets);
 
-		return { imported, errors };
-	} catch (e) {
-		return { imported: 0, errors: [`Failed to parse JSON: ${e}`] };
+		return { errors, imported };
+	} catch (error) {
+		return { errors: [`Failed to parse JSON: ${error}`], imported: 0 };
 	}
 }

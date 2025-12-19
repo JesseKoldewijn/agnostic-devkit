@@ -1,45 +1,54 @@
-import { defineConfig } from "wxt";
 import { resolve } from "node:path";
-import solid from "@wxt-dev/module-solid";
 import tailwindcss from "@tailwindcss/vite";
 import istanbul from "vite-plugin-istanbul";
+import { defineConfig } from "wxt";
 
 // Check if we're running in coverage mode
 const isCoverage = process.env.CI_COVERAGE === "true";
 
 export default defineConfig({
-	srcDir: "src",
-	modules: ["@wxt-dev/module-solid"],
-	manifest: {
-		name: "Agnostic Devkit for Google Chrome",
-		description: "A platform agnostic devkit for web development",
-		permissions: [
-			"scripting",
-			"storage",
-			"activeTab",
-			"tabs",
-			"notifications",
-			"sidePanel",
-			"cookies",
-		],
-		host_permissions: ["*://*/*"],
-		web_accessible_resources: [
-			{
-				resources: ["*"],
-				matches: ["<all_urls>"],
-			},
-		],
-		side_panel: {
-			default_path: "sidepanel.html",
-		},
-		options_page: "options.html",
+	outDir: "build-output",
+	imports: {
+		addons: [],
 	},
-	imports: false,
-	vite: () => ({
-		resolve: {
-			alias: {
-				"@": resolve(__dirname, "./src"),
+	manifest: async (env) => {
+		const isProduction = env.mode === "production";
+		const browserTarget = env.browser;
+
+		const prettyBrowserTarget = browserTarget.charAt(0).toUpperCase() + browserTarget.slice(1);
+		const name = `Agnostic Devkit for ${prettyBrowserTarget}${isProduction ? "" : " (Development)"}`;
+
+		return {
+			description: "A platform agnostic devkit for web development",
+			host_permissions: ["*://*/*"],
+			name,
+			options_page: "settings.html",
+			permissions: [
+				"scripting",
+				"storage",
+				"activeTab",
+				"tabs",
+				"notifications",
+				"sidePanel",
+				"cookies",
+			],
+			side_panel: {
+				default_path: "sidepanel.html",
 			},
+			web_accessible_resources: [
+				{
+					matches: ["<all_urls>"],
+					resources: ["*"],
+				},
+			],
+		};
+	},
+	modules: ["@wxt-dev/module-solid"],
+	srcDir: "src",
+	vite: () => ({
+		build: {
+			// Generate source maps for coverage
+			sourcemap: isCoverage ? "inline" : false,
 		},
 		plugins: [
 			tailwindcss(),
@@ -47,19 +56,19 @@ export default defineConfig({
 			...(isCoverage
 				? [
 						istanbul({
-							include: "src/**/*",
 							exclude: ["node_modules", "src/test/**/*"],
 							extension: [".ts", ".tsx"],
-							requireEnv: false,
 							forceBuildInstrument: true,
+							include: "src/**/*",
+							requireEnv: false,
 						}),
 					]
 				: []),
 		],
-		build: {
-			// Generate source maps for coverage
-			sourcemap: isCoverage ? "inline" : false,
+		resolve: {
+			alias: {
+				"@": resolve(__dirname, "./src"),
+			},
 		},
 	}),
 });
-

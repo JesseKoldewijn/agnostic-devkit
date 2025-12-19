@@ -1,4 +1,4 @@
-import { test, expect } from "./core/fixtures";
+import { expect, test } from "./core/fixtures";
 import { openPopupPage } from "./core/helpers";
 
 /**
@@ -7,26 +7,23 @@ import { openPopupPage } from "./core/helpers";
  */
 
 test.describe("Content Script E2E Tests", () => {
-	test("should inject content script into web pages", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should inject content script into web pages", async ({ context, extensionId }) => {
 		// Create a test page
 		const page = await context.newPage();
 
 		// Navigate to a URL that matches content script matches
 		await page.goto("https://example.com", {
+			timeout: 15_000,
 			waitUntil: "networkidle",
-			timeout: 15000,
 		});
 
 		// Verify extension is loaded
 		expect(extensionId).toBeTruthy();
 
 		// Verify content script is active by checking for console logs or behavior
-		// In our case, the content script logs to debug console. 
+		// In our case, the content script logs to debug console.
 		// We can also verify it by checking if it's responsive to messages.
-		
+
 		// Wait a bit for injection
 		await page.waitForTimeout(1000);
 
@@ -37,10 +34,7 @@ test.describe("Content Script E2E Tests", () => {
 		await page.close();
 	});
 
-	test("should be active on about:blank if matched", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should be active on about:blank if matched", async ({ context, extensionId }) => {
 		const page = await context.newPage();
 		await page.goto("about:blank");
 		await page.waitForTimeout(500);
@@ -54,7 +48,7 @@ test.describe("Content Script E2E Tests", () => {
 		extensionId,
 	}) => {
 		const page = await context.newPage();
-		
+
 		// Open background log or just verify functionality
 		await page.goto("https://example.com");
 		await page.waitForTimeout(1000);
@@ -70,10 +64,7 @@ test.describe("Content Script E2E Tests", () => {
 		await page.close();
 	});
 
-	test("should handle multiple content script instances", async ({
-		context,
-		extensionId,
-	}) => {
+	test("should handle multiple content script instances", async ({ context, extensionId }) => {
 		// Create multiple pages
 		const page1 = await context.newPage();
 		const page2 = await context.newPage();

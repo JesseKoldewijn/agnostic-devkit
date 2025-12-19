@@ -13,13 +13,13 @@
 		[
 			"@semantic-release/exec",
 			{
-				"prepareCmd": "node scripts/sync-manifest-version.js ${nextRelease.version} && yarn build && yarn package"
+				"prepareCmd": "yarn package"
 			}
 		],
 		[
 			"@semantic-release/git",
 			{
-				"assets": ["package.json", "CHANGELOG.md", "src/manifest.json"],
+				"assets": ["package.json", "CHANGELOG.md"],
 				"message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
 			}
 		],
@@ -28,9 +28,19 @@
 			{
 				"assets": [
 					{
-						"path": "dist/extension.zip",
-						"label": "Chrome Extension (${nextRelease.version})",
-						"name": "agnostic-devkit-${nextRelease.version}.zip"
+						"path": "build-output/agnostic-devkit-${nextRelease.version}-chrome.zip",
+						"label": "Chrome Extension (v${nextRelease.version})",
+						"name": "agnostic-devkit-v${nextRelease.version}-chrome.zip"
+					},
+					{
+						"path": "build-output/agnostic-devkit-${nextRelease.version}-firefox.zip",
+						"label": "Firefox Extension (v${nextRelease.version})",
+						"name": "agnostic-devkit-v${nextRelease.version}-firefox.zip"
+					},
+					{
+						"path": "build-output/agnostic-devkit-${nextRelease.version}-sources.zip",
+						"label": "Extension Sources (v${nextRelease.version})",
+						"name": "agnostic-devkit-v${nextRelease.version}-sources.zip"
 					}
 				]
 			}

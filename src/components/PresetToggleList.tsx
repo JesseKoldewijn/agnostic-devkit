@@ -1,13 +1,19 @@
-import { Component, createSignal, createEffect, For, Show, onMount, onCleanup } from "solid-js";
+import { Component, createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
+import type { Preset } from "@/logic/parameters";
 import {
-	type Preset,
+	getParameterTypeIcon,
 	getPresetsWithActiveState,
-	togglePreset,
 	onPresetsChanged,
 	onTabPresetStatesChanged,
-	getParameterTypeIcon,
+	togglePreset,
 } from "@/logic/parameters";
+import { cn } from "@/utils/cn";
+import { Badge } from "./ui/Badge";
+import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
+import { Separator } from "./ui/Separator";
+import { Switch } from "./ui/Switch";
 
 interface PresetToggleListProps {
 	/** Whether to show expanded details (parameter list) */
@@ -22,7 +28,7 @@ interface PresetToggleListProps {
  * A list of presets with toggle switches for the current tab
  */
 export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
-	const [presets, setPresets] = createSignal<Array<Preset & { isActive: boolean }>>([]);
+	const [presets, setPresets] = createSignal<(Preset & { isActive: boolean })[]>([]);
 	const [currentTabId, setCurrentTabId] = createSignal<number | null>(null);
 	const [loading, setLoading] = createSignal(true);
 	const [togglingPreset, setTogglingPreset] = createSignal<string | null>(null);
@@ -60,7 +66,9 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	// Load presets for the current tab
 	const loadPresets = async () => {
 		const tabId = currentTabId();
-		if (tabId === null) return;
+		if (tabId === null) {
+			return;
+		}
 
 		try {
 			const presetsWithState = await getPresetsWithActiveState(tabId);
@@ -75,7 +83,9 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	// Handle toggle
 	const handleToggle = async (presetId: string) => {
 		const tabId = currentTabId();
-		if (tabId === null) return;
+		if (tabId === null) {
+			return;
+		}
 
 		setTogglingPreset(presetId);
 		try {
@@ -157,111 +167,150 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	});
 
 	return (
-		<div class={`flex flex-col space-y-3 ${props.class ?? ""}`} data-testid="preset-toggle-list">
-			<div class="flex items-center justify-between">
-				<h2 class="text-sm font-semibold text-foreground" data-testid="presets-heading">Parameter Presets</h2>
+		<div class={cn("flex flex-col space-y-3", props.class)} data-testid="preset-toggle-list">
+			<div class={cn("flex items-center justify-between")}>
+				<h2
+					class={cn("font-black text-[10px] text-foreground/50 uppercase tracking-[0.2em]")}
+					data-testid="presets-heading"
+				>
+					Active Presets
+				</h2>
 				<Show when={props.onManagePresets}>
-					<button
+					<Button
+						variant="ghost"
+						size="xs"
 						onClick={props.onManagePresets}
-						class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+						class={cn("font-black text-[9px] uppercase tracking-widest")}
 						data-testid="manage-presets-button"
 					>
 						Manage
-					</button>
+					</Button>
 				</Show>
 			</div>
 
 			<Show when={loading()}>
-				<div class="flex items-center justify-center py-4">
-					<div class="text-sm text-muted-foreground" data-testid="loading-indicator">Loading...</div>
+				<div class={cn("flex items-center justify-center py-6")}>
+					<div
+						class={cn(
+							"h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+						)}
+					/>
 				</div>
 			</Show>
 
 			<Show when={!loading() && presets().length === 0}>
-				<div class="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border" data-testid="no-presets-message">
-					<p class="text-sm text-muted-foreground">No presets yet</p>
+				<Card class={cn("border-border/50 border-dashed bg-muted/10 px-4 py-10 text-center")}>
+					<p class={cn("font-black text-[10px] text-muted-foreground uppercase tracking-widest")}>
+						No presets active
+					</p>
 					<Show when={props.onManagePresets}>
-						<button
+						<Button
+							variant="link"
+							size="xs"
 							onClick={props.onManagePresets}
-							class="mt-2 text-xs text-primary hover:underline"
+							class={cn("mt-2")}
 							data-testid="create-first-preset-button"
 						>
-							Create your first preset
-						</button>
+							Create Your First Preset
+						</Button>
 					</Show>
-				</div>
+				</Card>
 			</Show>
 
 			<Show when={!loading() && presets().length > 0}>
-				<div class="flex flex-col space-y-2" data-testid="presets-container">
+				<div class={cn("flex flex-col space-y-3")} data-testid="presets-container">
 					<For each={presets()}>
 						{(preset) => (
-							<div
-								class={`p-3 rounded-lg border transition-all ${
-									preset.isActive
-										? "bg-primary/10 border-primary/30"
-										: "bg-card border-border"
-								}`}
+							<Card
+								class={cn(
+									"p-4 shadow-sm transition-all",
+									preset.isActive ? "border-primary/30 bg-primary/5" : "border-border/60 bg-card"
+								)}
 								data-testid="preset-toggle-item"
 								data-preset-id={preset.id}
 							>
-								<div class="flex items-center justify-between">
-									<div class="flex-1 min-w-0">
+								<div class={cn("flex items-start justify-between")}>
+									<div class={cn("min-w-0 flex-1 pr-4")}>
 										<button
-											class="text-left w-full"
+											class={cn("group w-full text-left")}
 											onClick={() => props.expanded && toggleExpanded(preset.id)}
 											data-testid="preset-expand-button"
 										>
-											<div class="font-medium text-sm text-foreground truncate" data-testid="preset-toggle-name">
+											<div
+												class={cn(
+													"mb-1 truncate font-black text-[14px] text-foreground uppercase leading-tight tracking-tight transition-colors group-hover:text-primary"
+												)}
+												data-testid="preset-toggle-name"
+											>
 												{preset.name}
 											</div>
 											<Show when={preset.description}>
-												<div class="text-xs text-muted-foreground mt-0.5 truncate" data-testid="preset-toggle-description">
+												<div
+													class={cn(
+														"truncate font-bold text-[11px] text-muted-foreground leading-none"
+													)}
+													data-testid="preset-toggle-description"
+												>
 													{preset.description}
 												</div>
 											</Show>
-											<div class="text-xs text-muted-foreground mt-1" data-testid="preset-parameter-count">
-												{preset.parameters.length} parameter{preset.parameters.length !== 1 ? "s" : ""}
+											<div class={cn("mt-3 flex items-center space-x-2")}>
+												<Badge variant="secondary" class={cn("!text-[8px] h-4 px-2 font-black")}>
+													{preset.parameters.length} VARS
+												</Badge>
+												<Show when={props.expanded}>
+													<span
+														class={cn(
+															"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
+														)}
+													>
+														{expandedPresetId() === preset.id ? "Hide Details" : "View Details"}
+													</span>
+												</Show>
 											</div>
 										</button>
 									</div>
 
-									<label class="relative inline-flex items-center cursor-pointer ml-3" data-testid="preset-toggle-label">
-										<input
-											type="checkbox"
+									<div class={cn("flex h-full items-center pt-1.5")}>
+										<Switch
 											checked={preset.isActive}
 											disabled={togglingPreset() === preset.id}
-											onChange={() => handleToggle(preset.id)}
-											class="sr-only peer"
+											onCheckedChange={() => handleToggle(preset.id)}
 											data-testid="preset-toggle-checkbox"
 										/>
-										<div
-											class={`w-9 h-5 bg-muted rounded-full peer 
-												peer-checked:bg-primary 
-												peer-disabled:opacity-50 
-												after:content-[''] after:absolute after:top-0.5 after:left-0.5 
-												after:bg-background after:border after:border-border after:rounded-full 
-												after:h-4 after:w-4 after:transition-all 
-												peer-checked:after:translate-x-full peer-checked:after:border-primary-foreground
-												${togglingPreset() === preset.id ? "animate-pulse" : ""}`}
-										/>
-									</label>
+									</div>
 								</div>
 
 								{/* Expanded parameter list */}
 								<Show when={props.expanded && expandedPresetId() === preset.id}>
-									<div class="mt-3 pt-3 border-t border-border" data-testid="preset-expanded-params">
-										<div class="text-xs font-medium text-muted-foreground mb-2">
-											Parameters:
-										</div>
-										<div class="space-y-1.5">
+									<div class={cn("mt-4")} data-testid="preset-expanded-params">
+										<Separator class={cn("mb-4 opacity-50")} />
+										<div class={cn("space-y-2")}>
 											<For each={preset.parameters}>
 												{(param) => (
-													<div class="flex items-center text-xs bg-muted/50 rounded px-2 py-1.5" data-testid="preset-expanded-param">
-														<span class="mr-1.5">{getParameterTypeIcon(param.type)}</span>
-														<span class="font-mono text-foreground">{param.key}</span>
-														<span class="mx-1 text-muted-foreground">=</span>
-														<span class="font-mono text-muted-foreground truncate">
+													<div
+														class={cn(
+															"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-3 py-2 text-[11px] shadow-sm"
+														)}
+														data-testid="preset-expanded-param"
+													>
+														<div class={cn("flex min-w-0 flex-1 items-center")}>
+															<span class={cn("mr-2 scale-90 opacity-60")}>
+																{getParameterTypeIcon(param.type)}
+															</span>
+															<span
+																class={cn(
+																	"truncate font-black text-foreground uppercase tracking-tighter"
+																)}
+															>
+																{param.key}
+															</span>
+														</div>
+														<span
+															class={cn(
+																"ml-2 max-w-[55%] truncate rounded border border-border/20 bg-background/60 px-2 py-1 font-mono text-muted-foreground/90"
+															)}
+														>
 															{param.value}
 														</span>
 													</div>
@@ -270,7 +319,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 										</div>
 									</div>
 								</Show>
-							</div>
+							</Card>
 						)}
 					</For>
 				</div>
@@ -278,6 +327,3 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 		</div>
 	);
 };
-
-export default PresetToggleList;
-

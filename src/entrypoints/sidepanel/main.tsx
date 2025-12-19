@@ -6,7 +6,7 @@ import { initTheme } from "@/utils/theme";
 // Initialize theme
 initTheme();
 
-const root = document.getElementById("root");
+const root = document.querySelector("#root");
 
 if (root) {
 	render(() => <App />, root);
