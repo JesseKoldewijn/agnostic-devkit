@@ -1,5 +1,5 @@
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,24 +15,32 @@ function getCoverageScore(type) {
 	}
 
 	try {
-		const summary = JSON.parse(readFileSync(summaryFile, "utf-8"));
-		
+		const summary = JSON.parse(readFileSync(summaryFile, "utf8"));
+
 		// Handle different summary formats
 		// Vitest format: { total: { lines: { pct: ... } } }
 		// Monocart format: { total: { lines: { pct: ... } } }
 		if (summary.total && summary.total.lines && typeof summary.total.lines.pct === "number") {
 			return Math.round(summary.total.lines.pct);
 		}
-		
+
 		// Fallback: try to find any coverage percentage
 		if (summary.total) {
 			const totals = summary.total;
-			if (totals.lines?.pct !== undefined) return Math.round(totals.lines.pct);
-			if (totals.statements?.pct !== undefined) return Math.round(totals.statements.pct);
-			if (totals.branches?.pct !== undefined) return Math.round(totals.branches.pct);
-			if (totals.functions?.pct !== undefined) return Math.round(totals.functions.pct);
+			if (totals.lines?.pct !== undefined) {
+				return Math.round(totals.lines.pct);
+			}
+			if (totals.statements?.pct !== undefined) {
+				return Math.round(totals.statements.pct);
+			}
+			if (totals.branches?.pct !== undefined) {
+				return Math.round(totals.branches.pct);
+			}
+			if (totals.functions?.pct !== undefined) {
+				return Math.round(totals.functions.pct);
+			}
 		}
-		
+
 		return null;
 	} catch (error) {
 		console.error(`Error reading coverage summary for ${type}:`, error.message);
@@ -52,10 +60,10 @@ function generateBadgeJson(score, label) {
 		score >= 80 ? "brightgreen" : score >= 60 ? "yellow" : score >= 40 ? "orange" : "red";
 
 	return {
-		schemaVersion: 1,
+		color: color,
 		label: label,
 		message: `${score}%`,
-		color: color,
+		schemaVersion: 1,
 	};
 }
 
@@ -67,10 +75,7 @@ const combinedScore = getCoverageScore("combined");
 // Generate badge JSON files
 if (vitestScore !== null) {
 	const badge = generateBadgeJson(vitestScore, "Unit Coverage");
-	writeFileSync(
-		resolve(badgesDir, "coverage-unit.json"),
-		JSON.stringify(badge, null, 2)
-	);
+	writeFileSync(resolve(badgesDir, "coverage-unit.json"), JSON.stringify(badge, null, 2));
 	console.log(`✅ Generated unit coverage badge: ${vitestScore}%`);
 } else {
 	console.warn("⚠️  No Vitest coverage data found");
@@ -78,10 +83,7 @@ if (vitestScore !== null) {
 
 if (playwrightScore !== null) {
 	const badge = generateBadgeJson(playwrightScore, "E2E Coverage");
-	writeFileSync(
-		resolve(badgesDir, "coverage-e2e.json"),
-		JSON.stringify(badge, null, 2)
-	);
+	writeFileSync(resolve(badgesDir, "coverage-e2e.json"), JSON.stringify(badge, null, 2));
 	console.log(`✅ Generated E2E coverage badge: ${playwrightScore}%`);
 } else {
 	console.warn("⚠️  No Playwright coverage data found");
@@ -89,12 +91,8 @@ if (playwrightScore !== null) {
 
 if (combinedScore !== null) {
 	const badge = generateBadgeJson(combinedScore, "Total Coverage");
-	writeFileSync(
-		resolve(badgesDir, "coverage-total.json"),
-		JSON.stringify(badge, null, 2)
-	);
+	writeFileSync(resolve(badgesDir, "coverage-total.json"), JSON.stringify(badge, null, 2));
 	console.log(`✅ Generated total coverage badge: ${combinedScore}%`);
 } else {
 	console.warn("⚠️  No combined coverage data found");
 }
-

@@ -1,26 +1,34 @@
 import {
 	Component,
-	createSignal,
 	createEffect,
-	For,
-	Show,
-	onMount,
-	onCleanup,
 	createMemo,
+	createSignal,
+	For,
+	onCleanup,
+	onMount,
+	Show,
 } from "solid-js";
+import type { Parameter, ParameterType, Preset } from "@/logic/parameters";
 import {
-	type Preset,
-	type Parameter,
-	type ParameterType,
-	getPresets,
-	createPreset,
-	updatePresetData,
-	deletePreset,
-	onPresetsChanged,
-	getParameterTypeIcon,
 	createEmptyParameter,
+	createPreset,
+	deletePreset,
 	duplicatePreset,
+	exportPresets,
+	getPresets,
+	importPresets,
+	onPresetsChanged,
+	updatePresetData,
 } from "@/logic/parameters";
+import { cn } from "@/utils/cn";
+import { Badge } from "./ui/Badge";
+import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
+import { Input } from "./ui/Input";
+import { Label } from "./ui/Label";
+import { Select } from "./ui/Select";
+import { Separator } from "./ui/Separator";
+import { Textarea } from "./ui/Textarea";
 
 interface PresetManagerProps {
 	/** Callback when user wants to close the manager */
@@ -46,9 +54,9 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	const [saving, setSaving] = createSignal(false);
 
 	// Store initial parameter data for default values (only used when editing)
-	const [initialParameterData, setInitialParameterData] = createSignal<
-		Map<string, Parameter>
-	>(new Map());
+	const [initialParameterData, setInitialParameterData] = createSignal<Map<string, Parameter>>(
+		new Map()
+	);
 
 	// Load presets
 	const loadPresets = async () => {
@@ -126,19 +134,18 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	};
 
 	// Get parameter data for rendering (for default values)
-	const getParameterData = (paramId: string): Parameter => {
-		return initialParameterData().get(paramId) ?? createEmptyParameter();
-	};
+	const getParameterData = (paramId: string): Parameter =>
+		initialParameterData().get(paramId) ?? createEmptyParameter();
 
 	// Save the preset (create or update) - reads all data from DOM
 	const savePreset = async (e?: Event) => {
 		e?.preventDefault();
 
 		// Read form data from DOM
-		const form = document.querySelector(
-			"[data-preset-form]"
-		) as HTMLFormElement;
-		if (!form) return;
+		const form = document.querySelector("[data-preset-form]") as HTMLFormElement;
+		if (!form) {
+			return;
+		}
 
 		const formData = new FormData(form);
 		const name = (formData.get("preset-name") as string)?.trim();
@@ -148,48 +155,45 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			return;
 		}
 
-		const description =
-			(formData.get("preset-description") as string)?.trim() || undefined;
+		const description = (formData.get("preset-description") as string)?.trim() || undefined;
 
 		// Read all parameters from DOM
 		const params: Parameter[] = [];
 		for (const paramId of parameterIds()) {
 			const key = formData.get(`param-${paramId}-key`) as string;
-			if (!key?.trim()) continue; // Skip empty parameters
+			if (!key?.trim()) {
+				continue;
+			} // Skip empty parameters
 
-			const type = formData.get(
-				`param-${paramId}-type`
-			) as string as ParameterType;
-			const value =
-				(formData.get(`param-${paramId}-value`) as string) || "";
+			const type = formData.get(`param-${paramId}-type`) as string as ParameterType;
+			const value = (formData.get(`param-${paramId}-value`) as string) || "";
 			const paramDescription =
-				(
-					formData.get(`param-${paramId}-description`) as string
-				)?.trim() || undefined;
+				(formData.get(`param-${paramId}-description`) as string)?.trim() || undefined;
 
 			params.push({
-				id: paramId,
-				type,
-				key: key.trim(),
-				value,
 				description: paramDescription,
+				id: paramId,
+				key: key.trim(),
+				type,
+				value,
 			});
 		}
 
 		setSaving(true);
+
 		try {
 			if (viewMode() === "create") {
 				await createPreset({
-					name,
 					description,
+					name,
 					parameters: params,
 				});
 			} else {
 				const preset = editingPreset();
 				if (preset) {
 					await updatePresetData(preset.id, {
-						name,
 						description,
+						name,
 						parameters: params,
 					});
 				}
@@ -229,107 +233,247 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		}
 	};
 
+	// Export presets
+	const handleExport = async () => {
+		try {
+			const json = await exportPresets();
+			const blob = new Blob([json], { type: "application/json" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `presets-${new Date().toISOString().split("T")[0]}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error("[PresetManager] Failed to export presets:", error);
+			alert("Failed to export presets.");
+		}
+	};
+
+	// Import presets
+	const handleImport = async (e: Event) => {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) {
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = async (event) => {
+			try {
+				const json = event.target?.result as string;
+				const { imported, errors } = await importPresets(json);
+				if (errors.length > 0) {
+					alert(`Imported ${imported} presets with some errors: ${errors.join(", ")}`);
+				} else {
+					alert(`Successfully imported ${imported} presets!`);
+				}
+				await loadPresets();
+			} catch (error) {
+				console.error("[PresetManager] Failed to import presets:", error);
+				alert("Failed to import presets. Invalid file format.");
+			} finally {
+				input.value = ""; // Reset input
+			}
+		};
+		reader.readAsText(file);
+	};
+
 	// Render the list view
 	const renderListView = () => (
-		<div class="flex flex-col h-full" data-testid="preset-manager-list">
-			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-lg font-semibold text-foreground" data-testid="manage-presets-heading">
-					Manage Presets
-				</h2>
-				<div class="flex gap-2">
-					<button
-						onClick={startCreate}
-						class="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-						data-testid="create-preset-button"
+		<div class={cn("flex h-full flex-col")} data-testid="preset-manager-list">
+			<div class={cn("mb-4 flex flex-col space-y-4")}>
+				<div class={cn("flex items-center justify-between")}>
+					<h2
+						class={cn(
+							"font-black text-[10px] text-foreground uppercase tracking-[0.2em] opacity-70"
+						)}
+						data-testid="manage-presets-heading"
 					>
-						+ New Preset
-					</button>
+						Manage Presets
+					</h2>
 					<Show when={props.onClose}>
-						<button
+						<Button
+							variant="ghost"
+							size="icon"
 							onClick={props.onClose}
-							class="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+							class={cn("h-6 w-6 text-foreground/50 hover:text-foreground")}
 							data-testid="close-manager-button"
+							title="Close manager"
 						>
-							Close
-						</button>
+							<svg class={cn("h-4 w-4")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M6 18L18 6M6 6l12 12"
+								/>
+							</svg>
+						</Button>
 					</Show>
+				</div>
+
+				<div
+					class={cn(
+						"flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3"
+					)}
+				>
+					<div class={cn("flex gap-2")}>
+						<Button
+							variant="secondary"
+							size="xs"
+							onClick={handleExport}
+							class={cn("h-8 min-w-[85px] border border-border/40 shadow-sm")}
+							title="Export presets to JSON"
+							data-testid="export-presets-button"
+						>
+							<svg
+								class={cn("mr-1.5 h-3.5 w-3.5 opacity-70")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+								/>
+							</svg>
+							Export
+						</Button>
+						<div class={cn("relative")}>
+							<input
+								type="file"
+								id="import-presets-input"
+								accept=".json"
+								onChange={handleImport}
+								class={cn("hidden")}
+								data-testid="import-presets-input"
+							/>
+							<Button
+								variant="secondary"
+								size="xs"
+								onClick={() =>
+									(document.querySelector("#import-presets-input") as HTMLInputElement)?.click()
+								}
+								class={cn("h-8 min-w-[85px] border border-border/40 shadow-sm")}
+								title="Import presets from JSON"
+								data-testid="import-presets-button"
+							>
+								<svg
+									class={cn("mr-1.5 h-3.5 w-3.5 opacity-70")}
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+									/>
+								</svg>
+								Import
+							</Button>
+						</div>
+					</div>
+					<Button
+						size="xs"
+						onClick={startCreate}
+						data-testid="create-preset-button"
+						class={cn("h-8 px-4")}
+					>
+						<span>+ New Preset</span>
+					</Button>
 				</div>
 			</div>
 
 			<Show when={loading()}>
-				<div class="flex items-center justify-center py-8">
-					<div class="text-sm text-muted-foreground" data-testid="loading-indicator">Loading...</div>
+				<div class={cn("flex flex-col items-center justify-center space-y-2 py-12")}>
+					<div
+						class={cn(
+							"h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+						)}
+					/>
 				</div>
 			</Show>
 
 			<Show when={!loading() && presets().length === 0}>
-				<div class="text-center py-8 px-4 bg-muted/50 rounded-lg border border-border" data-testid="no-presets-message">
-					<p class="text-muted-foreground mb-2">No presets yet</p>
-					<p class="text-sm text-muted-foreground">
-						Create presets to save groups of parameters that you can
-						quickly apply to any tab.
+				<Card
+					class={cn(
+						"flex flex-col items-center justify-center border-border/40 border-dashed bg-muted/10 px-6 py-12 text-center"
+					)}
+					data-testid="no-presets-message"
+				>
+					<p
+						class={cn(
+							"mb-4 font-black text-[10px] text-muted-foreground uppercase tracking-widest"
+						)}
+					>
+						No presets found
 					</p>
-				</div>
+					<Button variant="outline" size="xs" onClick={startCreate} class={cn("h-8")}>
+						Create First Preset
+					</Button>
+				</Card>
 			</Show>
 
 			<Show when={!loading() && presets().length > 0}>
-				<div class="flex-1 overflow-y-auto space-y-2" data-testid="presets-list">
+				<div class={cn("-mr-1 flex-1 space-y-3 overflow-y-auto pr-1")} data-testid="presets-list">
 					<For each={presets()}>
 						{(preset) => (
-							<div class="p-3 bg-card rounded-lg border border-border" data-testid="preset-item" data-preset-id={preset.id}>
-								<div class="flex items-start justify-between">
-									<div class="flex-1 min-w-0">
-										<div class="font-medium text-foreground" data-testid="preset-name">
+							<Card
+								class={cn("border-border/60 p-4 shadow-sm transition-all hover:border-primary/30")}
+								data-testid="preset-item"
+								data-preset-id={preset.id}
+							>
+								<div class={cn("flex items-start justify-between gap-4")}>
+									<div class={cn("min-w-0 flex-1")}>
+										<div
+											class={cn(
+												"truncate font-black text-[14px] text-foreground uppercase tracking-tight"
+											)}
+											data-testid="preset-name"
+										>
 											{preset.name}
 										</div>
 										<Show when={preset.description}>
-											<div class="text-sm text-muted-foreground mt-0.5" data-testid="preset-description">
+											<div
+												class={cn(
+													"mt-1 line-clamp-1 font-bold text-[11px] text-muted-foreground leading-tight"
+												)}
+												data-testid="preset-description"
+											>
 												{preset.description}
 											</div>
 										</Show>
-										<div class="flex flex-wrap gap-1 mt-2">
-											<For
-												each={preset.parameters.slice(
-													0,
-													3
-												)}
-											>
+										<div class={cn("mt-2.5 flex flex-wrap gap-1.5")}>
+											<For each={preset.parameters.slice(0, 3)}>
 												{(param) => (
-													<span class="inline-flex items-center px-1.5 py-0.5 text-xs bg-muted rounded" data-testid="preset-parameter-badge">
-														<span class="mr-1">
-															{getParameterTypeIcon(
-																param.type
-															)}
-														</span>
-														<span class="font-mono text-foreground">
-															{param.key}
-														</span>
-													</span>
+													<Badge variant="outline" class={cn("!text-[8px] h-4 px-1.5")}>
+														{param.key}
+													</Badge>
 												)}
 											</For>
-											<Show
-												when={
-													preset.parameters.length > 3
-												}
-											>
-												<span class="text-xs text-muted-foreground px-1.5 py-0.5">
-													+
-													{preset.parameters.length -
-														3}{" "}
-													more
-												</span>
+											<Show when={preset.parameters.length > 3}>
+												<Badge variant="outline" class={cn("!text-[8px] h-4 px-1.5 italic")}>
+													+{preset.parameters.length - 3}
+												</Badge>
 											</Show>
 										</div>
 									</div>
-									<div class="flex gap-1 ml-2">
-										<button
+									<div class={cn("flex items-center space-x-1")}>
+										<Button
+											variant="ghost"
+											size="icon"
 											onClick={() => handleDuplicate(preset.id)}
-											class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+											class={cn("h-7 w-7 text-foreground/50 hover:bg-muted hover:text-foreground")}
 											title="Duplicate preset"
 											data-testid="duplicate-preset-button"
 										>
 											<svg
-												class="w-4 h-4"
+												class={cn("h-3.5 w-3.5")}
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
@@ -341,15 +485,17 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
 												/>
 											</svg>
-										</button>
-										<button
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
 											onClick={() => startEdit(preset)}
-											class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+											class={cn("h-7 w-7 text-foreground/50 hover:bg-muted hover:text-foreground")}
 											title="Edit preset"
 											data-testid="edit-preset-button"
 										>
 											<svg
-												class="w-4 h-4"
+												class={cn("h-3.5 w-3.5")}
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
@@ -361,22 +507,22 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
 												/>
 											</svg>
-										</button>
+										</Button>
 										<Show
 											when={confirmDelete() === preset.id}
 											fallback={
-												<button
-													onClick={() =>
-														setConfirmDelete(
-															preset.id
-														)
-													}
-													class="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => setConfirmDelete(preset.id)}
+													class={cn(
+														"h-7 w-7 text-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+													)}
 													title="Delete preset"
 													data-testid="delete-preset-button"
 												>
 													<svg
-														class="w-4 h-4"
+														class={cn("h-3.5 w-3.5")}
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
@@ -388,33 +534,33 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 															d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
 														/>
 													</svg>
-												</button>
+												</Button>
 											}
 										>
-											<div class="flex gap-1">
-												<button
-													onClick={() =>
-														handleDelete(preset.id)
-													}
-													class="px-2 py-1 text-xs bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+											<div class={cn("flex gap-1")}>
+												<Button
+													variant="destructive"
+													size="xs"
+													onClick={() => handleDelete(preset.id)}
+													class={cn("!text-[8px] h-6 px-2")}
 													data-testid="confirm-delete-button"
 												>
-													Delete
-												</button>
-												<button
-													onClick={() =>
-														setConfirmDelete(null)
-													}
-													class="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+													Confirm
+												</Button>
+												<Button
+													variant="secondary"
+													size="xs"
+													onClick={() => setConfirmDelete(null)}
+													class={cn("!text-[8px] h-6 px-2")}
 													data-testid="cancel-delete-button"
 												>
-													Cancel
-												</button>
+													X
+												</Button>
 											</div>
 										</Show>
 									</div>
 								</div>
-							</div>
+							</Card>
 						)}
 					</For>
 				</div>
@@ -432,120 +578,188 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			<form
 				data-preset-form
 				data-testid="preset-form"
-				class="flex flex-col h-full"
+				class={cn("flex h-full flex-col")}
 				onSubmit={savePreset}
 			>
-				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-lg font-semibold text-foreground" data-testid="preset-form-heading">
-						{viewMode() === "create"
-							? "Create Preset"
-							: "Edit Preset"}
-					</h2>
-					<button
-						type="button"
-						onClick={cancelForm}
-						class="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
-						data-testid="cancel-form-button"
-					>
-						Cancel
-					</button>
-				</div>
-
-				<div class="flex-1 overflow-y-auto space-y-4">
-					{/* Preset name */}
-					<div>
-						<label class="block text-sm font-medium text-foreground mb-1">
-							Name <span class="text-destructive">*</span>
-						</label>
-						<input
-							type="text"
-							name="preset-name"
-							placeholder="My Preset"
-							required
-							ref={(el) => {
-								if (el && defaultName) el.value = defaultName;
-							}}
-							class="w-full px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-							data-testid="preset-name-input"
-						/>
+				<div class={cn("mb-4 flex flex-col space-y-4")}>
+					<div class={cn("flex items-center justify-between")}>
+						<h2
+							class={cn(
+								"font-black text-[10px] text-foreground uppercase tracking-[0.2em] opacity-50"
+							)}
+							data-testid="preset-form-heading"
+						>
+							{viewMode() === "create" ? "Create New Preset" : "Edit Preset Details"}
+						</h2>
+						<Button
+							variant="ghost"
+							size="icon"
+							type="button"
+							onClick={cancelForm}
+							class={cn("h-6 w-6")}
+							data-testid="cancel-form-button"
+							title="Cancel"
+						>
+							<svg class={cn("h-4 w-4")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M6 18L18 6M6 6l12 12"
+								/>
+							</svg>
+						</Button>
 					</div>
 
-					{/* Description */}
-					<div>
-						<label class="block text-sm font-medium text-foreground mb-1">
-							Description
-						</label>
-						<input
-							type="text"
-							name="preset-description"
-							placeholder="Optional description"
+					<div
+						class={cn(
+							"flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 p-2.5"
+						)}
+					>
+						<p
+							class={cn("ml-2 font-black text-[10px] text-foreground/40 uppercase tracking-widest")}
+						>
+							Preset Configuration
+						</p>
+						<Button
+							type="submit"
+							size="xs"
+							class={cn("h-8 px-4")}
+							disabled={saving()}
+							data-testid="save-preset-button"
+						>
+							<Show
+								when={saving()}
+								fallback={<span>{viewMode() === "create" ? "Save Preset" : "Update Preset"}</span>}
+							>
+								<span>Saving...</span>
+							</Show>
+						</Button>
+					</div>
+				</div>
+
+				<div class={cn("-mr-1 flex-1 space-y-6 overflow-y-auto pr-1")}>
+					{/* Preset name & Description */}
+					<div class={cn("space-y-4 px-1")}>
+						<Input
+							label="Name"
+							name="preset-name"
+							placeholder="e.g. Production Config"
+							required
 							ref={(el) => {
-								if (el && defaultDescription)
-									el.value = defaultDescription;
+								if (el && defaultName) {
+									el.value = defaultName;
+								}
 							}}
-							class="w-full px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+							data-testid="preset-name-input"
+						/>
+
+						<Textarea
+							label="Description (Optional)"
+							name="preset-description"
+							placeholder="Briefly describe what these parameters do..."
+							rows="2"
+							ref={(el) => {
+								if (el && defaultDescription) {
+									el.value = defaultDescription;
+								}
+							}}
 							data-testid="preset-description-input"
 						/>
 					</div>
 
-					{/* Parameters */}
-					<div>
-						<div class="flex items-center justify-between mb-2">
-							<label class="block text-sm font-medium text-foreground">
-								Parameters
-							</label>
-							<button
+					<Separator class={cn("opacity-50")} />
+
+					{/* Parameters section */}
+					<div class={cn("space-y-4")}>
+						<div class={cn("flex items-center justify-between px-1")}>
+							<Label
+								class={cn("!text-[10px] mb-0 font-black uppercase tracking-[0.2em] opacity-50")}
+							>
+								Parameters ({parameterIds().length})
+							</Label>
+							<Button
 								type="button"
+								variant="ghost"
+								size="xs"
 								onClick={addParameter}
-								class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+								class={cn("!text-[10px] h-7 px-3")}
 								data-testid="add-parameter-button"
 							>
-								+ Add Parameter
-							</button>
+								+ Add Variable
+							</Button>
 						</div>
 
 						<Show when={parameterIds().length === 0}>
-							<div class="text-center py-4 px-3 bg-muted/50 rounded-lg border border-border" data-testid="no-parameters-message">
-								<p class="text-sm text-muted-foreground">
-									No parameters yet
-								</p>
-								<button
+							<Card
+								class={cn(
+									"flex flex-col items-center justify-center border-border/30 border-dashed bg-muted/10 px-4 py-10"
+								)}
+								data-testid="no-parameters-message"
+							>
+								<Button
 									type="button"
+									variant="outline"
+									size="xs"
 									onClick={addParameter}
-									class="mt-2 text-xs text-primary hover:underline"
+									class={cn("h-9 px-5")}
 									data-testid="add-first-parameter-button"
 								>
-									Add your first parameter
-								</button>
-							</div>
+									Add First Parameter
+								</Button>
+							</Card>
 						</Show>
 
-						<div class="space-y-3" data-testid="parameters-list">
+						<div class={cn("space-y-4")} data-testid="parameters-list">
 							<For each={parameterIds()}>
 								{(paramId, index) => {
-									const param = createMemo(() =>
-										getParameterData(paramId)
-									);
+									const param = createMemo(() => getParameterData(paramId));
 									const paramData = param();
 									return (
-										<div class="p-3 bg-muted/50 rounded-lg border border-border" data-testid={`parameter-item-${index()}`}>
-											<div class="flex items-center justify-between mb-2">
-												<span class="text-xs font-medium text-muted-foreground" data-testid="parameter-label">
-													Parameter {index() + 1}
-												</span>
-												<button
+										<Card
+											class={cn("group relative border-border/40 p-4 shadow-sm")}
+											data-testid={`parameter-item-${index()}`}
+										>
+											<div class={cn("mb-4 flex items-center justify-between")}>
+												<div class={cn("flex items-center gap-2.5")}>
+													<Badge
+														variant="default"
+														class={cn(
+															"!p-0 !text-[9px] flex h-5 w-5 items-center justify-center rounded-sm"
+														)}
+													>
+														{index() + 1}
+													</Badge>
+													<Select
+														name={`param-${paramId}-type`}
+														ref={(el) => {
+															if (el) {
+																el.value = paramData.type;
+															}
+														}}
+														class={cn(
+															"!py-0 !px-2 !text-[10px] h-7 w-28 rounded-md uppercase tracking-widest"
+														)}
+														data-testid="parameter-type-select"
+													>
+														<option value="queryParam">URL Query</option>
+														<option value="cookie">Cookie</option>
+														<option value="localStorage">Storage</option>
+													</Select>
+												</div>
+												<Button
+													variant="ghost"
+													size="icon"
 													type="button"
-													onClick={() =>
-														removeFormParameter(
-															paramId
-														)
-													}
-													class="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
+													onClick={() => removeFormParameter(paramId)}
+													class={cn(
+														"h-7 w-7 text-destructive/40 opacity-0 transition-opacity hover:bg-destructive/5 hover:text-destructive group-hover:opacity-100"
+													)}
 													title="Remove parameter"
 													data-testid="remove-parameter-button"
 												>
 													<svg
-														class="w-3.5 h-3.5"
+														class={cn("h-4 w-4")}
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
@@ -554,133 +768,70 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 															stroke-linecap="round"
 															stroke-linejoin="round"
 															stroke-width="2"
-															d="M6 18L18 6M6 6l12 12"
+															d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
 														/>
 													</svg>
-												</button>
+												</Button>
 											</div>
 
-											<div class="grid grid-cols-1 gap-2">
-												{/* Type selector */}
-												<div>
-													<label class="block text-xs text-muted-foreground mb-1">
-														Type
-													</label>
-													<select
-														name={`param-${paramId}-type`}
-														class="w-full px-2 py-1.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
-														ref={(el) => {
-															if (el)
-																el.value =
-																	paramData.type;
-														}}
-														data-testid="parameter-type-select"
-													>
-														<option value="queryParam">
-															🔗 Query Parameter
-														</option>
-														<option value="cookie">
-															🍪 Cookie
-														</option>
-														<option value="localStorage">
-															💾 Local Storage
-														</option>
-													</select>
-												</div>
+											<div class={cn("grid grid-cols-2 gap-3")}>
+												<Input
+													label="Key"
+													name={`param-${paramId}-key`}
+													placeholder="variable_name"
+													ref={(el) => {
+														if (el) {
+															el.value = paramData.key;
+														}
+													}}
+													class={cn("!px-3 !py-1.5 !text-[12px] h-9 rounded-lg font-mono")}
+													data-testid="parameter-key-input"
+												/>
 
-												{/* Key */}
-												<div>
-													<label class="block text-xs text-muted-foreground mb-1">
-														Key
-													</label>
-													<input
-														type="text"
-														name={`param-${paramId}-key`}
-														placeholder="parameter_name"
-														ref={(el) => {
-															if (el)
-																el.value =
-																	paramData.key;
-														}}
-														class="w-full px-2 py-1.5 text-sm font-mono bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-														data-testid="parameter-key-input"
-													/>
-												</div>
+												<Input
+													label="Value"
+													name={`param-${paramId}-value`}
+													placeholder="value"
+													ref={(el) => {
+														if (el) {
+															el.value = paramData.value;
+														}
+													}}
+													class={cn("!px-3 !py-1.5 !text-[12px] h-9 rounded-lg font-mono")}
+													data-testid="parameter-value-input"
+												/>
 
-												{/* Value */}
-												<div>
-													<label class="block text-xs text-muted-foreground mb-1">
-														Value
-													</label>
-													<input
-														type="text"
-														name={`param-${paramId}-value`}
-														placeholder="value"
-														ref={(el) => {
-															if (el)
-																el.value =
-																	paramData.value;
-														}}
-														class="w-full px-2 py-1.5 text-sm font-mono bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-														data-testid="parameter-value-input"
-													/>
-												</div>
-
-												{/* Description */}
-												<div>
-													<label class="block text-xs text-muted-foreground mb-1">
-														Description (optional)
-													</label>
-													<input
-														type="text"
-														name={`param-${paramId}-description`}
-														placeholder="What this parameter does"
-														ref={(el) => {
-															if (el)
-																el.value =
-																	paramData.description ??
-																	"";
-														}}
-														class="w-full px-2 py-1.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-														data-testid="parameter-description-input"
-													/>
-												</div>
+												<Input
+													label="Notes (Optional)"
+													name={`param-${paramId}-description`}
+													placeholder="How is this variable used?"
+													ref={(el) => {
+														if (el) {
+															el.value = paramData.description ?? "";
+														}
+													}}
+													containerClass={cn("col-span-2")}
+													class={cn(
+														"!px-3 !py-1.5 !text-[10px] h-8 rounded-lg border-border/30 bg-muted/10 font-bold"
+													)}
+													data-testid="parameter-description-input"
+												/>
 											</div>
-										</div>
+										</Card>
 									);
 								}}
 							</For>
 						</div>
 					</div>
 				</div>
-
-				{/* Save button */}
-				<div class="pt-4 mt-4 border-t border-border">
-					<button
-						type="submit"
-						disabled={saving()}
-						class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-						data-testid="save-preset-button"
-					>
-						{saving()
-							? "Saving..."
-							: viewMode() === "create"
-							? "Create Preset"
-							: "Save Changes"}
-					</button>
-				</div>
 			</form>
 		);
 	};
 
 	return (
-		<div class={`flex flex-col ${props.class ?? ""}`}>
+		<div class={cn("flex flex-col", props.class)}>
 			<Show when={viewMode() === "list"}>{renderListView()}</Show>
-			<Show when={viewMode() === "create" || viewMode() === "edit"}>
-				{renderFormView()}
-			</Show>
+			<Show when={viewMode() === "create" || viewMode() === "edit"}>{renderFormView()}</Show>
 		</div>
 	);
 };
-
-export default PresetManager;

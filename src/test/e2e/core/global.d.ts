@@ -4,6 +4,3 @@ declare global {
 	var __extensionBrowser: Browser | undefined;
 	var __extensionContext: BrowserContext | undefined;
 }
-
-export {};
-

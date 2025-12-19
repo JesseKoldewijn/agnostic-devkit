@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 import {
-	isSidebarSupported,
-	isNotificationsSupported,
-	logBrowserInfo,
+	getBrowserName,
 	isNotificationDisabled,
+	isNotificationsSupported,
+	isSidebarSupported,
+	logBrowserInfo,
 	showNotification,
 	showNotificationWithButtons,
-	getBrowserName,
 } from "../utils/browser";
-import { fakeBrowser } from "wxt/testing/fake-browser";
 
 describe("browser utilities", () => {
 	let consoleLogSpy: any;
@@ -17,7 +17,7 @@ describe("browser utilities", () => {
 		fakeBrowser.reset();
 		// fake-browser might not have sidePanel by default
 		(fakeBrowser as any).sidePanel = {};
-		
+
 		consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 		vi.spyOn(console, "warn").mockImplementation(() => {});
 		vi.spyOn(console, "error").mockImplementation(() => {});
@@ -26,8 +26,8 @@ describe("browser utilities", () => {
 	describe("getBrowserName", () => {
 		it("should return Chrome for Chrome browser", () => {
 			Object.defineProperty(navigator, "userAgent", {
-				value: "Chrome/120.0.0.0",
 				configurable: true,
+				value: "Chrome/120.0.0.0",
 			});
 			(navigator as any).brave = undefined;
 
@@ -36,8 +36,8 @@ describe("browser utilities", () => {
 
 		it("should return Edge for Edge browser", () => {
 			Object.defineProperty(navigator, "userAgent", {
-				value: "Chrome/120.0.0.0 Edg/120.0.0.0",
 				configurable: true,
+				value: "Chrome/120.0.0.0 Edg/120.0.0.0",
 			});
 			(navigator as any).brave = undefined;
 
@@ -46,8 +46,8 @@ describe("browser utilities", () => {
 
 		it("should return Opera for Opera browser", () => {
 			Object.defineProperty(navigator, "userAgent", {
-				value: "Chrome/120.0.0.0 OPR/105.0.0.0",
 				configurable: true,
+				value: "Chrome/120.0.0.0 OPR/105.0.0.0",
 			});
 			(navigator as any).brave = undefined;
 
@@ -56,8 +56,8 @@ describe("browser utilities", () => {
 
 		it("should return Brave for Brave browser", () => {
 			Object.defineProperty(navigator, "userAgent", {
-				value: "Chrome/120.0.0.0",
 				configurable: true,
+				value: "Chrome/120.0.0.0",
 			});
 			(navigator as any).brave = { isBrave: () => true };
 
@@ -66,8 +66,8 @@ describe("browser utilities", () => {
 
 		it("should return Unknown for unrecognized browser", () => {
 			Object.defineProperty(navigator, "userAgent", {
-				value: "Mozilla/5.0 InternetExplorer/11.0",
 				configurable: true,
+				value: "Mozilla/5.0 InternetExplorer/11.0",
 			});
 			(navigator as any).brave = undefined;
 
@@ -77,47 +77,38 @@ describe("browser utilities", () => {
 
 	describe("isSidebarSupported", () => {
 		it("should return true when sidePanel is available", () => {
-			expect(isSidebarSupported()).toBe(true);
+			expect(isSidebarSupported()).toBeTruthy();
 		});
 
 		it("should return false when sidePanel is not available", () => {
 			const originalSidePanel = fakeBrowser.sidePanel;
 			(fakeBrowser as any).sidePanel = undefined;
-			
-			expect(isSidebarSupported()).toBe(false);
-			
+
+			expect(isSidebarSupported()).toBeFalsy();
+
 			(fakeBrowser as any).sidePanel = originalSidePanel;
 		});
 	});
 
 	describe("isNotificationsSupported", () => {
 		it("should return true when notifications.create is defined", () => {
-			expect(isNotificationsSupported()).toBe(true);
+			expect(isNotificationsSupported()).toBeTruthy();
 		});
 	});
 
 	describe("logBrowserInfo", () => {
 		it("should log browser information", () => {
 			Object.defineProperty(navigator, "userAgent", {
-				value: "Chrome/120.0.0.0",
 				configurable: true,
+				value: "Chrome/120.0.0.0",
 			});
 			(navigator as any).brave = undefined;
 
 			logBrowserInfo();
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(
-				"[Browser] Running in:",
-				"Chrome"
-			);
-			expect(consoleLogSpy).toHaveBeenCalledWith(
-				"[Browser] Sidebar support:",
-				true
-			);
-			expect(consoleLogSpy).toHaveBeenCalledWith(
-				"[Browser] Notifications support:",
-				true
-			);
+			expect(consoleLogSpy).toHaveBeenCalledWith("[Browser] Running in:", "Chrome");
+			expect(consoleLogSpy).toHaveBeenCalledWith("[Browser] Sidebar support:", true);
+			expect(consoleLogSpy).toHaveBeenCalledWith("[Browser] Notifications support:", true);
 		});
 	});
 
@@ -128,7 +119,7 @@ describe("browser utilities", () => {
 			(fakeBrowser as any).notifications = undefined;
 
 			const disabled = await isNotificationDisabled();
-			expect(disabled).toBe(true);
+			expect(disabled).toBeTruthy();
 
 			// Restore
 			(fakeBrowser as any).notifications = originalNotifications;
@@ -138,19 +129,19 @@ describe("browser utilities", () => {
 			await fakeBrowser.storage.sync.set({ notifications: false });
 
 			const disabled = await isNotificationDisabled();
-			expect(disabled).toBe(true);
+			expect(disabled).toBeTruthy();
 		});
 
 		it("should return false when notifications are enabled", async () => {
 			await fakeBrowser.storage.sync.set({ notifications: true });
 
 			const disabled = await isNotificationDisabled();
-			expect(disabled).toBe(false);
+			expect(disabled).toBeFalsy();
 		});
 
 		it("should return false when notifications setting is not set", async () => {
 			const disabled = await isNotificationDisabled();
-			expect(disabled).toBe(false);
+			expect(disabled).toBeFalsy();
 		});
 	});
 
@@ -164,9 +155,9 @@ describe("browser utilities", () => {
 			expect(createSpy).toHaveBeenCalledWith(
 				undefined,
 				expect.objectContaining({
-					type: "basic",
-					title: "Test Title",
 					message: "Test message",
+					title: "Test Title",
+					type: "basic",
 				})
 			);
 		});
@@ -187,7 +178,14 @@ describe("browser utilities", () => {
 			const createSpy = vi.spyOn(fakeBrowser.notifications, "create");
 			await showNotification("Test", "Message", true);
 
-			expect(createSpy).toHaveBeenCalled();
+			expect(createSpy).toHaveBeenCalledWith(
+				undefined,
+				expect.objectContaining({
+					message: "Message",
+					title: "Test",
+					type: "basic",
+				})
+			);
 		});
 	});
 
@@ -204,11 +202,11 @@ describe("browser utilities", () => {
 			expect(createSpy).toHaveBeenCalledWith(
 				undefined,
 				expect.objectContaining({
-					type: "basic",
-					title: "Test Title",
-					message: "Test message",
 					buttons: [{ title: "Button 1" }, { title: "Button 2" }],
+					message: "Test message",
 					requireInteraction: true,
+					title: "Test Title",
+					type: "basic",
 				})
 			);
 		});

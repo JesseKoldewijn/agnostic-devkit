@@ -88,7 +88,7 @@ export interface ParameterMessageResponse {
  * Helper function to generate a unique ID
  */
 export function generateId(): string {
-	return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+	return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 /**
@@ -97,8 +97,8 @@ export function generateId(): string {
 export function createEmptyParameter(type: ParameterType = "queryParam"): Parameter {
 	return {
 		id: generateId(),
-		type,
 		key: "",
+		type,
 		value: "",
 	};
 }
@@ -108,11 +108,10 @@ export function createEmptyParameter(type: ParameterType = "queryParam"): Parame
  */
 export function createEmptyPreset(): Preset {
 	return {
+		createdAt: Date.now(),
 		id: generateId(),
 		name: "",
 		parameters: [],
-		createdAt: Date.now(),
 		updatedAt: Date.now(),
 	};
 }
-

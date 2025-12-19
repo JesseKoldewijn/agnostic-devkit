@@ -4,12 +4,10 @@
  */
 
 import { browser } from "wxt/browser";
-import type { Parameter, ParameterType } from "./types";
-import {
-	getPresetById,
-	getActivePresetsForTab,
-	getPresets,
-} from "./storage";
+import { getActivePresetsForTab, getPresetById, getPresets } from "./storage";
+import type { Parameter, ParameterType, Preset } from "./types";
+
+console.log("[ParameterApplicator] Module loaded");
 
 /**
  * Get the current tab's URL
@@ -26,14 +24,12 @@ async function getTabUrl(tabId: number): Promise<string | undefined> {
 /**
  * Apply a query parameter to a tab's URL
  */
-async function applyQueryParam(
-	tabId: number,
-	key: string,
-	value: string
-): Promise<boolean> {
+async function applyQueryParam(tabId: number, key: string, value: string): Promise<boolean> {
 	try {
 		const url = await getTabUrl(tabId);
-		if (!url) return false;
+		if (!url) {
+			return false;
+		}
 
 		const urlObj = new URL(url);
 		urlObj.searchParams.set(key, value);
@@ -52,10 +48,14 @@ async function applyQueryParam(
 async function removeQueryParam(tabId: number, key: string): Promise<boolean> {
 	try {
 		const url = await getTabUrl(tabId);
-		if (!url) return false;
+		if (!url) {
+			return false;
+		}
 
 		const urlObj = new URL(url);
-		if (!urlObj.searchParams.has(key)) return true; // Already removed
+		if (!urlObj.searchParams.has(key)) {
+			return true;
+		} // Already removed
 
 		urlObj.searchParams.delete(key);
 
@@ -70,22 +70,20 @@ async function removeQueryParam(tabId: number, key: string): Promise<boolean> {
 /**
  * Apply a cookie to a tab's domain
  */
-async function applyCookie(
-	tabId: number,
-	key: string,
-	value: string
-): Promise<boolean> {
+async function applyCookie(tabId: number, key: string, value: string): Promise<boolean> {
 	try {
 		const url = await getTabUrl(tabId);
-		if (!url) return false;
+		if (!url) {
+			return false;
+		}
 
 		const urlObj = new URL(url);
 
 		await browser.cookies.set({
-			url: urlObj.origin,
 			name: key,
-			value: value,
 			path: "/",
+			url: urlObj.origin,
+			value: value,
 		});
 
 		return true;
@@ -101,13 +99,15 @@ async function applyCookie(
 async function removeCookie(tabId: number, key: string): Promise<boolean> {
 	try {
 		const url = await getTabUrl(tabId);
-		if (!url) return false;
+		if (!url) {
+			return false;
+		}
 
 		const urlObj = new URL(url);
 
 		await browser.cookies.remove({
-			url: urlObj.origin,
 			name: key,
+			url: urlObj.origin,
 		});
 
 		return true;
@@ -120,21 +120,15 @@ async function removeCookie(tabId: number, key: string): Promise<boolean> {
 /**
  * Apply a localStorage item to a tab
  */
-async function applyLocalStorage(
-	tabId: number,
-	key: string,
-	value: string
-): Promise<boolean> {
+async function applyLocalStorage(tabId: number, key: string, value: string): Promise<boolean> {
 	try {
-		await browser.scripting.executeScript({
-			target: { tabId },
-			func: (k: string, v: string) => {
-				localStorage.setItem(k, v);
-			},
-			args: [key, value],
+		const response = await browser.runtime.sendMessage({
+			key,
+			tabId,
+			type: "APPLY_LS",
+			value,
 		});
-
-		return true;
+		return Boolean(response?.success);
 	} catch (error) {
 		console.error("[ParameterApplicator] Failed to apply localStorage:", error);
 		return false;
@@ -146,15 +140,12 @@ async function applyLocalStorage(
  */
 async function removeLocalStorage(tabId: number, key: string): Promise<boolean> {
 	try {
-		await browser.scripting.executeScript({
-			target: { tabId },
-			func: (k: string) => {
-				localStorage.removeItem(k);
-			},
-			args: [key],
+		const response = await browser.runtime.sendMessage({
+			key,
+			tabId,
+			type: "REMOVE_LS",
 		});
-
-		return true;
+		return Boolean(response?.success);
 	} catch (error) {
 		console.error("[ParameterApplicator] Failed to remove localStorage:", error);
 		return false;
@@ -164,46 +155,42 @@ async function removeLocalStorage(tabId: number, key: string): Promise<boolean> 
 /**
  * Apply a single parameter to a tab
  */
-export async function applyParameter(
-	tabId: number,
-	parameter: Parameter
-): Promise<boolean> {
+export async function applyParameter(tabId: number, parameter: Parameter): Promise<boolean> {
 	switch (parameter.type) {
-		case "queryParam":
+		case "queryParam": {
 			return applyQueryParam(tabId, parameter.key, parameter.value);
-		case "cookie":
+		}
+		case "cookie": {
 			return applyCookie(tabId, parameter.key, parameter.value);
-		case "localStorage":
+		}
+		case "localStorage": {
 			return applyLocalStorage(tabId, parameter.key, parameter.value);
-		default:
-			console.warn(
-				"[ParameterApplicator] Unknown parameter type:",
-				parameter.type
-			);
+		}
+		default: {
+			console.warn("[ParameterApplicator] Unknown parameter type:", parameter.type);
 			return false;
+		}
 	}
 }
 
 /**
  * Remove a single parameter from a tab
  */
-export async function removeParameter(
-	tabId: number,
-	parameter: Parameter
-): Promise<boolean> {
+export async function removeParameter(tabId: number, parameter: Parameter): Promise<boolean> {
 	switch (parameter.type) {
-		case "queryParam":
+		case "queryParam": {
 			return removeQueryParam(tabId, parameter.key);
-		case "cookie":
+		}
+		case "cookie": {
 			return removeCookie(tabId, parameter.key);
-		case "localStorage":
+		}
+		case "localStorage": {
 			return removeLocalStorage(tabId, parameter.key);
-		default:
-			console.warn(
-				"[ParameterApplicator] Unknown parameter type:",
-				parameter.type
-			);
+		}
+		default: {
+			console.warn("[ParameterApplicator] Unknown parameter type:", parameter.type);
 			return false;
+		}
 	}
 }
 
@@ -211,10 +198,7 @@ export async function removeParameter(
  * Apply all parameters from a preset to a tab
  * Note: Verification should be done separately after application to avoid interference
  */
-export async function applyPreset(
-	tabId: number,
-	presetId: string
-): Promise<boolean> {
+export async function applyPreset(tabId: number, presetId: string): Promise<boolean> {
 	const preset = await getPresetById(presetId);
 	if (!preset) {
 		console.warn("[ParameterApplicator] Preset not found:", presetId);
@@ -224,9 +208,7 @@ export async function applyPreset(
 	// Group parameters by type to batch URL updates
 	const queryParams = preset.parameters.filter((p) => p.type === "queryParam");
 	const cookies = preset.parameters.filter((p) => p.type === "cookie");
-	const localStorageItems = preset.parameters.filter(
-		(p) => p.type === "localStorage"
-	);
+	const localStorageItems = preset.parameters.filter((p) => p.type === "localStorage");
 
 	let success = true;
 
@@ -242,15 +224,12 @@ export async function applyPreset(
 					urlObj.searchParams.set(param.key, param.value);
 				}
 				await browser.tabs?.update(tabId, { url: urlObj.toString() });
-				
+
 				// Wait for page to start reloading
 				await new Promise((resolve) => setTimeout(resolve, 200));
 			}
 		} catch (error) {
-			console.error(
-				"[ParameterApplicator] Failed to apply query params batch:",
-				error
-			);
+			console.error("[ParameterApplicator] Failed to apply query params batch:", error);
 			success = false;
 		}
 	}
@@ -258,114 +237,133 @@ export async function applyPreset(
 	// Apply cookies (after URL update, cookies persist across reloads)
 	for (const param of cookies) {
 		const result = await applyCookie(tabId, param.key, param.value);
-		if (!result) success = false;
+		if (!result) {
+			success = false;
+		}
 	}
 
 	// Apply localStorage items (after URL update, localStorage persists across reloads)
 	for (const param of localStorageItems) {
 		const result = await applyLocalStorage(tabId, param.key, param.value);
-		if (!result) success = false;
+		if (!result) {
+			success = false;
+		}
 	}
 
 	return success;
 }
 
 /**
- * Get all parameters that are still active from other presets
- * This is used when removing a preset to determine which parameters should not be removed
+ * Find the effective value for a parameter from a list of presets
+ * The last preset in the list that contains the parameter wins
  */
-async function getParametersFromOtherActivePresets(
-	tabId: number,
-	excludePresetId: string
-): Promise<Parameter[]> {
-	const activePresetIds = await getActivePresetsForTab(tabId);
-	const otherActivePresetIds = activePresetIds.filter(
-		(id) => id !== excludePresetId
-	);
-
-	const allPresets = await getPresets();
-	const otherActivePresets = allPresets.filter((p) =>
-		otherActivePresetIds.includes(p.id)
-	);
-
-	// Flatten all parameters from other active presets
-	return otherActivePresets.flatMap((p) => p.parameters);
-}
-
-/**
- * Check if a parameter is still needed by another active preset
- */
-function isParameterNeededByOtherPresets(
-	parameter: Parameter,
-	otherParameters: Parameter[]
-): boolean {
-	return otherParameters.some(
-		(p) => p.type === parameter.type && p.key === parameter.key
-	);
+function getEffectiveValue(
+	type: ParameterType,
+	key: string,
+	presets: Preset[]
+): string | undefined {
+	// Search from back to front (last wins)
+	for (let i = presets.length - 1; i >= 0; i--) {
+		const param = presets[i].parameters.find((p) => p.type === type && p.key === key);
+		if (param) {
+			return param.value;
+		}
+	}
+	return undefined;
 }
 
 /**
  * Remove all parameters from a preset that are not used by other active presets
+ * For shared parameters, reverts to the value from the next most recent active preset
  */
-export async function removePreset(
-	tabId: number,
-	presetId: string
-): Promise<boolean> {
+export async function removePreset(tabId: number, presetId: string): Promise<boolean> {
 	const preset = await getPresetById(presetId);
 	if (!preset) {
 		console.warn("[ParameterApplicator] Preset not found:", presetId);
 		return false;
 	}
 
-	const otherActiveParams = await getParametersFromOtherActivePresets(
-		tabId,
-		presetId
+	console.log(
+		`[ParameterApplicator] Removing preset ${preset.name} (${preset.id}) from tab ${tabId}`
 	);
 
-	// Filter out parameters that are still needed by other presets
-	const paramsToRemove = preset.parameters.filter(
-		(p) => !isParameterNeededByOtherPresets(p, otherActiveParams)
-	);
+	// Get other active presets to determine what to remove or revert
+	const activePresetIds = await getActivePresetsForTab(tabId);
+	const otherActivePresetIds = activePresetIds.filter((id) => id !== presetId);
 
-	// Group parameters by type
-	const queryParams = paramsToRemove.filter((p) => p.type === "queryParam");
-	const cookies = paramsToRemove.filter((p) => p.type === "cookie");
-	const localStorageItems = paramsToRemove.filter(
-		(p) => p.type === "localStorage"
+	const allPresets = await getPresets();
+	const otherActivePresets = otherActivePresetIds
+		.map((id) => allPresets.find((p: Preset) => p.id === id))
+		.filter((p): p is Preset => p !== undefined);
+
+	// Determine which parameters to remove and which to revert
+	const paramsToRemove: Parameter[] = [];
+	const paramsToRevert: Parameter[] = [];
+
+	for (const param of preset.parameters) {
+		const effectiveValue = getEffectiveValue(param.type, param.key, otherActivePresets);
+		if (effectiveValue === undefined) {
+			paramsToRemove.push(param);
+		} else if (effectiveValue !== param.value) {
+			// Only need to revert if the value is different from the current one
+			paramsToRevert.push({ ...param, value: effectiveValue });
+		}
+	}
+
+	console.log(
+		`[ParameterApplicator] Params to remove: ${paramsToRemove.length}, to revert: ${paramsToRevert.length}`
 	);
 
 	let success = true;
 
-	// Remove query params in batch
-	if (queryParams.length > 0) {
+	// Handle query params
+	const queryParamsToRemove = paramsToRemove.filter((p) => p.type === "queryParam");
+	const queryParamsToRevert = paramsToRevert.filter((p) => p.type === "queryParam");
+
+	if (queryParamsToRemove.length > 0 || queryParamsToRevert.length > 0) {
 		try {
 			const url = await getTabUrl(tabId);
 			if (url) {
 				const urlObj = new URL(url);
-				for (const param of queryParams) {
+				for (const param of queryParamsToRemove) {
 					urlObj.searchParams.delete(param.key);
 				}
+				for (const param of queryParamsToRevert) {
+					urlObj.searchParams.set(param.key, param.value);
+				}
 				await browser.tabs?.update(tabId, { url: urlObj.toString() });
+
+				// Wait for page to start reloading
+				await new Promise((resolve) => setTimeout(resolve, 200));
 			}
 		} catch (error) {
-			console.error(
-				"[ParameterApplicator] Failed to remove query params batch:",
-				error
-			);
+			console.error("[ParameterApplicator] Failed to update query params during removal:", error);
 			success = false;
 		}
 	}
 
-	// Remove cookies
-	for (const param of cookies) {
-		const result = await removeCookie(tabId, param.key);
-		if (!result) success = false;
+	// Handle cookies
+	for (const param of paramsToRemove.filter((p) => p.type === "cookie")) {
+		if (!(await removeCookie(tabId, param.key))) {
+			success = false;
+		}
+	}
+	for (const param of paramsToRevert.filter((p) => p.type === "cookie")) {
+		if (!(await applyCookie(tabId, param.key, param.value))) {
+			success = false;
+		}
 	}
 
-	// Remove localStorage items
-	for (const param of localStorageItems) {
-		const result = await removeLocalStorage(tabId, param.key);
-		if (!result) success = false;
+	// Handle localStorage
+	for (const param of paramsToRemove.filter((p) => p.type === "localStorage")) {
+		if (!(await removeLocalStorage(tabId, param.key))) {
+			success = false;
+		}
+	}
+	for (const param of paramsToRevert.filter((p) => p.type === "localStorage")) {
+		if (!(await applyLocalStorage(tabId, param.key, param.value))) {
+			success = false;
+		}
 	}
 
 	return success;
@@ -376,14 +374,18 @@ export async function removePreset(
  */
 export function getParameterTypeLabel(type: ParameterType): string {
 	switch (type) {
-		case "queryParam":
+		case "queryParam": {
 			return "Query Parameter";
-		case "cookie":
+		}
+		case "cookie": {
 			return "Cookie";
-		case "localStorage":
+		}
+		case "localStorage": {
 			return "Local Storage";
-		default:
+		}
+		default: {
 			return "Unknown";
+		}
 	}
 }
 
@@ -392,14 +394,18 @@ export function getParameterTypeLabel(type: ParameterType): string {
  */
 export function getParameterTypeIcon(type: ParameterType): string {
 	switch (type) {
-		case "queryParam":
+		case "queryParam": {
 			return "🔗";
-		case "cookie":
+		}
+		case "cookie": {
 			return "🍪";
-		case "localStorage":
+		}
+		case "localStorage": {
 			return "💾";
-		default:
+		}
+		default: {
 			return "❓";
+		}
 	}
 }
 
@@ -413,7 +419,9 @@ async function verifyQueryParam(
 ): Promise<boolean> {
 	try {
 		const url = await getTabUrl(tabId);
-		if (!url) return false;
+		if (!url) {
+			return false;
+		}
 
 		const urlObj = new URL(url);
 		const actualValue = urlObj.searchParams.get(key);
@@ -426,19 +434,17 @@ async function verifyQueryParam(
 /**
  * Verify a cookie is set correctly
  */
-async function verifyCookie(
-	tabId: number,
-	key: string,
-	expectedValue: string
-): Promise<boolean> {
+async function verifyCookie(tabId: number, key: string, expectedValue: string): Promise<boolean> {
 	try {
 		const url = await getTabUrl(tabId);
-		if (!url) return false;
+		if (!url) {
+			return false;
+		}
 
 		const urlObj = new URL(url);
 		const cookie = await browser.cookies.get({
-			url: urlObj.origin,
 			name: key,
+			url: urlObj.origin,
 		});
 
 		return cookie?.value === expectedValue;
@@ -456,16 +462,12 @@ async function verifyLocalStorage(
 	expectedValue: string
 ): Promise<boolean> {
 	try {
-		const result = await browser.scripting.executeScript({
-			target: { tabId },
-			func: (k: string) => {
-				return localStorage.getItem(k);
-			},
-			args: [key],
+		const response = await browser.runtime.sendMessage({
+			key,
+			tabId,
+			type: "GET_LS",
 		});
-
-		const actualValue = result[0]?.result;
-		return actualValue === expectedValue;
+		return response?.success && response.value === expectedValue;
 	} catch {
 		return false;
 	}
@@ -474,19 +476,20 @@ async function verifyLocalStorage(
 /**
  * Verify a parameter is correctly applied
  */
-export async function verifyParameter(
-	tabId: number,
-	parameter: Parameter
-): Promise<boolean> {
+export async function verifyParameter(tabId: number, parameter: Parameter): Promise<boolean> {
 	switch (parameter.type) {
-		case "queryParam":
+		case "queryParam": {
 			return verifyQueryParam(tabId, parameter.key, parameter.value);
-		case "cookie":
+		}
+		case "cookie": {
 			return verifyCookie(tabId, parameter.key, parameter.value);
-		case "localStorage":
+		}
+		case "localStorage": {
 			return verifyLocalStorage(tabId, parameter.key, parameter.value);
-		default:
+		}
+		default: {
 			return false;
+		}
 	}
 }
 
@@ -499,7 +502,7 @@ export async function verifyPreset(
 	presetId: string
 ): Promise<{
 	allVerified: boolean;
-	results: Array<{ parameter: Parameter; verified: boolean }>;
+	results: { parameter: Parameter; verified: boolean }[];
 }> {
 	const preset = await getPresetById(presetId);
 	if (!preset) {
@@ -522,24 +525,25 @@ export async function verifyPreset(
  * Sync a parameter - apply it and verify it was set correctly
  * If verification fails, retry once
  */
-export async function syncParameter(
-	tabId: number,
-	parameter: Parameter
-): Promise<boolean> {
+export async function syncParameter(tabId: number, parameter: Parameter): Promise<boolean> {
 	// Apply the parameter
 	const applied = await applyParameter(tabId, parameter);
-	if (!applied) return false;
+	if (!applied) {
+		return false;
+	}
 
 	// Verify it was set correctly
 	const verified = await verifyParameter(tabId, parameter);
-	if (verified) return true;
+	if (verified) {
+		return true;
+	}
 
 	// If verification failed, retry once
-	console.warn(
-		`[ParameterApplicator] Parameter ${parameter.key} verification failed, retrying...`
-	);
+	console.warn(`[ParameterApplicator] Parameter ${parameter.key} verification failed, retrying...`);
 	const retryApplied = await applyParameter(tabId, parameter);
-	if (!retryApplied) return false;
+	if (!retryApplied) {
+		return false;
+	}
 
 	// Wait a bit for the value to propagate
 	await new Promise((resolve) => setTimeout(resolve, 100));
@@ -547,4 +551,3 @@ export async function syncParameter(
 	// Verify again
 	return verifyParameter(tabId, parameter);
 }
-
