@@ -1,4 +1,5 @@
 {
+	"extends": "./.wxt/tsconfig.json",
 	"compilerOptions": {
 		"target": "ES2020",
 		"useDefineForClassFields": true,
@@ -13,20 +14,12 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noEmit": true,
-		"jsx": "preserve",
-		"jsxImportSource": "solid-js",
 
 		/* Linting */
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"noFallthroughCasesInSwitch": true,
-
-		/* Paths */
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./src/*"]
-		}
+		"noFallthroughCasesInSwitch": true
 	},
 	"include": ["src"]
 }

@@ -3,7 +3,7 @@
  * Supports queryParam, cookie, and localStorage parameter types
  */
 
-import { browser } from "@/utils/browser";
+import { browser } from "wxt/browser";
 import type { Parameter, ParameterType } from "./types";
 import {
 	getPresetById,
@@ -81,7 +81,7 @@ async function applyCookie(
 
 		const urlObj = new URL(url);
 
-		await chrome.cookies.set({
+		await browser.cookies.set({
 			url: urlObj.origin,
 			name: key,
 			value: value,
@@ -105,7 +105,7 @@ async function removeCookie(tabId: number, key: string): Promise<boolean> {
 
 		const urlObj = new URL(url);
 
-		await chrome.cookies.remove({
+		await browser.cookies.remove({
 			url: urlObj.origin,
 			name: key,
 		});
@@ -126,7 +126,7 @@ async function applyLocalStorage(
 	value: string
 ): Promise<boolean> {
 	try {
-		await chrome.scripting.executeScript({
+		await browser.scripting.executeScript({
 			target: { tabId },
 			func: (k: string, v: string) => {
 				localStorage.setItem(k, v);
@@ -146,7 +146,7 @@ async function applyLocalStorage(
  */
 async function removeLocalStorage(tabId: number, key: string): Promise<boolean> {
 	try {
-		await chrome.scripting.executeScript({
+		await browser.scripting.executeScript({
 			target: { tabId },
 			func: (k: string) => {
 				localStorage.removeItem(k);
@@ -436,7 +436,7 @@ async function verifyCookie(
 		if (!url) return false;
 
 		const urlObj = new URL(url);
-		const cookie = await chrome.cookies.get({
+		const cookie = await browser.cookies.get({
 			url: urlObj.origin,
 			name: key,
 		});
@@ -456,7 +456,7 @@ async function verifyLocalStorage(
 	expectedValue: string
 ): Promise<boolean> {
 	try {
-		const result = await chrome.scripting.executeScript({
+		const result = await browser.scripting.executeScript({
 			target: { tabId },
 			func: (k: string) => {
 				return localStorage.getItem(k);

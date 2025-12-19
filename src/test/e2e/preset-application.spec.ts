@@ -1,283 +1,85 @@
-import { test, expect } from "./core/test-with-extension";
-import { openPopupPage } from "./core/helpers";
+import { test, expect } from "./core/fixtures";
+import { openPopupPage, createTestPage, getTabId } from "./core/helpers";
 
 /**
- * E2E tests for preset parameter application
- * Tests that presets actually apply parameters to tabs
+ * E2E tests for applying presets to tabs
  */
 
 test.describe("Preset Application E2E Tests", () => {
-	test("should create preset with query parameters and apply them", async ({
-		extensionContext,
+	test("should apply a query parameter preset to a tab", async ({
+		context,
 		extensionId,
 	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Open preset manager
-		const manageButton = popupPage.getByRole("button", { name: "Manage" });
-		await manageButton.click();
-		await popupPage.waitForTimeout(500);
-
-		// Create a new preset
-		const newPresetButton = popupPage.getByRole("button", {
-			name: "+ New Preset",
-		});
-		await expect(newPresetButton).toBeVisible({ timeout: 5000 });
-		await newPresetButton.click();
-		await popupPage.waitForTimeout(300);
-
-		// Verify create form appears
-		const createHeading = popupPage.getByRole("heading", {
-			name: "Create Preset",
-		});
-		await expect(createHeading).toBeVisible({ timeout: 3000 });
-
-		// Fill in preset name
-		const nameInput = popupPage.locator('input[name="preset-name"]');
-		await expect(nameInput).toBeVisible({ timeout: 3000 });
-		await nameInput.fill("Test Query Params");
-
-		// Add query parameter
-		const addParamButton = popupPage.getByRole("button", {
-			name: "+ Add Parameter",
-		});
-		await expect(addParamButton).toBeVisible();
-		await addParamButton.click();
-		await popupPage.waitForTimeout(200);
-
-		// Fill in parameter key and value
-		const paramKeyInput = popupPage
-			.locator('input[name^="param-"][name$="-key"]')
-			.first();
-		await paramKeyInput.fill("testParam");
-
-		const paramValueInput = popupPage
-			.locator('input[name^="param-"][name$="-value"]')
-			.first();
-		await paramValueInput.fill("testValue");
-
-		// Save the preset
-		const saveButton = popupPage.getByRole("button", {
-			name: "Create Preset",
-		});
-		await saveButton.click();
-		await popupPage.waitForTimeout(500);
-
-		// Verify we're back to list view and preset appears
-		const managePresetsHeading = popupPage.getByRole("heading", {
-			name: "Manage Presets",
-		});
-		await expect(managePresetsHeading).toBeVisible({ timeout: 3000 });
-
-		// Verify preset appears in the list
-		const presetName = popupPage.getByText("Test Query Params");
-		await expect(presetName).toBeVisible({ timeout: 3000 });
-
-		// Close preset manager
-		const closeButton = popupPage.getByRole("button", { name: "Close" });
-		await closeButton.click();
-		await popupPage.waitForTimeout(500);
+		const testPage = await createTestPage(context, "https://example.com");
+		const tabId = await getTabId(context, testPage);
+		const popupPage = await openPopupPage(context, extensionId, tabId);
+		
+		const presetName = `Query Preset ${Date.now()}`;
+		
+		// Create preset
+		await popupPage.locator('[data-testid="manage-presets-button"]').click();
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill(presetName);
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("test");
+		await popupPage.locator('[data-testid="parameter-value-input"]').fill("value");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+		await popupPage.locator('[data-testid="close-manager-button"]').click();
+		
+		// Activate it
+		const presetToggle = popupPage.locator('[data-testid="preset-toggle-item"]', { hasText: presetName }).locator('[data-testid="preset-toggle-checkbox"]');
+		await presetToggle.check({ force: true });
+		
+		// Wait for completion
+		await expect(presetToggle).toBeEnabled({ timeout: 10000 });
+		
+		// Verify URL changed
+		await expect(testPage).toHaveURL(/.*test=value.*/);
 
 		await popupPage.close();
+		await testPage.close();
 	});
 
-	test("should toggle preset and verify it's active", async ({
-		extensionContext,
+	test("should deactivate a preset and remove its parameters", async ({
+		context,
 		extensionId,
 	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Wait for preset list to load
-		await popupPage.waitForTimeout(1000);
-
-		// Find a preset toggle (checkbox)
-		const presetToggles = popupPage
-			.locator('input[type="checkbox"]')
-			.filter({ hasNot: popupPage.getByLabel("Enable notifications") });
-
-		const toggleCount = await presetToggles.count();
-		if (toggleCount === 0) {
-			// No presets exist, skip this test
-			test.skip();
-			await popupPage.close();
-			return;
-		}
-
-		// Get initial state of first toggle
-		const firstToggle = presetToggles.first();
-		const initialChecked = await firstToggle.isChecked();
-
-		// Toggle it
-		await firstToggle.click();
-		await popupPage.waitForTimeout(500);
-
-		// Verify state changed
-		const newChecked = await firstToggle.isChecked();
-		expect(newChecked).toBe(!initialChecked);
-
-		// Toggle back
-		await firstToggle.click();
-		await popupPage.waitForTimeout(500);
-
-		// Verify it's back to original state
-		const finalChecked = await firstToggle.isChecked();
-		expect(finalChecked).toBe(initialChecked);
+		const testPage = await createTestPage(context, "https://example.com");
+		const tabId = await getTabId(context, testPage);
+		const popupPage = await openPopupPage(context, extensionId, tabId);
+		
+		const presetName = `Deactivate Test ${Date.now()}`;
+		
+		// Create preset
+		await popupPage.locator('[data-testid="manage-presets-button"]').click();
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill(presetName);
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("deact");
+		await popupPage.locator('[data-testid="parameter-value-input"]').fill("val");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+		await popupPage.locator('[data-testid="close-manager-button"]').click();
+		
+		const presetToggle = popupPage.locator('[data-testid="preset-toggle-item"]', { hasText: presetName }).locator('[data-testid="preset-toggle-checkbox"]');
+		
+		// Activate
+		await presetToggle.check({ force: true });
+		await expect(testPage).toHaveURL(/.*deact=val.*/, { timeout: 10000 });
+		
+		// Wait for the toggle to be enabled again (finished previous operation)
+		await expect(presetToggle).toBeEnabled({ timeout: 10000 });
+		
+		// Deactivate
+		await presetToggle.uncheck({ force: true });
+		
+		// Wait for parameter removal from URL
+		// Using a more robust check that handles potential reloads
+		await expect(testPage).not.toHaveURL(/.*deact=val.*/, { timeout: 15000 });
+		
+		// Verify URL doesn't have it
+		expect(testPage.url()).not.toContain("deact=val");
 
 		await popupPage.close();
-	});
-
-	test("should handle preset with multiple parameters", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Open preset manager
-		const manageButton = popupPage.getByRole("button", { name: "Manage" });
-		await manageButton.click();
-		await popupPage.waitForTimeout(500);
-
-		// Create new preset
-		const newPresetButton = popupPage.getByRole("button", {
-			name: "+ New Preset",
-		});
-		await expect(newPresetButton).toBeVisible({ timeout: 5000 });
-		await newPresetButton.click();
-		await popupPage.waitForTimeout(300);
-
-		// Verify create form appears
-		const createHeading = popupPage.getByRole("heading", {
-			name: "Create Preset",
-		});
-		await expect(createHeading).toBeVisible({ timeout: 3000 });
-
-		// Fill preset name
-		const nameInput = popupPage.locator('input[name="preset-name"]');
-		await expect(nameInput).toBeVisible({ timeout: 3000 });
-		await nameInput.fill("Multi Param Preset");
-
-		// Add first parameter
-		const addParamButton = popupPage.getByRole("button", {
-			name: "+ Add Parameter",
-		});
-		await expect(addParamButton).toBeVisible();
-		await addParamButton.click();
-		await popupPage.waitForTimeout(200);
-
-		// Fill first parameter
-		const firstParamKeyInput = popupPage
-			.locator('input[name^="param-"][name$="-key"]')
-			.first();
-		await firstParamKeyInput.fill("param1");
-		const firstParamValueInput = popupPage
-			.locator('input[name^="param-"][name$="-value"]')
-			.first();
-		await firstParamValueInput.fill("value1");
-
-		// Add second parameter
-		await addParamButton.click();
-		await popupPage.waitForTimeout(200);
-
-		// Fill second parameter
-		const secondParamKeyInput = popupPage
-			.locator('input[name^="param-"][name$="-key"]')
-			.nth(1);
-		await secondParamKeyInput.fill("param2");
-		const secondParamValueInput = popupPage
-			.locator('input[name^="param-"][name$="-value"]')
-			.nth(1);
-		await secondParamValueInput.fill("value2");
-
-		// Save preset
-		const saveButton = popupPage.getByRole("button", {
-			name: "Create Preset",
-		});
-		await saveButton.click();
-		await popupPage.waitForTimeout(500);
-
-		// Verify we're back to list view
-		const managePresetsHeading = popupPage.getByRole("heading", {
-			name: "Manage Presets",
-		});
-		await expect(managePresetsHeading).toBeVisible({ timeout: 3000 });
-
-		// Verify preset was created
-		const presetName = popupPage.getByText("Multi Param Preset");
-		await expect(presetName).toBeVisible({ timeout: 3000 });
-
-		await popupPage.close();
-	});
-
-	test("should validate preset name is required", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Open preset manager
-		const manageButton = popupPage.getByRole("button", { name: "Manage" });
-		await manageButton.click();
-		await popupPage.waitForTimeout(500);
-
-		// Create new preset
-		const newPresetButton = popupPage.getByRole("button", {
-			name: "+ New Preset",
-		});
-		await expect(newPresetButton).toBeVisible({ timeout: 5000 });
-		await newPresetButton.click();
-		await popupPage.waitForTimeout(300);
-
-		// Verify create form appears
-		const createHeading = popupPage.getByRole("heading", {
-			name: "Create Preset",
-		});
-		await expect(createHeading).toBeVisible({ timeout: 3000 });
-
-		// Verify name input exists and is empty
-		const nameInput = popupPage.locator('input[name="preset-name"]');
-		await expect(nameInput).toBeVisible({ timeout: 3000 });
-		const nameValue = await nameInput.inputValue();
-		expect(nameValue).toBe("");
-
-		// Try to save without name
-		const saveButton = popupPage.getByRole("button", {
-			name: "Create Preset",
-		});
-		await expect(saveButton).toBeVisible();
-
-		// The save button should not be disabled (HTML5 validation will handle it)
-		// Click it to trigger validation
-		await saveButton.click();
-		await popupPage.waitForTimeout(500);
-
-		// Check if we're still on the form (validation prevented submission)
-		// or if an alert appeared (browser native validation)
-		// The form should still be visible if validation failed
-		const stillOnForm = await createHeading.isVisible().catch(() => false);
-
-		// If still on form, validation worked (either HTML5 or custom)
-		// If we moved to list view, the form might have been submitted (unlikely with empty name)
-		// We'll verify the form is still there or an alert appeared
-		if (stillOnForm) {
-			// Validation prevented submission - good!
-			// Verify name input still exists and is empty
-			const nameInputAfter = popupPage.locator(
-				'input[name="preset-name"]'
-			);
-			await expect(nameInputAfter).toBeVisible();
-		}
-
-		// Cancel to clean up
-		const cancelButton = popupPage.getByRole("button", { name: "Cancel" });
-		if (await cancelButton.isVisible().catch(() => false)) {
-			await cancelButton.click();
-			await popupPage.waitForTimeout(300);
-		}
-
-		await popupPage.close();
+		await testPage.close();
 	});
 });

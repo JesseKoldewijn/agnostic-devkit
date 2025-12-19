@@ -1,16 +1,16 @@
 /**
  * Storage management for parameters and presets
- * All changes sync immediately to chrome.storage.sync
+ * All changes sync immediately to browser.storage.sync
  */
 
-import { browser } from "@/utils/browser";
+import { browser } from "wxt/browser";
 import type { Preset, Parameter } from "./types";
 
 const PRESETS_KEY = "presets";
 const TAB_PRESET_STATES_KEY = "tabPresetStates";
 
 /**
- * Get all presets from chrome.storage.sync
+ * Get all presets from browser.storage.sync
  */
 export async function getPresets(): Promise<Preset[]> {
 	const result = await browser.storage?.sync.get([PRESETS_KEY]);
@@ -18,7 +18,7 @@ export async function getPresets(): Promise<Preset[]> {
 }
 
 /**
- * Save all presets to chrome.storage.sync
+ * Save all presets to browser.storage.sync
  */
 export async function savePresets(presets: Preset[]): Promise<void> {
 	await browser.storage?.sync.set({ [PRESETS_KEY]: presets });
@@ -141,7 +141,7 @@ export async function removeParameter(
 }
 
 /**
- * Get tab preset states from chrome.storage.local
+ * Get tab preset states from browser.storage.local
  */
 export async function getTabPresetStates(): Promise<Record<string, string[]>> {
 	const result = await browser.storage?.local.get([TAB_PRESET_STATES_KEY]);
@@ -149,7 +149,7 @@ export async function getTabPresetStates(): Promise<Record<string, string[]>> {
 }
 
 /**
- * Save tab preset states to chrome.storage.local
+ * Save tab preset states to browser.storage.local
  */
 export async function saveTabPresetStates(
 	states: Record<string, string[]>
@@ -234,7 +234,7 @@ export function onPresetsChanged(
 	callback: (presets: Preset[]) => void
 ): () => void {
 	const listener = (
-		changes: { [key: string]: chrome.storage.StorageChange },
+		changes: { [key: string]: browser.storage.StorageChange },
 		areaName: string
 	) => {
 		if (areaName === "sync" && changes[PRESETS_KEY]) {
@@ -257,7 +257,7 @@ export function onTabPresetStatesChanged(
 	callback: (states: Record<string, string[]>) => void
 ): () => void {
 	const listener = (
-		changes: { [key: string]: chrome.storage.StorageChange },
+		changes: { [key: string]: browser.storage.StorageChange },
 		areaName: string
 	) => {
 		if (areaName === "local" && changes[TAB_PRESET_STATES_KEY]) {

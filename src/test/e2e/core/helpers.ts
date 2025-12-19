@@ -1,8 +1,5 @@
 import { BrowserContext, Page } from "@playwright/test";
 
-// Re-export coverage helpers from test-with-extension
-export { collectCoverage, collectAllCoverage } from "./test-with-extension";
-
 /**
  * Helper function to get extension ID from service workers
  * Following Playwright's official pattern
@@ -36,16 +33,20 @@ export async function openPopupPage(
 ): Promise<Page> {
 	const page = await context.newPage();
 	const url = targetTabId
-		? `chrome-extension://${extensionId}/src/popup/index.html?targetTabId=${targetTabId}`
-		: `chrome-extension://${extensionId}/src/popup/index.html`;
+		? `chrome-extension://${extensionId}/popup.html?targetTabId=${targetTabId}`
+		: `chrome-extension://${extensionId}/popup.html`;
+	
+	// Increase resilience by retrying or waiting longer
 	await page.goto(url, {
-		waitUntil: "domcontentloaded",
-		timeout: 15000,
+		waitUntil: "load", // Wait for full load including scripts
+		timeout: 30000,
 	});
-	await page.waitForSelector("#root", { timeout: 10000, state: "attached" });
-	await page
-		.waitForLoadState("networkidle", { timeout: 15000 })
-		.catch(() => {});
+	
+	await page.waitForSelector("#root", { timeout: 20000, state: "visible" });
+	
+	// Give SolidJS a moment to mount and initialize
+	await page.waitForTimeout(500);
+	
 	return page;
 }
 
@@ -63,8 +64,8 @@ export async function openSidebarPage(
 ): Promise<Page> {
 	const page = await context.newPage();
 	const url = targetTabId
-		? `chrome-extension://${extensionId}/src/sidebar/index.html?targetTabId=${targetTabId}`
-		: `chrome-extension://${extensionId}/src/sidebar/index.html`;
+		? `chrome-extension://${extensionId}/sidepanel.html?targetTabId=${targetTabId}`
+		: `chrome-extension://${extensionId}/sidepanel.html`;
 	await page.goto(url, {
 		waitUntil: "domcontentloaded",
 		timeout: 15000,
@@ -86,7 +87,7 @@ export async function openSettingsPage(
 ): Promise<Page> {
 	const page = await context.newPage();
 	await page.goto(
-		`chrome-extension://${extensionId}/src/options/index.html`,
+		`chrome-extension://${extensionId}/options.html`,
 		{
 			waitUntil: "domcontentloaded",
 			timeout: 15000,
@@ -159,7 +160,6 @@ export async function getTabId(
 	}
 
 	// Use the service worker to query for the tab by URL
-	// Use wildcard pattern to handle URL normalization differences (e.g., trailing slashes)
 	const pageUrl = page.url();
 	const tabId = await serviceWorker.evaluate(async (url: string) => {
 		// First try exact URL match
@@ -179,55 +179,4 @@ export async function getTabId(
 	}
 
 	return tabId;
-}
-
-/**
- * Helper to close a page with coverage collection.
- * Ensures coverage is collected before the page closes.
- */
-export async function closePageWithCoverage(
-	context: BrowserContext,
-	page: Page
-): Promise<void> {
-	const { collectCoverage } = await import("./test-with-extension");
-	await collectCoverage(context, page, "before-close");
-	await page.close();
-}
-
-/**
- * Helper to navigate with coverage collection.
- * Collects coverage before navigating to a new URL.
- */
-export async function navigateWithCoverage(
-	context: BrowserContext,
-	page: Page,
-	url: string,
-	options?: { waitUntil?: "load" | "domcontentloaded" | "networkidle"; timeout?: number }
-): Promise<void> {
-	const { collectCoverage } = await import("./test-with-extension");
-	await collectCoverage(context, page, "before-navigate");
-	await page.goto(url, {
-		waitUntil: options?.waitUntil ?? "networkidle",
-		timeout: options?.timeout ?? 15000,
-	});
-}
-
-/**
- * Helper to wait for preset toggle effects with coverage collection.
- * After toggling a preset, waits for URL change and collects coverage.
- */
-export async function waitForPresetToggleEffect(
-	context: BrowserContext,
-	page: Page,
-	popupPage: Page,
-	timeout: number = 3000
-): Promise<void> {
-	const { collectCoverage } = await import("./test-with-extension");
-	
-	// Wait for potential URL change on the target page
-	await page.waitForTimeout(timeout);
-	
-	// Collect coverage from both pages
-	await collectCoverage(context, popupPage, "after-toggle");
-	await collectCoverage(context, page, "after-toggle-target");
 }

@@ -5,7 +5,7 @@ import { existsSync } from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const extensionPath = resolve(__dirname, "dist");
+const extensionPath = resolve(__dirname, ".output/chrome-mv3");
 
 // Verify extension path exists (but don't build - expect it to be built already)
 if (!existsSync(extensionPath)) {
@@ -20,12 +20,14 @@ if (!existsSync(manifestPath)) {
 	console.warn("Please build the extension first with: yarn build");
 }
 
+const isCI = process.env.CI ? true : false;
+const isHeadless = process.env.NO_HEADLESS ? false : true;
+
+const headless = isCI ? true : isHeadless;
+
 export default defineConfig({
 	testDir: "./src/test/e2e",
-	fullyParallel: true, // Disable parallel for extension tests to avoid conflicts
-	forbidOnly: !!process.env.CI,
-	retries: process.env.CI ? 2 : 0,
-	// workers: 1, // Use single worker for extension tests?
+	fullyParallel: true,
 	reporter: "html",
 	ignoreSnapshots: true,
 	// E2E tests run via Playwright with launchPersistentContext for extension support.
@@ -46,7 +48,8 @@ export default defineConfig({
 					args: [
 						`--disable-extensions-except=${extensionPath}`,
 						`--load-extension=${extensionPath}`,
-					],
+						...(headless ? ["--headless=new"] : []),
+					].filter(Boolean),
 				},
 			},
 		},

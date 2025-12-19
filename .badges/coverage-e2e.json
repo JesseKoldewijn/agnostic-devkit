@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "E2E Coverage",
-  "message": "65%",
-  "color": "yellow"
+  "message": "19%",
+  "color": "red"
 }

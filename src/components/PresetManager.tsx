@@ -19,6 +19,7 @@ import {
 	onPresetsChanged,
 	getParameterTypeIcon,
 	createEmptyParameter,
+	duplicatePreset,
 } from "@/logic/parameters";
 
 interface PresetManagerProps {
@@ -217,6 +218,17 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		}
 	};
 
+	// Duplicate a preset
+	const handleDuplicate = async (presetId: string) => {
+		try {
+			await duplicatePreset(presetId);
+			await loadPresets();
+		} catch (error) {
+			console.error("[PresetManager] Failed to duplicate preset:", error);
+			alert("Failed to duplicate preset. Please try again.");
+		}
+	};
+
 	// Render the list view
 	const renderListView = () => (
 		<div class="flex flex-col h-full" data-testid="preset-manager-list">
@@ -264,7 +276,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 				<div class="flex-1 overflow-y-auto space-y-2" data-testid="presets-list">
 					<For each={presets()}>
 						{(preset) => (
-							<div class="p-3 bg-card rounded-lg border border-border" data-testid={`preset-item-${preset.id}`}>
+							<div class="p-3 bg-card rounded-lg border border-border" data-testid="preset-item" data-preset-id={preset.id}>
 								<div class="flex items-start justify-between">
 									<div class="flex-1 min-w-0">
 										<div class="font-medium text-foreground" data-testid="preset-name">
@@ -310,6 +322,26 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 										</div>
 									</div>
 									<div class="flex gap-1 ml-2">
+										<button
+											onClick={() => handleDuplicate(preset.id)}
+											class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+											title="Duplicate preset"
+											data-testid="duplicate-preset-button"
+										>
+											<svg
+												class="w-4 h-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+												/>
+											</svg>
+										</button>
 										<button
 											onClick={() => startEdit(preset)}
 											class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"

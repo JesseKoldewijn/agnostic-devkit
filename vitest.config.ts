@@ -1,18 +1,14 @@
 import { defineConfig } from "vitest/config";
-import solidPlugin from "vite-plugin-solid";
-import { resolve } from "node:path";
+import { WxtVitest } from "wxt/testing/vitest-plugin";
 
 export default defineConfig({
-	plugins: [solidPlugin()],
-	resolve: {
-		alias: {
-			"@": resolve(__dirname, "./src"),
-		},
-	},
+	plugins: [WxtVitest()],
 	test: {
 		environment: "happy-dom",
 		globals: true,
-		setupFiles: ["./src/test/setup.ts"],
+		clearMocks: true,
+		restoreMocks: true,
+		include: ["src/test/**/*.test.ts"],
 		exclude: [
 			"**/node_modules/**",
 			"**/dist/**",
@@ -21,15 +17,8 @@ export default defineConfig({
 		],
 		coverage: {
 			provider: "v8",
-			reportsDirectory: "./coverage/vitest",
-			reporter: ["text", "json", "json-summary", "html", "lcov"],
-			exclude: [
-				"node_modules/",
-				"src/test/",
-				"**/*.d.ts",
-				"**/*.config.*",
-				"**/dist/",
-			],
+			reporter: ["text", "json", "html", "json-summary"],
+			reportsDirectory: "coverage/vitest",
 		},
 	},
 });

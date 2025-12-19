@@ -1,5 +1,5 @@
 import { Component, createSignal, createEffect, For, Show, onMount, onCleanup } from "solid-js";
-import { browser } from "@/utils/browser";
+import { browser } from "wxt/browser";
 import {
 	type Preset,
 	getPresetsWithActiveState,
@@ -202,7 +202,8 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 										? "bg-primary/10 border-primary/30"
 										: "bg-card border-border"
 								}`}
-								data-testid={`preset-toggle-item-${preset.id}`}
+								data-testid="preset-toggle-item"
+								data-preset-id={preset.id}
 							>
 								<div class="flex items-center justify-between">
 									<div class="flex-1 min-w-0">

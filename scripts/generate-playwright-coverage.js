@@ -8,30 +8,20 @@ const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, "..");
 
 const playwrightCoverageDir = resolve(projectRoot, "coverage/playwright");
-const cacheDir = resolve(playwrightCoverageDir, ".cache");
+const rawCoverageDir = resolve(projectRoot, "coverage/raw-playwright");
 
 // Check if Playwright coverage data exists
-if (!existsSync(playwrightCoverageDir)) {
+if (!existsSync(rawCoverageDir)) {
 	console.warn(
-		"No Playwright coverage directory found. Run tests with CI_COVERAGE=true first."
+		"No Playwright raw coverage directory found. Run tests with CI_COVERAGE=true first."
 	);
 	process.exit(0);
 }
 
-// Look for coverage files in both the main directory and .cache subdirectory
-let coverageFiles = [];
-const mainDirFiles = existsSync(playwrightCoverageDir)
-	? readdirSync(playwrightCoverageDir)
-			.filter((file) => file.endsWith(".json"))
-			.map((file) => resolve(playwrightCoverageDir, file))
-	: [];
-const cacheDirFiles = existsSync(cacheDir)
-	? readdirSync(cacheDir)
-			.filter((file) => file.endsWith(".json"))
-			.map((file) => resolve(cacheDir, file))
-	: [];
-
-coverageFiles = [...mainDirFiles, ...cacheDirFiles];
+// Look for coverage files in the raw directory
+const coverageFiles = readdirSync(rawCoverageDir)
+	.filter((file) => file.endsWith(".json"))
+	.map((file) => resolve(rawCoverageDir, file));
 
 if (coverageFiles.length === 0) {
 	console.warn(
@@ -48,7 +38,7 @@ console.log(
 const coverageReport = new MCR({
 	name: "Playwright E2E Coverage Report",
 	outputDir: playwrightCoverageDir,
-	reports: ["console-details", "html", "json", "json-summary", "lcov"],
+	reports: ["console-details", "html", "json-summary", "lcov"],
 	// Exclude test files and config files
 	entryFilter: (entry) => {
 		return (

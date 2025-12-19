@@ -1,4 +1,4 @@
-import { test, expect } from "./core/test-with-extension";
+import { test, expect } from "./core/fixtures";
 import { openPopupPage, createTestPage, getTabId } from "./core/helpers";
 
 /**
@@ -8,18 +8,18 @@ import { openPopupPage, createTestPage, getTabId } from "./core/helpers";
 
 test.describe("Background Script E2E Tests", () => {
 	test("should initialize extension on installation", async ({
-		extensionContext,
+		context,
 		extensionId,
 	}) => {
 		// Create a new page to test background script
-		const page = await extensionContext.newPage();
+		const page = await context.newPage();
 
 		// Navigate to a test page to trigger background script
 		await page.goto("about:blank");
 		await page.waitForTimeout(1000);
 
 		// Verify extension is loaded by checking service workers
-		const serviceWorkers = extensionContext.serviceWorkers();
+		const serviceWorkers = context.serviceWorkers();
 		expect(serviceWorkers.length).toBeGreaterThan(0);
 
 		// Verify extension ID is valid
@@ -30,27 +30,22 @@ test.describe("Background Script E2E Tests", () => {
 	});
 
 	test("should initialize display mode on startup", async ({
-		extensionContext,
+		context,
 		extensionId,
 	}) => {
 		// Create a new page
-		const page = await extensionContext.newPage();
+		const page = await context.newPage();
 		await page.goto("about:blank");
 		await page.waitForTimeout(1000);
 
 		// Verify extension context is available
-		expect(extensionContext).toBeTruthy();
+		expect(context).toBeTruthy();
 		expect(extensionId).toBeTruthy();
 
 		// The display mode initialization happens in the background
 		// We can verify it by checking that the extension is functional
 		// by opening the popup which requires display mode to be set
-		const popupPage = await extensionContext.newPage();
-		await popupPage.goto(
-			`chrome-extension://${extensionId}/src/popup/index.html`,
-			{ waitUntil: "domcontentloaded", timeout: 15000 }
-		);
-		await popupPage.waitForSelector("#root", { timeout: 10000 });
+		const popupPage = await openPopupPage(context, extensionId);
 
 		// If popup loads, display mode was initialized correctly
 		const heading = popupPage.locator('[data-testid="popup-heading"]');
@@ -60,9 +55,9 @@ test.describe("Background Script E2E Tests", () => {
 		await page.close();
 	});
 
-	test("should handle tab updates", async ({ extensionContext }) => {
+	test("should handle tab updates", async ({ context }) => {
 		// Create a test page
-		const page = await extensionContext.newPage();
+		const page = await context.newPage();
 
 		// Navigate to a URL to trigger tab update
 		await page.goto("https://example.com", {
@@ -81,11 +76,11 @@ test.describe("Background Script E2E Tests", () => {
 	});
 
 	test("should clean up tab state on tab close", async ({
-		extensionContext,
+		context,
 		extensionId,
 	}) => {
 		// Create a test page
-		const page = await extensionContext.newPage();
+		const page = await context.newPage();
 		await page.goto("https://example.com", {
 			waitUntil: "networkidle",
 			timeout: 15000,
@@ -103,12 +98,7 @@ test.describe("Background Script E2E Tests", () => {
 
 		// Verify extension context is still functional
 		// by opening popup which should still work
-		const popupPage = await extensionContext.newPage();
-		await popupPage.goto(
-			`chrome-extension://${extensionId}/src/popup/index.html`,
-			{ waitUntil: "domcontentloaded", timeout: 15000 }
-		);
-		await popupPage.waitForSelector("#root", { timeout: 10000 });
+		const popupPage = await openPopupPage(context, extensionId);
 
 		const heading = popupPage.locator('[data-testid="popup-heading"]');
 		await expect(heading).toBeVisible({ timeout: 5000 });
@@ -118,17 +108,17 @@ test.describe("Background Script E2E Tests", () => {
 
 	test.describe("Tab State and Cleanup", () => {
 		test("should clean up preset state when tab is closed", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Create a test page first
-			const testPage = await createTestPage(extensionContext, "https://example.com");
+			const testPage = await createTestPage(context, "https://example.com");
 			
 			// Get the tab ID for the test page
-			const tabId = await getTabId(extensionContext, testPage);
+			const tabId = await getTabId(context, testPage);
 
 			// Create and activate a preset on this tab with tab context
-			const popupPage = await openPopupPage(extensionContext, extensionId, tabId);
+			const popupPage = await openPopupPage(context, extensionId, tabId);
 			await popupPage.waitForLoadState("networkidle");
 
 			// Create a preset
@@ -179,12 +169,7 @@ test.describe("Background Script E2E Tests", () => {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 
 			// Verify extension still works after cleanup
-			const newPopupPage = await extensionContext.newPage();
-			await newPopupPage.goto(
-				`chrome-extension://${extensionId}/src/popup/index.html`,
-				{ waitUntil: "domcontentloaded", timeout: 15000 }
-			);
-			await newPopupPage.waitForSelector("#root", { timeout: 10000 });
+			const newPopupPage = await openPopupPage(context, extensionId);
 
 			const heading = newPopupPage.locator('[data-testid="popup-heading"]');
 			await expect(heading).toBeVisible({ timeout: 5000 });
@@ -193,18 +178,18 @@ test.describe("Background Script E2E Tests", () => {
 		});
 
 		test("should clean up only specific tab state when multiple tabs exist", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Create two test pages
-			const testPage1 = await createTestPage(extensionContext, "https://example.com");
-			const testPage2 = await createTestPage(extensionContext, "https://example.com");
+			const testPage1 = await createTestPage(context, "https://example.com");
+			const testPage2 = await createTestPage(context, "https://example.com");
 			
 			// Get the tab ID for the first test page
-			const tabId1 = await getTabId(extensionContext, testPage1);
+			const tabId1 = await getTabId(context, testPage1);
 
 			// Activate preset on first tab with tab context
-			const popupPage = await openPopupPage(extensionContext, extensionId, tabId1);
+			const popupPage = await openPopupPage(context, extensionId, tabId1);
 			await popupPage.waitForLoadState("networkidle");
 
 			// Wait for preset list
@@ -233,17 +218,17 @@ test.describe("Background Script E2E Tests", () => {
 		});
 
 		test("should persist preset state when navigating to new URL", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Create a test page first
-			const testPage = await createTestPage(extensionContext, "https://example.com");
+			const testPage = await createTestPage(context, "https://example.com");
 			
 			// Get the tab ID for the test page
-			const tabId = await getTabId(extensionContext, testPage);
+			const tabId = await getTabId(context, testPage);
 
 			// Activate a preset with tab context
-			const popupPage = await openPopupPage(extensionContext, extensionId, tabId);
+			const popupPage = await openPopupPage(context, extensionId, tabId);
 			await popupPage.waitForLoadState("networkidle");
 
 			await popupPage.waitForTimeout(1000);
@@ -276,13 +261,13 @@ test.describe("Background Script E2E Tests", () => {
 	});
 
 	test("should listen for storage changes", async ({
-		extensionContext,
+		context,
 		extensionId,
 	}) => {
 		// Open options page to change settings
-		const optionsPage = await extensionContext.newPage();
+		const optionsPage = await context.newPage();
 		await optionsPage.goto(
-			`chrome-extension://${extensionId}/src/options/index.html`,
+			`chrome-extension://${extensionId}/options.html`,
 			{ waitUntil: "domcontentloaded", timeout: 15000 }
 		);
 		await optionsPage.waitForSelector("#root", { timeout: 10000 });
@@ -304,41 +289,12 @@ test.describe("Background Script E2E Tests", () => {
 		await optionsPage.close();
 	});
 
-	test("should handle background script messaging", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		// Create a test page
-		const page = await extensionContext.newPage();
-		await page.goto("about:blank");
-
-		// Test messaging by evaluating script in page context
-		// Note: We can't directly test extension messaging from E2E,
-		// but we can verify the extension is responsive
-		await page.evaluate(async () => {
-			try {
-				// Try to access chrome runtime (if available in test context)
-				return (
-					typeof chrome !== "undefined" &&
-					chrome.runtime !== undefined
-				);
-			} catch {
-				return false;
-			}
-		});
-
-		// Verify extension context is available
-		expect(extensionId).toBeTruthy();
-
-		await page.close();
-	});
-
 	test("should register context menu on startup", async ({
-		extensionContext,
+		context,
 		extensionId,
 	}) => {
 		// Create a test page
-		const page = await extensionContext.newPage();
+		const page = await context.newPage();
 		await page.goto("https://example.com", {
 			waitUntil: "networkidle",
 			timeout: 15000,
@@ -349,9 +305,9 @@ test.describe("Background Script E2E Tests", () => {
 
 		// Verify extension is functional (context menu registration happens in background)
 		// We can verify by checking that the extension works correctly
-		const popupPage = await extensionContext.newPage();
+		const popupPage = await context.newPage();
 		await popupPage.goto(
-			`chrome-extension://${extensionId}/src/popup/index.html`,
+			`chrome-extension://${extensionId}/popup.html`,
 			{ waitUntil: "domcontentloaded", timeout: 15000 }
 		);
 		await popupPage.waitForSelector("#root", { timeout: 10000 });
@@ -365,12 +321,12 @@ test.describe("Background Script E2E Tests", () => {
 	});
 
 	test("should handle multiple tab updates", async ({
-		extensionContext,
+		context,
 		extensionId,
 	}) => {
 		// Create multiple pages to simulate multiple tabs
-		const page1 = await extensionContext.newPage();
-		const page2 = await extensionContext.newPage();
+		const page1 = await context.newPage();
+		const page2 = await context.newPage();
 
 		// Navigate both pages
 		await page1.goto("https://example.com", {
@@ -398,9 +354,9 @@ test.describe("Background Script E2E Tests", () => {
 		await new Promise((resolve) => setTimeout(resolve, 500));
 
 		// Verify extension still works after multiple tab operations
-		const popupPage = await extensionContext.newPage();
+		const popupPage = await context.newPage();
 		await popupPage.goto(
-			`chrome-extension://${extensionId}/src/popup/index.html`,
+			`chrome-extension://${extensionId}/popup.html`,
 			{ waitUntil: "domcontentloaded", timeout: 15000 }
 		);
 		await popupPage.waitForSelector("#root", { timeout: 10000 });
@@ -413,11 +369,11 @@ test.describe("Background Script E2E Tests", () => {
 
 	test.describe("Context Menu", () => {
 		test("should register context menu items on startup", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Create a test page
-			const page = await extensionContext.newPage();
+			const page = await context.newPage();
 			await page.goto("https://example.com", {
 				waitUntil: "networkidle",
 				timeout: 15000,
@@ -428,9 +384,9 @@ test.describe("Background Script E2E Tests", () => {
 
 			// Verify extension is functional (context menu registration happens in background)
 			// We can verify by checking that the extension works correctly
-			const popupPage = await extensionContext.newPage();
+			const popupPage = await context.newPage();
 			await popupPage.goto(
-				`chrome-extension://${extensionId}/src/popup/index.html`,
+				`chrome-extension://${extensionId}/popup.html`,
 				{ waitUntil: "domcontentloaded", timeout: 15000 }
 			);
 			await popupPage.waitForSelector("#root", { timeout: 10000 });
@@ -444,11 +400,11 @@ test.describe("Background Script E2E Tests", () => {
 		});
 
 		test("should handle context menu clicks", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Create a test page
-			const page = await extensionContext.newPage();
+			const page = await context.newPage();
 			await page.goto("https://example.com", {
 				waitUntil: "networkidle",
 				timeout: 15000,
@@ -468,9 +424,9 @@ test.describe("Background Script E2E Tests", () => {
 			await expect(body).toBeVisible();
 
 			// Verify extension still works
-			const popupPage = await extensionContext.newPage();
+			const popupPage = await context.newPage();
 			await popupPage.goto(
-				`chrome-extension://${extensionId}/src/popup/index.html`,
+				`chrome-extension://${extensionId}/popup.html`,
 				{ waitUntil: "domcontentloaded", timeout: 15000 }
 			);
 			await popupPage.waitForSelector("#root", { timeout: 10000 });
@@ -483,11 +439,11 @@ test.describe("Background Script E2E Tests", () => {
 		});
 
 		test("should process context menu actions", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Create a test page
-			const page = await extensionContext.newPage();
+			const page = await context.newPage();
 			await page.goto("https://example.com", {
 				waitUntil: "networkidle",
 				timeout: 15000,
@@ -498,9 +454,9 @@ test.describe("Background Script E2E Tests", () => {
 
 			// Context menu actions are handled by background script
 			// We can verify the background script is responsive by checking extension functionality
-			const popupPage = await extensionContext.newPage();
+			const popupPage = await context.newPage();
 			await popupPage.goto(
-				`chrome-extension://${extensionId}/src/popup/index.html`,
+				`chrome-extension://${extensionId}/popup.html`,
 				{ waitUntil: "domcontentloaded", timeout: 15000 }
 			);
 			await popupPage.waitForSelector("#root", { timeout: 10000 });
@@ -516,13 +472,13 @@ test.describe("Background Script E2E Tests", () => {
 
 	test.describe("Notifications", () => {
 		test("should show notification on tab update when enabled", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Enable notifications in options first
-			const optionsPage = await extensionContext.newPage();
+			const optionsPage = await context.newPage();
 			await optionsPage.goto(
-				`chrome-extension://${extensionId}/src/options/index.html`,
+				`chrome-extension://${extensionId}/options.html`,
 				{ waitUntil: "domcontentloaded", timeout: 15000 }
 			);
 			await optionsPage.waitForSelector("#root", { timeout: 10000 });
@@ -541,7 +497,7 @@ test.describe("Background Script E2E Tests", () => {
 			await optionsPage.close();
 
 			// Create a test page and navigate to trigger tab update
-			const page = await extensionContext.newPage();
+			const page = await context.newPage();
 			await page.goto("https://example.com", {
 				waitUntil: "networkidle",
 				timeout: 15000,
@@ -559,13 +515,13 @@ test.describe("Background Script E2E Tests", () => {
 		});
 
 		test("should not show notification when disabled", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Disable notifications in options
-			const optionsPage = await extensionContext.newPage();
+			const optionsPage = await context.newPage();
 			await optionsPage.goto(
-				`chrome-extension://${extensionId}/src/options/index.html`,
+				`chrome-extension://${extensionId}/options.html`,
 				{ waitUntil: "domcontentloaded", timeout: 15000 }
 			);
 			await optionsPage.waitForSelector("#root", { timeout: 10000 });
@@ -584,7 +540,7 @@ test.describe("Background Script E2E Tests", () => {
 			await optionsPage.close();
 
 			// Create a test page and navigate
-			const page = await extensionContext.newPage();
+			const page = await context.newPage();
 			await page.goto("https://example.com", {
 				waitUntil: "networkidle",
 				timeout: 15000,
@@ -601,13 +557,13 @@ test.describe("Background Script E2E Tests", () => {
 		});
 
 		test("should show correct notification content", async ({
-			extensionContext,
+			context,
 			extensionId,
 		}) => {
 			// Enable notifications
-			const optionsPage = await extensionContext.newPage();
+			const optionsPage = await context.newPage();
 			await optionsPage.goto(
-				`chrome-extension://${extensionId}/src/options/index.html`,
+				`chrome-extension://${extensionId}/options.html`,
 				{ waitUntil: "domcontentloaded", timeout: 15000 }
 			);
 			await optionsPage.waitForSelector("#root", { timeout: 10000 });
@@ -624,7 +580,7 @@ test.describe("Background Script E2E Tests", () => {
 			await optionsPage.close();
 
 			// Navigate to a page - notification should show the URL
-			const page = await extensionContext.newPage();
+			const page = await context.newPage();
 			await page.goto("https://example.com", {
 				waitUntil: "networkidle",
 				timeout: 15000,
