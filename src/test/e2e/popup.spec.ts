@@ -1,184 +1,89 @@
-import { test, expect } from "./core/test-with-extension";
-import { openPopupPage } from "./core/helpers";
+import { test, expect } from "./core/fixtures";
 
 /**
- * E2E tests for the Chrome extension popup
- * These tests verify popup functionality and UI elements
+ * E2E tests for the Popup interface
+ * These tests verify popup loading, theme display, and navigation to options
  */
 
-test.describe("Popup E2E Tests", () => {
-	test("should open and display popup correctly", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
+test.describe("Popup Interface E2E Tests", () => {
+	test.beforeEach(async ({ context, extensionId }) => {
+		const popupPage = await context.newPage();
+		await popupPage.goto(
+			`chrome-extension://${extensionId}/popup.html`,
+			{ waitUntil: "domcontentloaded", timeout: 15000 }
+		);
+		await popupPage.waitForSelector("#root", { timeout: 10000 });
+		(context as any).popupPage = popupPage;
+	});
 
-		// Wait for content to load
-		await popupPage.waitForLoadState("networkidle");
+	test.afterEach(async ({ context }) => {
+		if ((context as any).popupPage) {
+			await (context as any).popupPage.close();
+		}
+	});
 
-		// Verify title
-		const title = await popupPage.title();
-		expect(title).toBe("Chrome Extension Popup");
-
-		// Verify main heading is visible
+	test("should load popup correctly", async ({ context }) => {
+		const popupPage = (context as any).popupPage;
 		const heading = popupPage.locator('[data-testid="popup-heading"]');
 		await expect(heading).toBeVisible();
-		await expect(heading).toHaveText("Parameters");
-
-		// Verify "Manage" button exists
-		const manageButton = popupPage.locator('[data-testid="manage-presets-button"]');
-		await expect(manageButton).toBeVisible();
-
-		// Verify "Open Options" button exists
-		const optionsButton = popupPage.locator('[data-testid="open-options-button"]');
-		await expect(optionsButton).toBeVisible();
-
-		await popupPage.close();
+		await expect(heading).toContainText("Parameters");
 	});
 
-	test("should display current tab URL when available", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		// Create a test web page first
-		const testPage = await extensionContext.newPage();
-		await testPage.goto("https://example.com", {
-			waitUntil: "networkidle",
-			timeout: 15000,
-		});
-
-		// Open popup - it should show the current tab URL
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Wait for content to render
-		await popupPage.waitForTimeout(1000);
-
-		// Verify main heading is visible
-		const heading = popupPage.locator('[data-testid="popup-heading"]');
-		await expect(heading).toBeVisible({ timeout: 5000 });
-
-		// The "Current Tab" section should be visible if there's an active tab
-		const currentTabSection = popupPage.locator('[data-testid="current-tab-section"]');
-		// This may or may not be visible depending on implementation
-		// If it exists, verify it's visible
-		if (await currentTabSection.isVisible().catch(() => false)) {
-			await expect(currentTabSection).toBeVisible();
-		}
-
-		await popupPage.close();
-		await testPage.close();
-	});
-
-	test("should update current tab URL display when navigating", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		// Create a test web page
-		const testPage = await extensionContext.newPage();
-		await testPage.goto("https://example.com", {
-			waitUntil: "networkidle",
-			timeout: 15000,
-		});
-
-		// Open popup
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-		await popupPage.waitForTimeout(1000);
-
-		// Verify popup loads
-		const heading = popupPage.locator('[data-testid="popup-heading"]');
-		await expect(heading).toBeVisible({ timeout: 5000 });
-
-		// Navigate to a different page
-		await testPage.goto("https://example.org", {
-			waitUntil: "networkidle",
-			timeout: 15000,
-		});
-
-		// Close popup
-		await popupPage.close();
-
-		// Wait a bit before reopening
-		await testPage.waitForTimeout(500);
-
-		const newPopupPage = await openPopupPage(extensionContext, extensionId);
-		await newPopupPage.waitForLoadState("networkidle");
-		await newPopupPage.waitForTimeout(1000);
-
-		// Verify popup still works after navigation
-		const newHeading = newPopupPage.locator('[data-testid="popup-heading"]');
-		await expect(newHeading).toBeVisible({ timeout: 5000 });
-
-		await newPopupPage.close();
-		await testPage.close();
-	});
-
-	test("should open preset manager when clicking Manage", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Find and click the Manage button
-		const manageButton = popupPage.locator('[data-testid="manage-presets-button"]');
-		await expect(manageButton).toBeVisible();
-		await manageButton.click();
-
-		// Wait for preset manager to appear
-		await popupPage.waitForTimeout(500);
-
-		// Verify preset manager UI elements appear
-		const closeButton = popupPage.locator('[data-testid="close-manager-button"]');
-		await expect(closeButton).toBeVisible({ timeout: 5000 });
-
-		await popupPage.close();
-	});
-
-	test("should have Open Options button that navigates to options page", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Find the Open Options button
-		const openOptionsButton = popupPage.locator('[data-testid="open-options-button"]');
-		await expect(openOptionsButton).toBeVisible();
-
-		// Click the button and wait for options page to open
-		const [optionsPage] = await Promise.all([
-			extensionContext.waitForEvent("page"),
-			openOptionsButton.click(),
-		]);
-
-		// Verify options page opened
-		await optionsPage.waitForLoadState("networkidle");
-		const optionsTitle = await optionsPage.title();
-		expect(optionsTitle).toBe("Chrome Extension Options");
-
-		// Verify options page content
-		const optionsHeading = optionsPage.locator('[data-testid="options-heading"]');
-		await expect(optionsHeading).toBeVisible();
-
-		await popupPage.close();
-		await optionsPage.close();
-	});
-
-	test("should display current theme", async ({
-		extensionContext,
-		extensionId,
-	}) => {
-		const popupPage = await openPopupPage(extensionContext, extensionId);
-		await popupPage.waitForLoadState("networkidle");
-
-		// Verify theme indicator displays a valid theme
+	test("should display current theme indicator", async ({ context }) => {
+		const popupPage = (context as any).popupPage;
 		const themeIndicator = popupPage.locator('[data-testid="theme-indicator"]');
 		await expect(themeIndicator).toBeVisible();
-		const themeText = await themeIndicator.textContent();
-		expect(themeText).toMatch(/(light|dark|system)/i);
+	});
 
-		await popupPage.close();
+	test("should open options page from footer button", async ({ context, extensionId }) => {
+		const popupPage = (context as any).popupPage;
+		const openOptionsButton = popupPage.locator('[data-testid="open-options-button"]');
+		
+		// Wait for new page to open
+		const [newPage] = await Promise.all([
+			context.waitForEvent("page"),
+			openOptionsButton.click(),
+		]);
+		
+		await newPage.waitForLoadState("networkidle");
+		// Chrome might open options in chrome://extensions/?options=ID or chrome-extension://ID/options.html
+		const url = newPage.url();
+		const isOptionsUrl = url.includes(extensionId) && (url.includes("options.html") || url.includes("options="));
+		expect(isOptionsUrl).toBe(true);
+		
+		await newPage.close();
+	});
+
+	test("should show current tab section", async ({ context }) => {
+		const popupPage = (context as any).popupPage;
+		
+		// By default should be visible if a tab is active
+		const currentTabSection = popupPage.locator('[data-testid="current-tab-section"]');
+		await expect(currentTabSection).toBeVisible();
+		
+		const currentTabUrl = popupPage.locator('[data-testid="current-tab-url"]');
+		await expect(currentTabUrl).toBeVisible();
+	});
+
+	test("should toggle preset manager view", async ({ context }) => {
+		const popupPage = (context as any).popupPage;
+		const manageButton = popupPage.locator('[data-testid="manage-presets-button"]');
+		
+		await manageButton.click();
+		
+		// Verify manager view is shown
+		const managerContainer = popupPage.locator('[data-testid="preset-manager-container"]');
+		await expect(managerContainer).toBeVisible();
+		
+		// Verify heading in manager
+		const managerHeading = popupPage.locator('[data-testid="manage-presets-heading"]');
+		await expect(managerHeading).toContainText("Manage Presets");
+		
+		// Close manager
+		const closeButton = popupPage.locator('[data-testid="close-manager-button"]');
+		await closeButton.click();
+		
+		// Verify main view is back
+		await expect(popupPage.locator('[data-testid="popup-heading"]')).toBeVisible();
 	});
 });

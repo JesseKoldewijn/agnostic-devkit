@@ -1,4 +1,5 @@
-import { browser, isSidebarSupported } from "./browser";
+import { browser } from "wxt/browser";
+import { isSidebarSupported, getBrowserName } from "@/utils/browser";
 
 export type DisplayMode = "popup" | "sidebar";
 
@@ -30,49 +31,35 @@ export { isSidebarSupported };
  */
 export async function applyDisplayMode(mode: DisplayMode): Promise<void> {
 	console.log(`[DisplayMode] Applying mode: ${mode}`);
-	console.log(`[DisplayMode] Browser: ${browser.getBrowserName()}`);
+	console.log(`[DisplayMode] Browser: ${getBrowserName()}`);
 	console.log(`[DisplayMode] Sidebar supported: ${isSidebarSupported()}`);
-	console.log(
-		`[DisplayMode] chrome.sidePanel:`,
-		typeof chrome !== "undefined" ? chrome.sidePanel : "chrome undefined"
-	);
-	console.log(
-		`[DisplayMode] chrome.sidebarAction:`,
-		typeof chrome !== "undefined"
-			? (chrome as any).sidebarAction
-			: "chrome undefined"
-	);
+	console.log(`[DisplayMode] browser.sidePanel:`, !!browser.sidePanel);
 
 	if (mode === "sidebar") {
 		// Check if sidebar is supported
 		if (!isSidebarSupported()) {
 			console.warn(
-				`[DisplayMode] Sidebar not supported in ${browser.getBrowserName()}, falling back to popup`
+				`[DisplayMode] Sidebar not supported in ${getBrowserName()}, falling back to popup`
 			);
 			// Fallback: use sidebar HTML in popup mode
-			await browser.action?.setPopup({ popup: "src/sidebar/index.html" });
+			await browser.action?.setPopup({ popup: "sidepanel.html" });
 			return;
 		}
 
 		// Enable sidebar using browser-agnostic API
-		console.log(
-			`[DisplayMode] Enabling sidebar with path: src/sidebar/index.html`
-		);
+		console.log(`[DisplayMode] Enabling sidebar with path: sidepanel.html`);
 		await browser.sidePanel.setOptions({
 			enabled: true,
-			path: "src/sidebar/index.html",
+			path: "sidepanel.html",
 		});
 
-		// Set panel behavior to open on action click (this is the key!)
-		if (
-			typeof chrome !== "undefined" &&
-			chrome.sidePanel?.setPanelBehavior
-		) {
+		// Set panel behavior to open on action click
+		if (browser.sidePanel?.setPanelBehavior) {
 			console.log(
 				`[DisplayMode] Setting panel behavior to openPanelOnActionClick`
 			);
 			try {
-				await chrome.sidePanel.setPanelBehavior({
+				await browser.sidePanel.setPanelBehavior({
 					openPanelOnActionClick: true,
 				});
 				console.log(`[DisplayMode] ✓ Panel behavior set successfully`);
@@ -103,7 +90,7 @@ export async function applyDisplayMode(mode: DisplayMode): Promise<void> {
 		console.log(`[DisplayMode] Sidebar enabled, popup disabled`);
 	} else {
 		// Enable popup
-		await browser.action?.setPopup({ popup: "src/popup/index.html" });
+		await browser.action?.setPopup({ popup: "popup.html" });
 		// Disable sidebar when popup is active
 		if (isSidebarSupported()) {
 			await browser.sidePanel?.setOptions({

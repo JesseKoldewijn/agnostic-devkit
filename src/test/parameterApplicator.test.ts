@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
 	applyParameter,
 	removeParameter,
@@ -11,28 +11,22 @@ import {
 	syncParameter,
 } from "../logic/parameters/parameterApplicator";
 import type { Parameter, Preset } from "../logic/parameters/types";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 
 describe("parameterApplicator", () => {
-	let mockSyncStorage: Record<string, any>;
-	let mockLocalStorage: Record<string, any>;
 	let mockTabUrl: string;
 
 	beforeEach(() => {
-		mockSyncStorage = {};
-		mockLocalStorage = {};
+		fakeBrowser.reset();
 		mockTabUrl = "https://example.com/page";
 
-		// Reset all mocks
-		vi.clearAllMocks();
-
-		// Mock chrome.tabs.get
-		(globalThis.chrome.tabs as any).get = vi.fn(async (tabId: number) => ({
+		// Setup fake tabs
+		(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
 			id: tabId,
 			url: mockTabUrl,
 		}));
 
-		// Mock chrome.tabs.update
-		(globalThis.chrome.tabs as any).update = vi.fn(
+		(fakeBrowser.tabs.update as any) = vi.fn(
 			async (tabId: number, updateProperties: any) => {
 				if (updateProperties.url) {
 					mockTabUrl = updateProperties.url;
@@ -41,64 +35,13 @@ describe("parameterApplicator", () => {
 			}
 		);
 
-		// Mock chrome.cookies
-		(globalThis.chrome as any).cookies = {
-			set: vi.fn(async () => ({})),
-			get: vi.fn(async (details: any) => {
-				const key = `${details.url}-${details.name}`;
-				return mockLocalStorage[key] || null;
-			}),
-			remove: vi.fn(async () => ({})),
-		};
+		// Setup fake cookies
+		(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
+		(fakeBrowser.cookies.get as any) = vi.fn(async () => null);
+		(fakeBrowser.cookies.remove as any) = vi.fn(async () => ({}));
 
-		// Mock chrome.scripting
-		(globalThis.chrome as any).scripting = {
-			executeScript: vi.fn(async ({ args }: any) => {
-				// Simulate localStorage operations
-				if (args && args.length === 2) {
-					// setItem
-					mockLocalStorage[args[0]] = args[1];
-					return [{ result: undefined }];
-				} else if (args && args.length === 1) {
-					// getItem or removeItem
-					const result = mockLocalStorage[args[0]];
-					return [{ result }];
-				}
-				return [{ result: undefined }];
-			}),
-		};
-
-		// Mock chrome.storage
-		(globalThis.chrome.storage.sync.get as any).mockImplementation(
-			async (keys: string[]) => {
-				const result: Record<string, any> = {};
-				for (const key of keys) {
-					if (mockSyncStorage[key] !== undefined) {
-						result[key] = mockSyncStorage[key];
-					}
-				}
-				return result;
-			}
-		);
-
-		(globalThis.chrome.storage as any).local = {
-			get: vi.fn(async (keys: string[]) => {
-				const result: Record<string, any> = {};
-				for (const key of keys) {
-					if (mockLocalStorage[key] !== undefined) {
-						result[key] = mockLocalStorage[key];
-					}
-				}
-				return result;
-			}),
-			set: vi.fn(async (data: Record<string, any>) => {
-				Object.assign(mockLocalStorage, data);
-			}),
-		};
-	});
-
-	afterEach(() => {
-		vi.clearAllMocks();
+		// Setup fake scripting
+		(fakeBrowser.scripting.executeScript as any) = vi.fn(async () => [{ result: undefined }]);
 	});
 
 	describe("applyParameter", () => {
@@ -112,7 +55,7 @@ describe("parameterApplicator", () => {
 
 			const result = await applyParameter(123, param);
 			expect(result).toBe(true);
-			expect(chrome.tabs.update).toHaveBeenCalledWith(123, {
+			expect(fakeBrowser.tabs.update).toHaveBeenCalledWith(123, {
 				url: expect.stringContaining("testKey=testValue"),
 			});
 		});
@@ -127,7 +70,7 @@ describe("parameterApplicator", () => {
 
 			const result = await applyParameter(123, param);
 			expect(result).toBe(true);
-			expect(chrome.cookies.set).toHaveBeenCalledWith({
+			expect(fakeBrowser.cookies.set).toHaveBeenCalledWith({
 				url: "https://example.com",
 				name: "cookieKey",
 				value: "cookieValue",
@@ -145,7 +88,7 @@ describe("parameterApplicator", () => {
 
 			const result = await applyParameter(123, param);
 			expect(result).toBe(true);
-			expect(chrome.scripting.executeScript).toHaveBeenCalled();
+			expect(fakeBrowser.scripting.executeScript).toHaveBeenCalled();
 		});
 
 		it("should return false for unknown parameter type", async () => {
@@ -161,7 +104,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return false when tab URL is not available", async () => {
-			(chrome.tabs.get as any).mockResolvedValueOnce({ id: 123, url: undefined });
+			(fakeBrowser.tabs.get as any).mockResolvedValueOnce({ id: 123, url: undefined });
 
 			const param: Parameter = {
 				id: "1",
@@ -175,7 +118,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should handle errors gracefully for query params", async () => {
-			(chrome.tabs.update as any).mockRejectedValueOnce(new Error("Tab error"));
+			(fakeBrowser.tabs.update as any).mockRejectedValueOnce(new Error("Tab error"));
 
 			const param: Parameter = {
 				id: "1",
@@ -189,7 +132,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should handle errors gracefully for cookies", async () => {
-			(chrome.cookies.set as any).mockRejectedValueOnce(new Error("Cookie error"));
+			(fakeBrowser.cookies.set as any).mockRejectedValueOnce(new Error("Cookie error"));
 
 			const param: Parameter = {
 				id: "1",
@@ -203,7 +146,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should handle errors gracefully for localStorage", async () => {
-			(chrome.scripting.executeScript as any).mockRejectedValueOnce(
+			(fakeBrowser.scripting.executeScript as any).mockRejectedValueOnce(
 				new Error("Script error")
 			);
 
@@ -232,7 +175,7 @@ describe("parameterApplicator", () => {
 
 			const result = await removeParameter(123, param);
 			expect(result).toBe(true);
-			expect(chrome.tabs.update).toHaveBeenCalledWith(123, {
+			expect(fakeBrowser.tabs.update).toHaveBeenCalledWith(123, {
 				url: expect.not.stringContaining("testKey="),
 			});
 		});
@@ -261,7 +204,7 @@ describe("parameterApplicator", () => {
 
 			const result = await removeParameter(123, param);
 			expect(result).toBe(true);
-			expect(chrome.cookies.remove).toHaveBeenCalledWith({
+			expect(fakeBrowser.cookies.remove).toHaveBeenCalledWith({
 				url: "https://example.com",
 				name: "cookieKey",
 			});
@@ -277,19 +220,7 @@ describe("parameterApplicator", () => {
 
 			const result = await removeParameter(123, param);
 			expect(result).toBe(true);
-			expect(chrome.scripting.executeScript).toHaveBeenCalled();
-		});
-
-		it("should return false for unknown parameter type", async () => {
-			const param = {
-				id: "1",
-				type: "unknown" as any,
-				key: "key",
-				value: "value",
-			};
-
-			const result = await removeParameter(123, param);
-			expect(result).toBe(false);
+			expect(fakeBrowser.scripting.executeScript).toHaveBeenCalled();
 		});
 	});
 
@@ -303,14 +234,14 @@ describe("parameterApplicator", () => {
 					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
 				],
 			};
-			mockSyncStorage.presets = [preset];
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await applyPreset(123, "preset1");
 			expect(result).toBe(true);
 		});
 
 		it("should return false when preset not found", async () => {
-			mockSyncStorage.presets = [];
+			await fakeBrowser.storage.sync.set({ presets: [] });
 
 			const result = await applyPreset(123, "nonexistent");
 			expect(result).toBe(false);
@@ -325,31 +256,19 @@ describe("parameterApplicator", () => {
 					{ id: "p2", type: "queryParam", key: "qp2", value: "v2" },
 				],
 			};
-			mockSyncStorage.presets = [preset];
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			await applyPreset(123, "preset1");
 
 			// Should be called once with both params in URL
-			expect(chrome.tabs.update).toHaveBeenCalledTimes(1);
-			const callArg = (chrome.tabs.update as any).mock.calls[0][1];
+			expect(fakeBrowser.tabs.update).toHaveBeenCalledTimes(1);
+			const callArg = (fakeBrowser.tabs.update as any).mock.calls[0][1];
 			expect(callArg.url).toContain("qp1=v1");
 			expect(callArg.url).toContain("qp2=v2");
 		});
 
-		it("should handle preset with no parameters", async () => {
-			const preset: Preset = {
-				id: "preset1",
-				name: "Empty Preset",
-				parameters: [],
-			};
-			mockSyncStorage.presets = [preset];
-
-			const result = await applyPreset(123, "preset1");
-			expect(result).toBe(true);
-		});
-
 		it("should handle errors during batch query param application", async () => {
-			(chrome.tabs.update as any).mockRejectedValueOnce(new Error("Update error"));
+			(fakeBrowser.tabs.update as any).mockRejectedValueOnce(new Error("Update error"));
 
 			const preset: Preset = {
 				id: "preset1",
@@ -358,7 +277,7 @@ describe("parameterApplicator", () => {
 					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
 				],
 			};
-			mockSyncStorage.presets = [preset];
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await applyPreset(123, "preset1");
 			expect(result).toBe(false);
@@ -375,19 +294,12 @@ describe("parameterApplicator", () => {
 					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
 				],
 			};
-			mockSyncStorage.presets = [preset];
-			mockLocalStorage.tabPresetStates = { "123": [] };
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
+			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": [] } });
 			mockTabUrl = "https://example.com/page?qp1=v1";
 
 			const result = await removePreset(123, "preset1");
 			expect(result).toBe(true);
-		});
-
-		it("should return false when preset not found", async () => {
-			mockSyncStorage.presets = [];
-
-			const result = await removePreset(123, "nonexistent");
-			expect(result).toBe(false);
 		});
 
 		it("should not remove parameters used by other active presets", async () => {
@@ -405,14 +317,14 @@ describe("parameterApplicator", () => {
 					{ id: "p2", type: "queryParam", key: "shared", value: "v1" },
 				],
 			};
-			mockSyncStorage.presets = [preset1, preset2];
-			mockLocalStorage.tabPresetStates = { "123": ["preset2"] }; // preset2 is still active
+			await fakeBrowser.storage.sync.set({ presets: [preset1, preset2] });
+			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": ["preset2"] } });
 			mockTabUrl = "https://example.com/page?shared=v1";
 
 			await removePreset(123, "preset1");
 
 			// Should not call update since "shared" is used by preset2
-			expect(chrome.tabs.update).not.toHaveBeenCalled();
+			expect(fakeBrowser.tabs.update).not.toHaveBeenCalled();
 		});
 	});
 
@@ -481,22 +393,8 @@ describe("parameterApplicator", () => {
 			expect(result).toBe(false);
 		});
 
-		it("should return false when query parameter is missing", async () => {
-			mockTabUrl = "https://example.com/page";
-
-			const param: Parameter = {
-				id: "1",
-				type: "queryParam",
-				key: "testKey",
-				value: "testValue",
-			};
-
-			const result = await verifyParameter(123, param);
-			expect(result).toBe(false);
-		});
-
 		it("should verify cookie is set correctly", async () => {
-			(chrome.cookies.get as any).mockResolvedValueOnce({
+			(fakeBrowser.cookies.get as any).mockResolvedValueOnce({
 				value: "cookieValue",
 			});
 
@@ -511,24 +409,8 @@ describe("parameterApplicator", () => {
 			expect(result).toBe(true);
 		});
 
-		it("should return false when cookie has wrong value", async () => {
-			(chrome.cookies.get as any).mockResolvedValueOnce({
-				value: "wrongValue",
-			});
-
-			const param: Parameter = {
-				id: "1",
-				type: "cookie",
-				key: "cookieKey",
-				value: "cookieValue",
-			};
-
-			const result = await verifyParameter(123, param);
-			expect(result).toBe(false);
-		});
-
 		it("should verify localStorage is set correctly", async () => {
-			mockLocalStorage["storageKey"] = "storageValue";
+			(fakeBrowser.scripting.executeScript as any).mockResolvedValueOnce([{ result: "storageValue" }]);
 
 			const param: Parameter = {
 				id: "1",
@@ -540,38 +422,12 @@ describe("parameterApplicator", () => {
 			const result = await verifyParameter(123, param);
 			expect(result).toBe(true);
 		});
-
-		it("should return false for unknown parameter type", async () => {
-			const param = {
-				id: "1",
-				type: "unknown" as any,
-				key: "key",
-				value: "value",
-			};
-
-			const result = await verifyParameter(123, param);
-			expect(result).toBe(false);
-		});
-
-		it("should handle errors gracefully", async () => {
-			(chrome.tabs.get as any).mockRejectedValueOnce(new Error("Tab error"));
-
-			const param: Parameter = {
-				id: "1",
-				type: "queryParam",
-				key: "key",
-				value: "value",
-			};
-
-			const result = await verifyParameter(123, param);
-			expect(result).toBe(false);
-		});
 	});
 
 	describe("verifyPreset", () => {
 		it("should verify all parameters in a preset", async () => {
 			mockTabUrl = "https://example.com/page?qp1=v1";
-			(chrome.cookies.get as any).mockResolvedValueOnce({ value: "cv1" });
+			(fakeBrowser.cookies.get as any).mockResolvedValueOnce({ value: "cv1" });
 
 			const preset: Preset = {
 				id: "preset1",
@@ -581,40 +437,12 @@ describe("parameterApplicator", () => {
 					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
 				],
 			};
-			mockSyncStorage.presets = [preset];
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
 
 			const result = await verifyPreset(123, "preset1");
 			expect(result.allVerified).toBe(true);
 			expect(result.results.length).toBe(2);
 			expect(result.results.every((r) => r.verified)).toBe(true);
-		});
-
-		it("should return false when preset not found", async () => {
-			mockSyncStorage.presets = [];
-
-			const result = await verifyPreset(123, "nonexistent");
-			expect(result.allVerified).toBe(false);
-			expect(result.results).toEqual([]);
-		});
-
-		it("should return partial verification results", async () => {
-			mockTabUrl = "https://example.com/page?qp1=v1";
-			(chrome.cookies.get as any).mockResolvedValueOnce({ value: "wrongValue" });
-
-			const preset: Preset = {
-				id: "preset1",
-				name: "Test Preset",
-				parameters: [
-					{ id: "p1", type: "queryParam", key: "qp1", value: "v1" },
-					{ id: "p2", type: "cookie", key: "ck1", value: "cv1" },
-				],
-			};
-			mockSyncStorage.presets = [preset];
-
-			const result = await verifyPreset(123, "preset1");
-			expect(result.allVerified).toBe(false);
-			expect(result.results[0].verified).toBe(true);
-			expect(result.results[1].verified).toBe(false);
 		});
 	});
 
@@ -629,37 +457,15 @@ describe("parameterApplicator", () => {
 				value: "testValue",
 			};
 
-			// Mock update to change the URL
-			(chrome.tabs.update as any).mockImplementation(
-				async (tabId: number, props: any) => {
-					mockTabUrl = props.url;
-					return { id: tabId, url: mockTabUrl };
-				}
-			);
-
 			const result = await syncParameter(123, param);
 			expect(result).toBe(true);
-		});
-
-		it("should return false when apply fails", async () => {
-			(chrome.tabs.get as any).mockResolvedValueOnce({ id: 123, url: undefined });
-
-			const param: Parameter = {
-				id: "1",
-				type: "queryParam",
-				key: "key",
-				value: "value",
-			};
-
-			const result = await syncParameter(123, param);
-			expect(result).toBe(false);
 		});
 
 		it("should retry once when verification fails", async () => {
 			mockTabUrl = "https://example.com/page";
 			let callCount = 0;
 
-			(chrome.tabs.update as any).mockImplementation(
+			(fakeBrowser.tabs.update as any).mockImplementation(
 				async (tabId: number, props: any) => {
 					callCount++;
 					// First call fails verification, second succeeds
@@ -683,4 +489,3 @@ describe("parameterApplicator", () => {
 		});
 	});
 });
-

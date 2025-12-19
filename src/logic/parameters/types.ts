@@ -52,14 +52,14 @@ export interface TabPresetState {
 }
 
 /**
- * Storage schema for chrome.storage.sync
+ * Storage schema for browser.storage.sync
  */
 export interface SyncStorageSchema {
 	presets: Preset[];
 }
 
 /**
- * Storage schema for chrome.storage.local
+ * Storage schema for browser.storage.local
  */
 export interface LocalStorageSchema {
 	tabPresetStates: Record<string, string[]>; // Maps tabId (as string) to active preset IDs
