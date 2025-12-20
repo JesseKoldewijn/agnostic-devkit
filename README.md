@@ -7,10 +7,10 @@ A platform-agnostic developer toolkit for web development, built as a modern Bro
 
 ## Status
 
-[![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![Total Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-total.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![Unit Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-unit.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![E2E Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-e2e.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+[![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+[![Total Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/develop/.badges/coverage-total.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+[![Unit Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/develop/.badges/coverage-unit.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+[![E2E Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/develop/.badges/coverage-e2e.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 
 ## Features
 
