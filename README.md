@@ -2,11 +2,15 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/ahpllpcmljhdaeijgfjljopamoaeinpp.svg)
-[![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+
+A platform-agnostic developer toolkit for web development, built as a modern Browser extension. Designed to streamline common development tasks with a clean, intuitive interface.
+
+## Status
+
+[![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+[![Total Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-total.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 [![Unit Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-unit.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 [![E2E Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/main/.badges/coverage-e2e.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-
-A platform-agnostic developer toolkit for web development, built as a modern Chromium extension. Designed to streamline common development tasks with a clean, intuitive interface.
 
 ## Features
 
@@ -43,16 +47,17 @@ Works across all Chromium-based browsers with automatic fallbacks for unsupporte
 
 ## Tech Stack
 
-| Category        | Technology                                                     |
-| --------------- | -------------------------------------------------------------- |
-| Build           | [Vite](https://vite.dev) 7.x                                   |
-| Language        | [TypeScript](https://www.typescriptlang.org) 5.9               |
-| UI Framework    | [SolidJS](https://www.solidjs.com) 1.9                         |
-| Styling         | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config) |
-| Unit Testing    | [Vitest](https://vitest.dev) 4.x                               |
-| E2E Testing     | [Playwright](https://playwright.dev) 1.57                      |
-| Package Manager | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                 |
-| Releases        | [semantic-release](https://semantic-release.gitbook.io)        |
+| Category             | Technology                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Build                | [WXT](https://wxt.dev) 0.20.x & [Vite](https://vite.dev) 7.x                                                 |
+| Language             | [TypeScript](https://www.typescriptlang.org) 5.9                                                            |
+| UI Framework         | [SolidJS](https://www.solidjs.com) 1.9                                                                      |
+| Styling              | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config)                                              |
+| Unit Testing         | [Vitest](https://vitest.dev) 4.x                                                                            |
+| E2E Testing          | [Playwright](https://playwright.dev) 1.57                                                                   |
+| Linting & Formatting | [Oxlint](https://oxlint.js.org) & [Biome](https://biomejs.dev)                                              |
+| Package Manager      | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                                                              |
+| Releases             | [semantic-release](https://semantic-release.gitbook.io)                                                     |
 
 ## Getting Started
 
@@ -81,12 +86,12 @@ Build the extension with watch mode:
 yarn dev
 ```
 
-This creates a `dist` folder that rebuilds automatically on changes. Load it as an unpacked extension:
+This creates a `build-output` folder that rebuilds automatically on changes. Load it as an unpacked extension:
 
 1. Navigate to `chrome://extensions/`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the `dist` folder
+4. Select the `build-output/chrome-mv3` (or `firefox-mv2`) folder
 
 > **Note:** After changes, manually reload the extension in Chrome (click the reload icon on the extension card).
 
@@ -155,36 +160,46 @@ Coverage scores are displayed automatically when running coverage commands and c
 
 ```
 src/
-├── popup/              # Extension popup UI
-├── sidebar/            # Extension sidebar UI
-├── options/            # Settings page
-├── background/         # Service worker
-├── content/            # Content scripts (injected into pages)
+├── entrypoints/        # Extension entrypoints (auto-detected by WXT)
+│   ├── background.ts   # Service worker
+│   ├── content.ts      # Content scripts (injected into pages)
+│   ├── popup/          # Extension popup UI
+│   ├── sidepanel/      # Extension sidebar/sidepanel UI
+│   └── settings/       # Options/settings page
 ├── components/         # Shared UI components
+│   ├── ui/             # Primitive UI components (shadcn-style)
 │   ├── PresetManager.tsx     # Full CRUD interface for presets
 │   └── PresetToggleList.tsx  # Quick preset toggles
 ├── logic/              # Business logic
 │   └── parameters/           # Preset & parameter management
 ├── utils/              # Utility functions
 │   ├── browser.ts            # Cross-browser compatibility
-│   ├── browserClasses.ts     # Browser class helpers
 │   ├── displayMode.ts        # Display mode management
 │   ├── dom.ts                # DOM utilities
 │   └── theme.ts              # Theme management
 ├── styles/             # Global styles & Tailwind config
-├── icons/              # Extension icons
-├── test/               # Test files
-└── manifest.json       # Chrome MV3 manifest
+├── public/             # Static assets & icons
+└── test/               # Test files & helpers
+```
+
+## Linting & Formatting
+
+```bash
+yarn lint          # Run Oxlint
+yarn lint:fix      # Run Oxlint with auto-fix
+yarn check         # Run Biome check (format & lint)
+yarn format        # Run Biome format
+yarn type-check    # Run TypeScript type check
 ```
 
 ## CI/CD
 
 The project uses GitHub Actions for continuous integration and deployment:
 
--   **CI Workflow** — Runs on all branches: type checking, unit tests, E2E tests, and coverage badge generation
+-   **CI Workflow** — Runs on all branches: Oxlint, Biome check, type checking, unit tests, E2E tests, and coverage badge generation
 -   **Release Workflow** — Triggered on `main`: semantic versioning and packaging
 
-Coverage badges are automatically updated on each push to `main`.
+Coverage badges are automatically updated on each push for the current branch.
 
 ## Tailwind CSS v4 Configuration
 
