@@ -291,12 +291,21 @@ jobs:
             - name: Generate coverage badges
               run: yarn coverage:badges
 
-            - name: Commit coverage badges
-              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+            - name: Commit and push coverage badges
+              if: github.event_name == 'push' && github.ref_type == 'branch'
               run: |
                   git config --local user.email "github-actions[bot]@users.noreply.github.com"
                   git config --local user.name "github-actions[bot]"
-                  git add .badges/
-                  git diff --staged --quiet || git commit -m "chore: update coverage badges [skip ci]"
-                  git pull --rebase origin main
-                  git push
+
+                  # Update branch name in README.md links
+                  perl -pi -e "s|/agnostic-devkit/.*?/.badges/|/agnostic-devkit/${{ github.ref_name }}/.badges/|g" README.md
+                  perl -pi -e "s|badge.svg\?branch=.*?([\) ])|badge.svg?branch=${{ github.ref_name }}\$1|g" README.md
+
+                  git add .badges/ README.md
+                  if ! git diff --staged --quiet; then
+                    git commit -m "chore: update coverage badges for ${{ github.ref_name }} [skip ci]"
+                    # Discard any other unstaged changes (e.g. yarn.lock) to ensure a clean rebase
+                    git checkout .
+                    git pull --rebase origin ${{ github.ref_name }}
+                    git push origin ${{ github.ref_name }}
+                  fi
