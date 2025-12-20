@@ -100,8 +100,12 @@ export const Settings: Component = () => {
 								onChange={(e) => handleDisplayModeChange(e.currentTarget.value as DisplayMode)}
 								data-testid="display-mode-select"
 							>
-								<option value="popup">Popup</option>
-								<option value="sidebar">Sidebar</option>
+								<option value="popup" selected={displayMode() === "popup"}>
+									Popup
+								</option>
+								<option value="sidebar" selected={displayMode() === "sidebar"}>
+									Sidebar
+								</option>
 							</Select>
 							<p class={cn("ml-1 text-[11px] text-muted-foreground")}>
 								Choose your preferred view for the extension interface.
@@ -125,9 +129,15 @@ export const Settings: Component = () => {
 								onChange={(e) => handleThemeChange(e.currentTarget.value as Theme)}
 								data-testid="theme-select"
 							>
-								<option value="light">Light</option>
-								<option value="dark">Dark</option>
-								<option value="system">System Preference</option>
+								<option value="light" selected={theme() === "light"}>
+									Light
+								</option>
+								<option value="dark" selected={theme() === "dark"}>
+									Dark
+								</option>
+								<option value="system" selected={theme() === "system"}>
+									System Preference
+								</option>
 							</Select>
 							<p class={cn("ml-1 text-[11px] text-muted-foreground")}>
 								The extension will adapt its appearance based on this selection.
@@ -147,7 +157,7 @@ export const Settings: Component = () => {
 								"flex items-center justify-between rounded-xl border-2 border-border/50 bg-muted/50 p-4"
 							)}
 						>
-							<Label class={cn("!mb-0 !ml-0 font-black text-[11px]")}>Enable Notifications</Label>
+							<Label class={cn("mb-0! ml-0! font-black text-[11px]")}>Enable Notifications</Label>
 							<Switch
 								checked={notifications()}
 								onCheckedChange={handleNotificationsChange}
@@ -207,8 +217,8 @@ export const Settings: Component = () => {
 			</Show>
 
 			<div class={cn("pt-20 pb-10 text-center")}>
-				<p class={cn("font-black text-[10px] text-muted-foreground/30 uppercase tracking-[0.4em]")}>
-					Agnostic Devkit &copy; {new Date().getFullYear()}
+				<p class={cn("font-black text-[10px] text-muted-foreground uppercase tracking-[0.4em]")}>
+					Agnostic Devkit | {new Date().getFullYear()}
 				</p>
 			</div>
 		</Layout>
