@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import istanbul from "vite-plugin-istanbul";
@@ -8,6 +9,9 @@ const isCoverage = process.env.CI_COVERAGE === "true";
 
 export default defineConfig({
 	outDir: "build-output",
+	webExt: {
+		disabled: true,
+	},
 	imports: {
 		addons: [],
 	},
@@ -50,6 +54,24 @@ export default defineConfig({
 	},
 	modules: ["@wxt-dev/module-solid"],
 	srcDir: "src",
+	hooks: {
+		"build:done": (wxt) => {
+			const isWsl = process.env.WSL_DISTRO_NAME !== undefined;
+			if (isWsl) {
+				// Small delay to ensure it logs after the "Load ..." message
+				setTimeout(() => {
+					try {
+						const winPath = execSync(`wslpath -w "${wxt.config.outDir}"`).toString().trim();
+						wxt.logger.info(`Extension output (Windows): ${winPath}`);
+						execSync(`echo -n "${winPath}" | clip.exe`);
+						wxt.logger.success("Copied to Windows clipboard!");
+					} catch {
+						wxt.logger.warn("Failed to copy extension path to Windows clipboard.");
+					}
+				}, 100);
+			}
+		},
+	},
 	vite: () => ({
 		build: {
 			// Generate source maps for coverage
