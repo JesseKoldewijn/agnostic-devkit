@@ -1,3 +1,10 @@
+# [1.2.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.4...v1.2.0-canary.1) (2026-01-05)
+
+
+### Features
+
+* allow for canary build release cycle to be CI/CD'd ([05c4aed](https://github.com/JesseKoldewijn/agnostic-devkit/commit/05c4aedfe205373392bbe51ca528dfe91262d88a))
+
 ## [1.1.4](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.3...v1.1.4) (2025-12-08)
 
 
