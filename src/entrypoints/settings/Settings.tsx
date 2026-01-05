@@ -1,4 +1,4 @@
-import { Component, createSignal, onMount, Show } from "solid-js";
+import { Component, createResource, createSignal, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
@@ -6,6 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Switch } from "@/components/ui/Switch";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { getUpdateInfo } from "@/logic/releaseService";
 import { getBrowserName, isSidebarSupported } from "@/utils/browser";
 import { cn } from "@/utils/cn";
 import type { DisplayMode } from "@/utils/displayMode";
@@ -15,6 +16,7 @@ import { applyTheme, getTheme, setTheme } from "@/utils/theme";
 
 export const Settings: Component = () => {
 	const version = browser.runtime.getManifest().version;
+	const extensionEnv = __EXTENSION_ENV__;
 
 	const [theme, setThemeInput] = createSignal<Theme>("system");
 	const [displayMode, setDisplayModeInput] = createSignal<DisplayMode>("popup");
@@ -23,6 +25,9 @@ export const Settings: Component = () => {
 	const [showSaved, setShowSaved] = createSignal(false);
 	const [sidebarSupported, setSidebarSupported] = createSignal(true);
 	const [browserName, setBrowserName] = createSignal("");
+
+	// Resource for fetching update info
+	const [updateInfo] = createResource(() => getUpdateInfo(version, extensionEnv));
 
 	onMount(async () => {
 		const currentTheme = await getTheme();
@@ -192,6 +197,70 @@ export const Settings: Component = () => {
 								v{version}
 							</span>
 						</div>
+					</CardContent>
+				</Card>
+
+				<Card data-testid="release-channels-section">
+					<CardHeader>
+						<CardTitle>Release Channel</CardTitle>
+						<CardDescription>Stay updated with latest features</CardDescription>
+					</CardHeader>
+					<CardContent class={cn("space-y-4")}>
+						<div class={cn("flex items-center justify-between rounded-xl border-2 border-border/50 bg-muted/50 p-4")}>
+							<div class="space-y-1">
+								<p class="font-black text-[11px] uppercase tracking-widest">Active Channel</p>
+								<div class="flex items-center gap-2">
+									<span 
+										class={cn(
+											"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter",
+											extensionEnv === "production" ? "bg-blue-500/10 text-blue-500" : "bg-red-500/10 text-red-500"
+										)}
+										data-testid="current-channel-label"
+									>
+										{extensionEnv.charAt(0).toUpperCase() + extensionEnv.slice(1)}
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="px-1 space-y-2">
+							<Show when={updateInfo.loading}>
+								<p class="text-[11px] text-muted-foreground animate-pulse">Checking for updates...</p>
+							</Show>
+							<Show when={!updateInfo.loading && updateInfo()}>
+								<div class="flex flex-col gap-2" data-testid="update-status">
+									<Show when={updateInfo()?.isUpdateAvailable}>
+										<div class="flex items-center justify-between">
+											<span class="text-[11px] font-bold text-amber-500 uppercase tracking-widest animate-pulse">
+												Update available: {updateInfo()?.latestVersion}
+											</span>
+											<a 
+												href={updateInfo()?.url} 
+												target="_blank" 
+												rel="noopener noreferrer"
+												class="text-[10px] font-black text-foreground hover:underline uppercase tracking-widest"
+												data-testid="latest-release-link"
+											>
+												View Release
+											</a>
+										</div>
+									</Show>
+									<Show when={!updateInfo()?.isUpdateAvailable}>
+										<p class="text-[11px] text-muted-foreground uppercase tracking-widest">
+											You are on the latest {extensionEnv} version
+										</p>
+									</Show>
+								</div>
+							</Show>
+						</div>
+
+						<Show when={extensionEnv === "production"}>
+							<div class="mt-4 rounded-lg bg-red-500/5 p-3 border border-red-500/10">
+								<p class="text-[10px] text-red-500/80 leading-relaxed font-medium">
+									Want to try early features? Push to the <span class="font-bold">develop</span> branch to trigger a Canary build.
+								</p>
+							</div>
+						</Show>
 					</CardContent>
 				</Card>
 			</div>

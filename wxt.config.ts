@@ -7,6 +7,20 @@ import { defineConfig } from "wxt";
 // Check if we're running in coverage mode
 const isCoverage = process.env.CI_COVERAGE === "true";
 
+// Extract repo info from git remote
+let repoUrl = "https://github.com/JesseKoldewijn/agnostic-devkit";
+try {
+	const remoteUrl = execSync("git remote get-url origin").toString().trim();
+	if (remoteUrl.includes("github.com")) {
+		const match = remoteUrl.match(/github\.com[:/]([^/]+\/[^/.]+)(\.git)?$/);
+		if (match?.[1]) {
+			repoUrl = `https://github.com/${match[1]}`;
+		}
+	}
+} catch {
+	// Fallback to default if git fails (e.g. in some CI environments)
+}
+
 export default defineConfig({
 	outDir: "build-output",
 	webExt: {
@@ -83,6 +97,14 @@ export default defineConfig({
 		},
 	},
 	vite: () => ({
+		server: {
+			port: 3001,
+			strictPort: true,
+		},
+		define: {
+			__REPO_URL__: JSON.stringify(repoUrl),
+			__EXTENSION_ENV__: JSON.stringify(process.env.EXTENSION_ENV || "development"),
+		},
 		build: {
 			// Generate source maps for coverage
 			sourcemap: isCoverage ? "inline" : false,

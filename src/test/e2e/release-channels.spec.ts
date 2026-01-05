@@ -1,0 +1,63 @@
+import { expect, test } from "./core/fixtures";
+
+test.describe("Release Channels E2E Tests", () => {
+	test.beforeEach(async ({ context, extensionId, page }) => {
+		// Mock GitHub API
+		await context.route("**/api.github.com/repos/**/releases*", async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify([
+					{
+						tag_name: "v99.99.99",
+						prerelease: false,
+						html_url: "https://github.com/owner/repo/releases/tag/v99.99.99",
+						name: "Stable Release",
+					},
+					{
+						tag_name: "v100.0.0-canary.1",
+						prerelease: true,
+						html_url: "https://github.com/owner/repo/releases/tag/v100.0.0-canary.1",
+						name: "Canary Release",
+					},
+				]),
+			});
+		});
+
+		await page.goto(`chrome-extension://${extensionId}/settings.html`, {
+			timeout: 15_000,
+			waitUntil: "networkidle",
+		});
+		await page.waitForSelector("#root", { timeout: 10_000 });
+	});
+
+	test("should display the release channels section", async ({ page }) => {
+		const section = page.locator('[data-testid="release-channels-section"]');
+		await expect(section).toBeVisible();
+		await expect(section).toContainText("Release Channel");
+	});
+
+	test("should detect and show available stable update", async ({ page }) => {
+		// The current version in package.json is around 1.1.4
+		// Our mock returns 99.99.99
+		const updateStatus = page.locator('[data-testid="update-status"]');
+		await expect(updateStatus).toContainText("Update available");
+		await expect(updateStatus).toContainText("v99.99.99");
+	});
+
+	test("should show correct channel label based on environment", async ({ page }) => {
+		const channelLabel = page.locator('[data-testid="current-channel-label"]');
+		// By default in tests it should be 'development' or 'production' depending on build
+		// We expect it to be visible and have one of the valid values
+		await expect(channelLabel).toBeVisible();
+		const text = await channelLabel.innerText();
+		expect(["Production", "Canary", "Development"]).toContain(text);
+	});
+
+	test("should link to the correct release page", async ({ page }) => {
+		const releaseLink = page.locator('[data-testid="latest-release-link"]');
+		await expect(releaseLink).toBeVisible();
+		await expect(releaseLink).toHaveAttribute("href", /github\.com.*\/releases\/tag\/v99\.99\.99/);
+	});
+});
+
