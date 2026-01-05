@@ -6,6 +6,17 @@ on:
         branches: ["*"]
     pull_request:
         branches: ["*"]
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: "Environment to build (development, canary, production)"
+                required: false
+                default: "development"
+                type: choice
+                options:
+                    - development
+                    - canary
+                    - production
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
@@ -132,9 +143,23 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Build extension (for E2E with coverage)
+            - name: Determine Environment
+              id: env
+              run: |
+                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                    echo "val=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "val=canary" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=development" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Build extension
               env:
                   CI_COVERAGE: "true"
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
               run: yarn build:all
 
             - name: "Debug: List build artifacts"
@@ -143,7 +168,7 @@ jobs:
             - name: Upload build artifact
               uses: actions/upload-artifact@v4
               with:
-                  name: extension-build
+                  name: extension-build-${{ steps.env.outputs.val }}
                   path: build-output/
                   retention-days: 7
 
@@ -192,10 +217,23 @@ jobs:
             - name: Install Playwright browsers
               run: yarn playwright install --with-deps chromium
 
+            - name: Determine Environment
+              id: env
+              run: |
+                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                    echo "val=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "val=canary" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=development" >> $GITHUB_OUTPUT
+                  fi
+
             - name: Download build artifact
               uses: actions/download-artifact@v4
               with:
-                  name: extension-build
+                  name: extension-build-${{ steps.env.outputs.val }}
                   path: build-output/
 
             - name: "Debug: Verify downloaded artifacts"

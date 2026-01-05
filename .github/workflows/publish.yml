@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main
+            - develop
     workflow_dispatch:
         inputs:
             dry-run:
@@ -88,8 +89,17 @@ jobs:
         if: needs.release.outputs.new_release_published == 'true'
         steps:
             - uses: actions/checkout@v4
-              with:
-                  ref: main
+
+            - name: Determine Environment
+              id: env
+              run: |
+                  if [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "val=canary" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=development" >> $GITHUB_OUTPUT
+                  fi
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -118,6 +128,8 @@ jobs:
               run: yarn install --immutable
 
             - name: Build
+              env:
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
               run: yarn build:all
 
             - name: "Debug: List build artifacts"
@@ -126,7 +138,7 @@ jobs:
             - name: Upload build artifact
               uses: actions/upload-artifact@v4
               with:
-                  name: build
+                  name: build-${{ steps.env.outputs.val }}
                   path: build-output/
 
     test:
@@ -135,8 +147,17 @@ jobs:
         needs: build
         steps:
             - uses: actions/checkout@v4
-              with:
-                  ref: main
+
+            - name: Determine Environment
+              id: env
+              run: |
+                  if [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "val=canary" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=development" >> $GITHUB_OUTPUT
+                  fi
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -176,6 +197,8 @@ jobs:
               run: yarn playwright install --with-deps chromium
 
             - name: Build
+              env:
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
               run: yarn build:all
 
             - name: Test (Unit/Integration)
@@ -190,8 +213,17 @@ jobs:
         needs: [build, test]
         steps:
             - uses: actions/checkout@v4
-              with:
-                  ref: main
+
+            - name: Determine Environment
+              id: env
+              run: |
+                  if [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "val=canary" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=development" >> $GITHUB_OUTPUT
+                  fi
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -220,10 +252,30 @@ jobs:
               run: yarn install --immutable
 
             - name: Package
+              env:
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
               run: yarn package
+
+            - name: Sync main to develop
+              if: github.ref_name == 'main' && needs.release.outputs.new_release_published == 'true'
+              env:
+                  GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+              run: |
+                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --local user.name "github-actions[bot]"
+                  
+                  # Fetch develop to ensure we have it
+                  git fetch origin develop
+                  
+                  # Switch to develop and merge main
+                  git checkout develop
+                  git merge main --no-edit
+                  
+                  # Push back to develop, skipping CI
+                  git push origin develop --no-verify -o ci.skip
 
             - name: Upload package artifact
               uses: actions/upload-artifact@v4
               with:
-                  name: extension-package
+                  name: extension-package-${{ steps.env.outputs.val }}
                   path: build-output/*.zip

@@ -19,8 +19,18 @@ export default defineConfig({
 		const isProduction = env.mode === "production";
 		const browserTarget = env.browser;
 
+		const extensionEnv = process.env.EXTENSION_ENV;
+		let nameSuffix = "";
+		if (extensionEnv === "canary") {
+			nameSuffix = " (Canary)";
+		} else if (extensionEnv === "development" || !isProduction) {
+			nameSuffix = " (Development)";
+		}
+
 		const prettyBrowserTarget = browserTarget.charAt(0).toUpperCase() + browserTarget.slice(1);
-		const name = `Agnostic Devkit for ${prettyBrowserTarget}${isProduction ? "" : " (Development)"}`;
+		const name = `Agnostic Devkit for ${prettyBrowserTarget}${nameSuffix}`;
+
+		const isDevIcon = extensionEnv === "development" || extensionEnv === "canary" || !isProduction;
 
 		return {
 			description: "A platform agnostic devkit for web development",
@@ -46,9 +56,9 @@ export default defineConfig({
 				},
 			],
 			icons: {
-				16: "/icons/icon-16.png",
-				48: "/icons/icon-48.png",
-				128: "/icons/icon-128.png",
+				16: isDevIcon ? "/icons/icon-16-red.png" : "/icons/icon-16.png",
+				48: isDevIcon ? "/icons/icon-48-red.png" : "/icons/icon-48.png",
+				128: isDevIcon ? "/icons/icon-128-red.png" : "/icons/icon-128.png",
 			},
 		};
 	},
