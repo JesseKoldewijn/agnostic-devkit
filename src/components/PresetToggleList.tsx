@@ -1,4 +1,5 @@
-import { Component, createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import type { Component } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
 import type { Preset } from "@/logic/parameters";
 import {

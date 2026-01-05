@@ -2616,6 +2616,7 @@ __metadata:
     "@vitest/ui": "npm:^4.0.16"
     "@wxt-dev/module-solid": "npm:^1.1.4"
     archiver: "npm:^7.0.1"
+    baseline-browser-mapping: "npm:^2.9.11"
     clsx: "npm:^2.1.1"
     happy-dom: "npm:^20.0.10"
     jsdom: "npm:^27.2.0"
@@ -2921,6 +2922,15 @@ __metadata:
   bin:
     baseline-browser-mapping: dist/cli.js
   checksum: 10c0/bfdc00501d691166a45303d7a83420ac90ae42619fc1625dcb7ef486b4a049237b37314aaa51e265b8c5083eecfd7064d9af9cb57b9f686bb7b306d7de45b0a3
+  languageName: node
+  linkType: hard
+
+"baseline-browser-mapping@npm:^2.9.11":
+  version: 2.9.11
+  resolution: "baseline-browser-mapping@npm:2.9.11"
+  bin:
+    baseline-browser-mapping: dist/cli.js
+  checksum: 10c0/eba49fcc1b33ab994aeeb73a4848f2670e06a0886dd5b903689ae6f60d47e7f1bea9262dbb2548c48179e858f7eda2b82ddf941ae783b862f4dcc51085a246f2
   languageName: node
   linkType: hard
 

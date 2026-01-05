@@ -32,19 +32,31 @@ function compareVersions(a: string, b: string): number {
 		const partA = partsA[i];
 		const partB = partsB[i];
 
-		if (partA === partB) continue;
-		if (partA === undefined) return -1;
-		if (partB === undefined) return 1;
+		if (partA === partB) {
+			continue;
+		}
+		if (partA === undefined) {
+			return -1;
+		}
+		if (partB === undefined) {
+			return 1;
+		}
 
-		const numA = parseInt(partA, 10);
-		const numB = parseInt(partB, 10);
+		const numA = Number.parseInt(partA, 10);
+		const numB = Number.parseInt(partB, 10);
 
-		if (!isNaN(numA) && !isNaN(numB)) {
-			if (numA !== numB) return numA - numB;
+		if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+			if (numA !== numB) {
+				return numA - numB;
+			}
 		} else {
 			// String comparison for pre-release tags (e.g., canary.1)
-			if (partA < partB) return -1;
-			if (partA > partB) return 1;
+			if (partA < partB) {
+				return -1;
+			}
+			if (partA > partB) {
+				return 1;
+			}
 		}
 	}
 	return 0;
@@ -53,26 +65,29 @@ function compareVersions(a: string, b: string): number {
 /**
  * Gets the latest release from GitHub API based on environment
  */
-export async function getLatestRelease(env: "production" | "canary" | "development"): Promise<GitHubRelease | null> {
+export async function getLatestRelease(
+	env: "production" | "canary" | "development"
+): Promise<GitHubRelease | null> {
 	try {
 		// Extract owner/repo from __REPO_URL__ (e.g., https://github.com/owner/repo)
 		const repoPath = __REPO_URL__.replace("https://github.com/", "");
 		const response = await fetch(`https://api.github.com/repos/${repoPath}/releases`);
-		
-		if (!response.ok) return null;
-		
+
+		if (!response.ok) {
+			return null;
+		}
+
 		const releases: GitHubRelease[] = await response.json();
-		
+
 		if (env === "production") {
 			// Find the latest stable release (prerelease: false)
-			return releases.find(r => !r.prerelease) || null;
+			return releases.find((r) => !r.prerelease) || null;
 		} else if (env === "canary") {
 			// Find the latest prerelease
-			return releases.find(r => r.prerelease) || null;
-		} else {
-			// For development, just take the absolute latest
-			return releases[0] || null;
+			return releases.find((r) => r.prerelease) || null;
 		}
+		// For development, just take the absolute latest
+		return releases[0] || null;
 	} catch (error) {
 		console.error("Failed to fetch releases:", error);
 		return null;
@@ -83,17 +98,17 @@ export async function getLatestRelease(env: "production" | "canary" | "developme
  * Compares current version with remote and returns update info
  */
 export async function getUpdateInfo(
-	currentVersion: string, 
+	currentVersion: string,
 	env: "production" | "canary" | "development"
 ): Promise<UpdateInfo> {
 	const latest = await getLatestRelease(env);
-	
+
 	if (!latest) {
 		return {
 			isUpdateAvailable: false,
 			latestVersion: currentVersion,
 			url: "",
-			publishedAt: ""
+			publishedAt: "",
 		};
 	}
 
@@ -103,7 +118,6 @@ export async function getUpdateInfo(
 		isUpdateAvailable: isNewer,
 		latestVersion: latest.tag_name,
 		url: latest.html_url,
-		publishedAt: latest.published_at
+		publishedAt: latest.published_at,
 	};
 }
-

@@ -1,4 +1,5 @@
-import { Component, JSX, splitProps } from "solid-js";
+import type { Component, JSX } from "solid-js";
+import { splitProps } from "solid-js";
 
 interface SeparatorProps extends JSX.HTMLAttributes<HTMLDivElement> {
 	orientation?: "horizontal" | "vertical";

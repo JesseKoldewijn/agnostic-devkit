@@ -1,8 +1,13 @@
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import istanbul from "vite-plugin-istanbul";
 import { defineConfig } from "wxt";
+
+// Read version from package.json
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf8"));
+const version = packageJson.version;
 
 // Check if we're running in coverage mode
 const isCoverage = process.env.CI_COVERAGE === "true";
@@ -98,12 +103,13 @@ export default defineConfig({
 	},
 	vite: () => ({
 		server: {
-			port: 3001,
+			port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3001,
 			strictPort: true,
 		},
 		define: {
 			__REPO_URL__: JSON.stringify(repoUrl),
 			__EXTENSION_ENV__: JSON.stringify(process.env.EXTENSION_ENV || "development"),
+			__EXTENSION_VERSION__: JSON.stringify(version),
 		},
 		build: {
 			// Generate source maps for coverage

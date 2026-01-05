@@ -27,65 +27,64 @@ describe("releaseService", () => {
 	];
 
 	it("should correctly identify the latest production release", async () => {
-		global.fetch = vi.fn().mockResolvedValue({
+		vi.spyOn(global, "fetch").mockResolvedValue({
 			ok: true,
 			json: () => Promise.resolve(mockReleases),
-		});
+		} as Response);
 
 		const release = await getLatestRelease("production");
 		expect(release?.tag_name).toBe("v1.2.0");
-		expect(release?.prerelease).toBe(false);
+		expect(release?.prerelease).toBeFalsy();
 	});
 
 	it("should correctly identify the latest canary release", async () => {
-		global.fetch = vi.fn().mockResolvedValue({
+		vi.spyOn(global, "fetch").mockResolvedValue({
 			ok: true,
 			json: () => Promise.resolve(mockReleases),
-		});
+		} as Response);
 
 		const release = await getLatestRelease("canary");
 		expect(release?.tag_name).toBe("v1.3.0-canary.1");
-		expect(release?.prerelease).toBe(true);
+		expect(release?.prerelease).toBeTruthy();
 	});
 
 	describe("getUpdateInfo", () => {
 		it("should return update available when a newer production version exists", async () => {
-			global.fetch = vi.fn().mockResolvedValue({
+			vi.spyOn(global, "fetch").mockResolvedValue({
 				ok: true,
 				json: () => Promise.resolve(mockReleases),
-			});
+			} as Response);
 
 			const currentVersion = "1.1.0";
 			const info = await getUpdateInfo(currentVersion, "production");
 
-			expect(info.isUpdateAvailable).toBe(true);
+			expect(info.isUpdateAvailable).toBeTruthy();
 			expect(info.latestVersion).toBe("v1.2.0");
 		});
 
 		it("should return no update when on the latest production version", async () => {
-			global.fetch = vi.fn().mockResolvedValue({
+			vi.spyOn(global, "fetch").mockResolvedValue({
 				ok: true,
 				json: () => Promise.resolve(mockReleases),
-			});
+			} as Response);
 
 			const currentVersion = "1.2.0";
 			const info = await getUpdateInfo(currentVersion, "production");
 
-			expect(info.isUpdateAvailable).toBe(false);
+			expect(info.isUpdateAvailable).toBeFalsy();
 		});
 
 		it("should return update available when a newer canary version exists", async () => {
-			global.fetch = vi.fn().mockResolvedValue({
+			vi.spyOn(global, "fetch").mockResolvedValue({
 				ok: true,
 				json: () => Promise.resolve(mockReleases),
-			});
+			} as Response);
 
 			const currentVersion = "1.2.0";
 			const info = await getUpdateInfo(currentVersion, "canary");
 
-			expect(info.isUpdateAvailable).toBe(true);
+			expect(info.isUpdateAvailable).toBeTruthy();
 			expect(info.latestVersion).toBe("v1.3.0-canary.1");
 		});
 	});
 });
-

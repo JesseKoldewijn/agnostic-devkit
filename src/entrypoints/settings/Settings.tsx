@@ -1,4 +1,5 @@
-import { Component, createResource, createSignal, onMount, Show } from "solid-js";
+import type { Component } from "solid-js";
+import { createResource, createSignal, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
@@ -15,8 +16,8 @@ import type { Theme } from "@/utils/theme";
 import { applyTheme, getTheme, setTheme } from "@/utils/theme";
 
 export const Settings: Component = () => {
-	const version = browser.runtime.getManifest().version;
 	const extensionEnv = __EXTENSION_ENV__;
+	const version = __EXTENSION_VERSION__;
 
 	const [theme, setThemeInput] = createSignal<Theme>("system");
 	const [displayMode, setDisplayModeInput] = createSignal<DisplayMode>("popup");
@@ -71,7 +72,7 @@ export const Settings: Component = () => {
 
 	const handleNotificationsChange = async (enabled: boolean) => {
 		setNotifications(enabled);
-		const storage = browser.storage?.sync || (browser.storage as any)?.local;
+		const storage = browser.storage?.sync || browser.storage?.local;
 		if (storage) {
 			try {
 				await storage.set({ notifications: enabled });
@@ -206,14 +207,20 @@ export const Settings: Component = () => {
 						<CardDescription>Stay updated with latest features</CardDescription>
 					</CardHeader>
 					<CardContent class={cn("space-y-4")}>
-						<div class={cn("flex items-center justify-between rounded-xl border-2 border-border/50 bg-muted/50 p-4")}>
+						<div
+							class={cn(
+								"flex items-center justify-between rounded-xl border-2 border-border/50 bg-muted/50 p-4"
+							)}
+						>
 							<div class="space-y-1">
 								<p class="font-black text-[11px] uppercase tracking-widest">Active Channel</p>
 								<div class="flex items-center gap-2">
-									<span 
+									<span
 										class={cn(
-											"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter",
-											extensionEnv === "production" ? "bg-blue-500/10 text-blue-500" : "bg-red-500/10 text-red-500"
+											"inline-flex items-center rounded-full px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter",
+											extensionEnv === "production"
+												? "bg-blue-500/10 text-blue-500"
+												: "bg-red-500/10 text-red-500"
 										)}
 										data-testid="current-channel-label"
 									>
@@ -223,22 +230,24 @@ export const Settings: Component = () => {
 							</div>
 						</div>
 
-						<div class="px-1 space-y-2">
+						<div class="space-y-2 px-1">
 							<Show when={updateInfo.loading}>
-								<p class="text-[11px] text-muted-foreground animate-pulse">Checking for updates...</p>
+								<p class="animate-pulse text-[11px] text-muted-foreground">
+									Checking for updates...
+								</p>
 							</Show>
 							<Show when={!updateInfo.loading && updateInfo()}>
 								<div class="flex flex-col gap-2" data-testid="update-status">
 									<Show when={updateInfo()?.isUpdateAvailable}>
 										<div class="flex items-center justify-between">
-											<span class="text-[11px] font-bold text-amber-500 uppercase tracking-widest animate-pulse">
+											<span class="animate-pulse font-bold text-[11px] text-amber-500 uppercase tracking-widest">
 												Update available: {updateInfo()?.latestVersion}
 											</span>
-											<a 
-												href={updateInfo()?.url} 
-												target="_blank" 
+											<a
+												href={updateInfo()?.url}
+												target="_blank"
 												rel="noopener noreferrer"
-												class="text-[10px] font-black text-foreground hover:underline uppercase tracking-widest"
+												class="font-black text-[10px] text-foreground uppercase tracking-widest hover:underline"
 												data-testid="latest-release-link"
 											>
 												View Release
@@ -255,9 +264,10 @@ export const Settings: Component = () => {
 						</div>
 
 						<Show when={extensionEnv === "production"}>
-							<div class="mt-4 rounded-lg bg-red-500/5 p-3 border border-red-500/10">
-								<p class="text-[10px] text-red-500/80 leading-relaxed font-medium">
-									Want to try early features? Push to the <span class="font-bold">develop</span> branch to trigger a Canary build.
+							<div class="mt-4 rounded-lg border border-red-500/10 bg-red-500/5 p-3">
+								<p class="font-medium text-[10px] text-red-500/80 leading-relaxed">
+									Want to try early features? Push to the <span class="font-bold">develop</span>{" "}
+									branch to trigger a Canary build.
 								</p>
 							</div>
 						</Show>
@@ -273,7 +283,15 @@ export const Settings: Component = () => {
 						"fade-in slide-in-from-bottom-4 fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background shadow-2xl duration-300"
 					)}
 				>
-					<svg class={cn("h-4 w-4")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg
+						class={cn("h-4 w-4")}
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+						role="img"
+					>
+						<title>Check</title>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"

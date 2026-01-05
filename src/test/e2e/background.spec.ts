@@ -146,7 +146,7 @@ test.describe("Background Script E2E Tests", () => {
 				await testPage.waitForTimeout(2000);
 
 				// Verify preset is active (URL should have parameter)
-				let url = testPage.url();
+				const url = testPage.url();
 				expect(url).toContain("cleanupKey=cleanupValue");
 			}
 

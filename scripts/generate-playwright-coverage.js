@@ -125,7 +125,7 @@ if (validCoverageData.length === 0) {
 	console.warn("Attempting to generate summary report from summary data...");
 
 	// Try to generate a summary report from the summary data we have
-	let mergedSummary = { total: { branches: {}, functions: {}, lines: {}, statements: {} } };
+	const mergedSummary = { total: { branches: {}, functions: {}, lines: {}, statements: {} } };
 	let fileCount = 0;
 
 	for (const filePath of coverageFiles) {

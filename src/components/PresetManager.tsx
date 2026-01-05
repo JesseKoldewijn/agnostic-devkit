@@ -1,13 +1,5 @@
-import {
-	Component,
-	createEffect,
-	createMemo,
-	createSignal,
-	For,
-	onCleanup,
-	onMount,
-	Show,
-} from "solid-js";
+import type { Component } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import type { Parameter, ParameterType, Preset } from "@/logic/parameters";
 import {
 	createEmptyParameter,

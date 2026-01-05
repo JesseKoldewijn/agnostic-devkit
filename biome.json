@@ -4,7 +4,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": false,
+			"recommended": true,
 			"nursery": {
 				"useSortedClasses": {
 					"level": "error",
@@ -34,11 +34,11 @@
 	"files": {
 		"includes": [
 			"**",
-			"!**/build-output/**",
-			"!**/node_modules/**",
-			"!**/coverage/**",
-			"!**/.wxt/**",
-			"!**/dist/**"
+			"!**/build-output",
+			"!**/node_modules",
+			"!**/coverage",
+			"!**/.wxt",
+			"!**/dist"
 		]
 	}
 }

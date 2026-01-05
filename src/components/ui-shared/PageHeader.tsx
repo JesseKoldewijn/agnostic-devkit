@@ -1,4 +1,5 @@
-import { Component, Show } from "solid-js";
+import type { Component } from "solid-js";
+import { Show } from "solid-js";
 import { cn } from "@/utils/cn";
 import { Badge } from "../ui/Badge";
 import { Separator } from "../ui/Separator";

@@ -1,4 +1,5 @@
-import { Component, createSignal, onMount, Show } from "solid-js";
+import type { Component } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
 import { PresetManager } from "@/components/PresetManager";
 import { PresetToggleList } from "@/components/PresetToggleList";

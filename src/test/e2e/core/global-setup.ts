@@ -1,6 +1,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Browser, BrowserContext, chromium } from "@playwright/test";
+import type { Browser, BrowserContext } from "@playwright/test";
+import { chromium } from "@playwright/test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

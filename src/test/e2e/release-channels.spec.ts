@@ -50,7 +50,7 @@ test.describe("Release Channels E2E Tests", () => {
 		// By default in tests it should be 'development' or 'production' depending on build
 		// We expect it to be visible and have one of the valid values
 		await expect(channelLabel).toBeVisible();
-		const text = await channelLabel.innerText();
+		const text = await channelLabel.textContent();
 		expect(["Production", "Canary", "Development"]).toContain(text);
 	});
 
@@ -60,4 +60,3 @@ test.describe("Release Channels E2E Tests", () => {
 		await expect(releaseLink).toHaveAttribute("href", /github\.com.*\/releases\/tag\/v99\.99\.99/);
 	});
 });
-
