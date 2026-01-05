@@ -113,6 +113,7 @@ jobs:
         name: Build Extension
         runs-on: ubuntu-latest
         needs: [lint-and-type-check]
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'develop'))
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -176,6 +177,7 @@ jobs:
         name: E2E Tests
         runs-on: ubuntu-latest
         needs: [build]
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'develop'))
         steps:
             - name: Checkout code
               uses: actions/checkout@v4

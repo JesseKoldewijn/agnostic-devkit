@@ -32,6 +32,17 @@ jobs:
                   app-id: ${{ secrets.APP_ID }}
                   private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
+            - name: Determine Environment
+              id: env
+              run: |
+                  if [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "val=canary" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=development" >> $GITHUB_OUTPUT
+                  fi
+
             - uses: actions/checkout@v4
               with:
                   fetch-depth: 0
@@ -80,7 +91,18 @@ jobs:
               id: semantic
               env:
                   GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-              run: npx semantic-release
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
+              run: |
+                  # Run semantic-release and capture its output
+                  # Use --debug to get more info if needed
+                  npx semantic-release | tee semantic.log
+                  
+                  # Check if a new release was published
+                  if grep -q "Published release" semantic.log || grep -q "Published prerelease" semantic.log; then
+                    echo "new_release_published=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "new_release_published=false" >> $GITHUB_OUTPUT
+                  fi
 
     build:
         name: Build
