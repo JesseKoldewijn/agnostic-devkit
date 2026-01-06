@@ -37,8 +37,7 @@ const coverageReport = new MCR({
 	reports: ["console-details", "html", "json-summary", "lcov"],
 	// Exclude test files and config files
 	entryFilter: (entry) =>
-		entry.url &&
-		entry.url.includes("/src/") &&
+		entry.url?.includes("/src/") &&
 		!entry.url.includes("/test/") &&
 		!entry.url.includes(".config."),
 	// Source filter for source files

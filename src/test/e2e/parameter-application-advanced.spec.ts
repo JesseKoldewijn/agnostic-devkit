@@ -132,9 +132,9 @@ test.describe("Advanced Parameter Application E2E Tests", () => {
 		await expect(toggle).toBeEnabled();
 
 		// Verify cookie removed
-		let removedCookie = "not_null";
+		let removedCookie: string | null = "not_null";
 		for (let i = 0; i < 10; i++) {
-			removedCookie = (await getCookie(testPage, cookieKey)) as any;
+			removedCookie = (await getCookie(testPage, cookieKey)) as string | null;
 			if (removedCookie === null) {
 				break;
 			}
@@ -211,9 +211,9 @@ test.describe("Advanced Parameter Application E2E Tests", () => {
 			timeout: 15_000,
 		});
 
-		let removedCookie = "not_null";
+		let removedCookie: string | null = "not_null";
 		for (let i = 0; i < 10; i++) {
-			removedCookie = (await getCookie(testPage, cookieKey)) as any;
+			removedCookie = (await getCookie(testPage, cookieKey)) as string | null;
 			if (removedCookie === null) {
 				break;
 			}

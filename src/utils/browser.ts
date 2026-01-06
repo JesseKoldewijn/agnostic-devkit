@@ -18,7 +18,7 @@ export function getBrowserName(): string {
 	if (userAgent.includes("OPR") || userAgent.includes("Opera")) {
 		return "Opera";
 	}
-	if ((navigator as any).brave) {
+	if ((navigator as unknown as { brave?: object }).brave) {
 		return "Brave";
 	}
 	if (userAgent.includes("Chrome")) {
@@ -77,7 +77,9 @@ export async function showNotification(
 	if ((await isNotificationDisabled()) && !force) {
 		return "";
 	}
+	// biome-ignore lint/suspicious/noExplicitAny: WXT's browser.runtime type is missing getURL
 	const iconUrl = (browser.runtime as any).getURL("/icons/icon-48.png");
+	// biome-ignore lint/suspicious/noExplicitAny: notification options are complex
 	const options: any = {
 		iconUrl,
 		message,
@@ -85,6 +87,7 @@ export async function showNotification(
 		type: "basic",
 	};
 
+	// biome-ignore lint/suspicious/noExplicitAny: notifications.create expects string or undefined as first arg
 	return await browser.notifications.create(undefined as any, options);
 }
 
@@ -100,7 +103,9 @@ export async function showNotificationWithButtons(
 	if ((await isNotificationDisabled()) && !force) {
 		return "";
 	}
+	// biome-ignore lint/suspicious/noExplicitAny: WXT's browser.runtime type is missing getURL
 	const iconUrl = (browser.runtime as any).getURL("/icons/icon-48.png");
+	// biome-ignore lint/suspicious/noExplicitAny: notification options are complex
 	const options: any = {
 		buttons,
 		iconUrl,
@@ -110,5 +115,6 @@ export async function showNotificationWithButtons(
 		type: "basic", // Keep notification visible until user interacts
 	};
 
+	// biome-ignore lint/suspicious/noExplicitAny: notifications.create expects string or undefined as first arg
 	return await browser.notifications.create(undefined as any, options);
 }

@@ -5,13 +5,13 @@ export default defineContentScript({
 	main() {
 		try {
 			// Example: Send a message to the background script
-			browser.runtime?.sendMessage({ type: "CONTENT_LOADED" }, (response: any) => {
+			browser.runtime?.sendMessage({ type: "CONTENT_LOADED" }, (response: unknown) => {
 				console.debug("Response from background:", response);
 			});
 
 			// Example: Listen for messages from the popup or background
 			browser.runtime?.onMessage.addListener(
-				(message: any, _sender: any, sendResponse: (response?: any) => void) => {
+				(message: unknown, _sender: unknown, sendResponse: (response?: unknown) => void) => {
 					console.debug("Content script received message:", message);
 					sendResponse({ received: true });
 

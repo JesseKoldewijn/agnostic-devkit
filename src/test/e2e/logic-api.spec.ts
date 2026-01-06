@@ -10,7 +10,7 @@ test.describe("Logic Layer API Exhaustive Tests", () => {
 		popupPage.on("console", (msg) => console.log(`[Popup Console] ${msg.text()}`));
 
 		await popupPage.evaluate(async (tid) => {
-			const logic = (window as any).__LOGIC__;
+			const logic = window.__LOGIC__;
 			if (!logic) {
 				return;
 			}
@@ -56,7 +56,7 @@ test.describe("Logic Layer API Exhaustive Tests", () => {
 		const popupPage = await openPopupPage(context, extensionId, tabId);
 
 		await popupPage.evaluate(async (tid) => {
-			const logic = (window as any).__LOGIC__;
+			const logic = window.__LOGIC__;
 			if (!logic) {
 				return;
 			}

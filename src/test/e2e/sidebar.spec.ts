@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./core/fixtures";
 
 /**
@@ -5,37 +6,35 @@ import { expect, test } from "./core/fixtures";
  */
 
 test.describe("Sidebar/SidePanel E2E Tests", () => {
+	let sidebarPage: Page;
+
 	test.beforeEach(async ({ context, extensionId }) => {
-		const sidebarPage = await context.newPage();
+		sidebarPage = await context.newPage();
 		await sidebarPage.goto(`chrome-extension://${extensionId}/sidepanel.html`, {
 			timeout: 15_000,
 			waitUntil: "domcontentloaded",
 		});
 		await sidebarPage.waitForSelector("#root", { timeout: 10_000 });
-		(context as any).sidebarPage = sidebarPage;
 	});
 
-	test.afterEach(async ({ context }) => {
-		if ((context as any).sidebarPage) {
-			await (context as any).sidebarPage.close();
+	test.afterEach(async () => {
+		if (sidebarPage) {
+			await sidebarPage.close();
 		}
 	});
 
-	test("should load sidebar correctly", async ({ context }) => {
-		const sidebarPage = (context as any).sidebarPage;
+	test("should load sidebar correctly", async () => {
 		const heading = sidebarPage.locator('[data-testid="sidebar-heading"]');
 		await expect(heading).toBeVisible();
 		await expect(heading).toContainText("Side Panel");
 	});
 
-	test("should display sidebar specific container attribute", async ({ context }) => {
-		const sidebarPage = (context as any).sidebarPage;
+	test("should display sidebar specific container attribute", async () => {
 		const container = sidebarPage.locator('[data-testid="sidebar-container"]');
 		await expect(container).toBeVisible();
 	});
 
 	test("should open options page from sidebar", async ({ context, extensionId }) => {
-		const sidebarPage = (context as any).sidebarPage;
 		const openOptionsButton = sidebarPage.locator('[data-testid="open-options-button"]');
 
 		const [newPage] = await Promise.all([context.waitForEvent("page"), openOptionsButton.click()]);

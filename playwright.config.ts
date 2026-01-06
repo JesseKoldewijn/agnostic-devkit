@@ -20,8 +20,8 @@ if (!existsSync(manifestPath)) {
 	console.warn("Please build the extension first with: yarn build");
 }
 
-const isCI = process.env.CI ? true : false;
-const isHeadless = process.env.NO_HEADLESS ? false : true;
+const isCI = Boolean(process.env.CI);
+const isHeadless = !process.env.NO_HEADLESS;
 
 const headless = isCI ? true : isHeadless;
 

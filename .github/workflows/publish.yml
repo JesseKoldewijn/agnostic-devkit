@@ -149,10 +149,10 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Build
+            - name: Build and Package
               env:
                   EXTENSION_ENV: ${{ steps.env.outputs.val }}
-              run: yarn build:all
+              run: yarn package
 
             - name: "Debug: List build artifacts"
               run: ls -R build-output/
@@ -218,10 +218,10 @@ jobs:
             - name: Install Playwright
               run: yarn playwright install --with-deps chromium
 
-            - name: Build
+            - name: Build and Package
               env:
                   EXTENSION_ENV: ${{ steps.env.outputs.val }}
-              run: yarn build:all
+              run: yarn package
 
             - name: Test (Unit/Integration)
               run: yarn test

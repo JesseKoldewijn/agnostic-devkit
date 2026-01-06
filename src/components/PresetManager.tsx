@@ -293,7 +293,15 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 							data-testid="close-manager-button"
 							title="Close manager"
 						>
-							<svg class={cn("h-4 w-4")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg
+								class={cn("h-4 w-4")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								role="img"
+							>
+								<title>Close</title>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -324,7 +332,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
+								aria-hidden="true"
+								role="img"
 							>
+								<title>Export</title>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -358,7 +369,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
+									aria-hidden="true"
+									role="img"
 								>
+									<title>Import</title>
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
@@ -469,7 +483,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
+												aria-hidden="true"
+												role="img"
 											>
+												<title>Duplicate</title>
 												<path
 													stroke-linecap="round"
 													stroke-linejoin="round"
@@ -491,7 +508,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
+												aria-hidden="true"
+												role="img"
 											>
+												<title>Edit</title>
 												<path
 													stroke-linecap="round"
 													stroke-linejoin="round"
@@ -518,7 +538,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
+														aria-hidden="true"
+														role="img"
 													>
+														<title>Delete</title>
 														<path
 															stroke-linecap="round"
 															stroke-linejoin="round"
@@ -592,7 +615,15 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 							data-testid="cancel-form-button"
 							title="Cancel"
 						>
-							<svg class={cn("h-4 w-4")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg
+								class={cn("h-4 w-4")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								role="img"
+							>
+								<title>Cancel</title>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -755,7 +786,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
+														aria-hidden="true"
+														role="img"
 													>
+														<title>Remove</title>
 														<path
 															stroke-linecap="round"
 															stroke-linejoin="round"

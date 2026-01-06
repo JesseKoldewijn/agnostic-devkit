@@ -40,8 +40,8 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const overrideTabId = urlParams.get("targetTabId");
 		if (overrideTabId) {
-			const parsed = parseInt(overrideTabId, 10);
-			if (!isNaN(parsed)) {
+			const parsed = Number.parseInt(overrideTabId, 10);
+			if (!Number.isNaN(parsed)) {
 				return parsed;
 			}
 		}
@@ -233,6 +233,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 								<div class={cn("flex items-start justify-between")}>
 									<div class={cn("min-w-0 flex-1 pr-4")}>
 										<button
+											type="button"
 											class={cn("group w-full text-left")}
 											onClick={() => props.expanded && toggleExpanded(preset.id)}
 											data-testid="preset-expand-button"

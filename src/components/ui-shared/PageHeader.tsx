@@ -1,4 +1,4 @@
-import type { Component } from "solid-js";
+import type { Component, JSX } from "solid-js";
 import { Show } from "solid-js";
 import { cn } from "@/utils/cn";
 import { Badge } from "../ui/Badge";
@@ -8,7 +8,7 @@ interface PageHeaderProps {
 	title: string;
 	subtitle?: string;
 	theme?: string;
-	actions?: any;
+	actions?: JSX.Element;
 	titleTestId?: string;
 }
 

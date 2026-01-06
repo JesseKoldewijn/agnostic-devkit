@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./core/fixtures";
 
 /**
@@ -6,32 +7,30 @@ import { expect, test } from "./core/fixtures";
  */
 
 test.describe("Options Page E2E Tests", () => {
+	let optionsPage: Page;
+
 	test.beforeEach(async ({ context, extensionId }) => {
-		const optionsPage = await context.newPage();
+		optionsPage = await context.newPage();
 		optionsPage.on("console", (msg) => console.log("BROWSER LOG:", msg.text()));
 		await optionsPage.goto(`chrome-extension://${extensionId}/settings.html`, {
 			timeout: 15_000,
 			waitUntil: "networkidle",
 		});
 		await optionsPage.waitForSelector("#root", { timeout: 10_000 });
-		// Store page on context or handle in each test
-		(context as any).optionsPage = optionsPage;
 	});
 
-	test.afterEach(async ({ context }) => {
-		if ((context as any).optionsPage) {
-			await (context as any).optionsPage.close();
+	test.afterEach(async () => {
+		if (optionsPage) {
+			await optionsPage.close();
 		}
 	});
 
-	test("should load options page correctly", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should load options page correctly", async () => {
 		const heading = optionsPage.locator("h1");
 		await expect(heading).toContainText("Extension Options");
 	});
 
-	test("should change theme to dark", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should change theme to dark", async () => {
 		const themeSelect = optionsPage.locator('[data-testid="theme-select"]');
 
 		await themeSelect.selectOption("dark");
@@ -47,8 +46,7 @@ test.describe("Options Page E2E Tests", () => {
 		});
 	});
 
-	test("should change theme to light", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should change theme to light", async () => {
 		const themeSelect = optionsPage.locator('[data-testid="theme-select"]');
 
 		await themeSelect.selectOption("light");
@@ -61,8 +59,7 @@ test.describe("Options Page E2E Tests", () => {
 		});
 	});
 
-	test("should change display mode", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should change display mode", async () => {
 		const displayModeSelect = optionsPage.locator('[data-testid="display-mode-select"]');
 
 		await displayModeSelect.selectOption("sidebar");
@@ -75,8 +72,7 @@ test.describe("Options Page E2E Tests", () => {
 		await expect(displayModeSelect).toHaveValue("sidebar");
 	});
 
-	test("should toggle notifications", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should toggle notifications", async () => {
 		const notificationsCheckbox = optionsPage.locator('[data-testid="notifications-checkbox"]');
 
 		const initialState = await notificationsCheckbox.isChecked();
@@ -90,15 +86,13 @@ test.describe("Options Page E2E Tests", () => {
 		expect(await notificationsCheckbox.isChecked()).toBe(!initialState);
 	});
 
-	test("should show browser information", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should show browser information", async () => {
 		const browserInfo = optionsPage.locator('[data-testid="browser-info"]');
 		await expect(browserInfo).toBeVisible();
 		await expect(browserInfo).toContainText("Browser");
 	});
 
-	test("should show extension version", async ({ context }) => {
-		const optionsPage = (context as any).optionsPage;
+	test("should show extension version", async () => {
 		const versionInfo = optionsPage.locator('[data-testid="extension-version"]');
 		await expect(versionInfo).toBeVisible();
 		await expect(versionInfo).toContainText("v");

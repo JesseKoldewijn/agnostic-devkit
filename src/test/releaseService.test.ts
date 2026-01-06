@@ -4,8 +4,10 @@ import { getLatestRelease, getUpdateInfo } from "../logic/releaseService";
 describe("releaseService", () => {
 	beforeAll(() => {
 		// Mock global constants
-		(global as any).__REPO_URL__ = "https://github.com/owner/repo";
-		(global as any).__EXTENSION_ENV__ = "development";
+		// biome-ignore lint/suspicious/noExplicitAny: mocking global constants for tests
+		const globalAny = global as any;
+		globalAny.__REPO_URL__ = "https://github.com/owner/repo";
+		globalAny.__EXTENSION_ENV__ = "development";
 	});
 
 	const mockReleases = [

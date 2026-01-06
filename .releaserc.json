@@ -34,17 +34,17 @@
 			{
 				"assets": [
 					{
-						"path": "build-output/agnostic-devkit-${nextRelease.version}-chrome.zip",
+						"path": "build-output/*-chrome.zip",
 						"label": "Chrome Extension (v${nextRelease.version})",
 						"name": "agnostic-devkit-v${nextRelease.version}-chrome.zip"
 					},
 					{
-						"path": "build-output/agnostic-devkit-${nextRelease.version}-firefox.zip",
+						"path": "build-output/*-firefox.zip",
 						"label": "Firefox Extension (v${nextRelease.version})",
 						"name": "agnostic-devkit-v${nextRelease.version}-firefox.zip"
 					},
 					{
-						"path": "build-output/agnostic-devkit-${nextRelease.version}-sources.zip",
+						"path": "build-output/*-sources.zip",
 						"label": "Extension Sources (v${nextRelease.version})",
 						"name": "agnostic-devkit-v${nextRelease.version}-sources.zip"
 					}

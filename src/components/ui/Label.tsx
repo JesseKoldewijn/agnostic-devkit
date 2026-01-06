@@ -9,6 +9,7 @@ export const Label: Component<LabelProps> = (props) => {
 	const [local, others] = splitProps(props, ["required", "class", "children"]);
 
 	return (
+		// biome-ignore lint/a11y/noLabelWithoutControl: generic label component used with htmlFor in parent components
 		<label
 			{...others}
 			class={`mb-1.5 ml-1 block font-black text-[10px] text-foreground/70 uppercase tracking-widest ${local.class ?? ""}`}

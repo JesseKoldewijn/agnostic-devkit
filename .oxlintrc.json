@@ -98,5 +98,16 @@
 			"polymorphicPropName": "as"
 		}
 	},
-	"ignorePatterns": ["build-output", "node_modules", "coverage", "dist", ".wxt"]
+	"ignorePatterns": [
+		"**/build-output",
+		"**/node_modules",
+		"**/coverage",
+		"**/.wxt",
+		"**/dist",
+		"**/playwright-report",
+		"**/test-results",
+		"**/yarn.lock",
+		"**/CHANGELOG.md",
+		"**/LICENSE"
+	]
 }

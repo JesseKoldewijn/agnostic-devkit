@@ -38,11 +38,15 @@ test.describe("Release Channels E2E Tests", () => {
 	});
 
 	test("should detect and show available stable update", async ({ page }) => {
+		const channelLabel = page.locator('[data-testid="current-channel-label"]');
+		const channel = await channelLabel.textContent();
+		const expectedVersion = channel === "Canary" ? "v100.0.0-canary.1" : "v99.99.99";
+
 		// The current version in package.json is around 1.1.4
-		// Our mock returns 99.99.99
+		// Our mock returns 99.99.99 for stable/dev and 100.0.0-canary.1 for canary
 		const updateStatus = page.locator('[data-testid="update-status"]');
 		await expect(updateStatus).toContainText("Update available");
-		await expect(updateStatus).toContainText("v99.99.99");
+		await expect(updateStatus).toContainText(expectedVersion);
 	});
 
 	test("should show correct channel label based on environment", async ({ page }) => {
@@ -55,8 +59,17 @@ test.describe("Release Channels E2E Tests", () => {
 	});
 
 	test("should link to the correct release page", async ({ page }) => {
+		const channelLabel = page.locator('[data-testid="current-channel-label"]');
+		const channel = await channelLabel.textContent();
+		const expectedVersion = channel === "Canary" ? "v100.0.0-canary.1" : "v99.99.99";
+		// Escape dots for regex
+		const escapedVersion = String(expectedVersion).replaceAll(".", String.raw`\.`);
+
 		const releaseLink = page.locator('[data-testid="latest-release-link"]');
 		await expect(releaseLink).toBeVisible();
-		await expect(releaseLink).toHaveAttribute("href", /github\.com.*\/releases\/tag\/v99\.99\.99/);
+		await expect(releaseLink).toHaveAttribute(
+			"href",
+			new RegExp(`github\\.com.*/releases/tag/${escapedVersion}`)
+		);
 	});
 });

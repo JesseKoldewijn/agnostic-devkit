@@ -157,11 +157,11 @@ jobs:
                     echo "val=development" >> $GITHUB_OUTPUT
                   fi
 
-            - name: Build extension
+            - name: Build and Package extension
               env:
                   CI_COVERAGE: "true"
                   EXTENSION_ENV: ${{ steps.env.outputs.val }}
-              run: yarn build:all
+              run: yarn package
 
             - name: "Debug: List build artifacts"
               run: ls -R build-output/

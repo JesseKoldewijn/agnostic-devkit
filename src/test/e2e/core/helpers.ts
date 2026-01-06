@@ -177,6 +177,7 @@ export async function getTabId(context: BrowserContext, page: Page): Promise<num
 	const pageUrl = page.url();
 	const tabId = await serviceWorker.evaluate(async (url: string) => {
 		// In the service worker context, chrome or browser global is available
+		// biome-ignore lint/suspicious/noExplicitAny: browser globals are not in scope for evaluate
 		const browserObj = (globalThis as any).chrome || (globalThis as any).browser;
 		if (!browserObj?.tabs) {
 			return null;
@@ -189,7 +190,7 @@ export async function getTabId(context: BrowserContext, page: Page): Promise<num
 		}
 
 		// If exact match fails, try with/without trailing slash
-		const altUrl = url.endsWith("/") ? url.slice(0, -1) : url + "/";
+		const altUrl = url.endsWith("/") ? url.slice(0, -1) : `${url}/`;
 		tabs = await browserObj.tabs.query({ url: altUrl });
 		return tabs[0]?.id ?? null;
 	}, pageUrl);

@@ -268,7 +268,7 @@ export async function importPresets(
 					description: item.description,
 					id: item.id && !existingIds.has(item.id) ? item.id : generateId(),
 					name: item.name,
-					parameters: item.parameters.map((p: any) => ({
+					parameters: (item.parameters as Partial<Parameter>[]).map((p) => ({
 						description: p.description,
 						id: generateId(),
 						key: p.key ?? "",

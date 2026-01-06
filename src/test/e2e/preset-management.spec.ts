@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./core/fixtures";
 import { createTestPage, getTabId, openPopupPage } from "./core/helpers";
 
@@ -6,31 +7,30 @@ import { createTestPage, getTabId, openPopupPage } from "./core/helpers";
  */
 
 test.describe("Preset Management E2E Tests", () => {
+	let testPage: Page;
+	let popupPage: Page;
+
 	test.beforeEach(async ({ context, extensionId }) => {
 		// Start with a clean test page and popup
-		const testPage = await createTestPage(context, "https://example.com");
+		testPage = await createTestPage(context, "https://example.com");
 		const tabId = await getTabId(context, testPage);
-		const popupPage = await openPopupPage(context, extensionId, tabId);
+		popupPage = await openPopupPage(context, extensionId, tabId);
 
 		// Go to manager
 		await popupPage.locator('[data-testid="manage-presets-button"]').click();
 		await popupPage.waitForSelector('[data-testid="preset-manager-container"]');
-
-		(context as any).testPage = testPage;
-		(context as any).popupPage = popupPage;
 	});
 
-	test.afterEach(async ({ context }) => {
-		if ((context as any).popupPage) {
-			await (context as any).popupPage.close();
+	test.afterEach(async () => {
+		if (popupPage) {
+			await popupPage.close();
 		}
-		if ((context as any).testPage) {
-			await (context as any).testPage.close();
+		if (testPage) {
+			await testPage.close();
 		}
 	});
 
-	test("should create a new preset with parameters", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
+	test("should create a new preset with parameters", async () => {
 		const presetName = `Test Preset ${Date.now()}`;
 
 		// Click create
@@ -51,9 +51,7 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(popupPage.locator('[data-testid="preset-item"]')).toContainText(presetName);
 	});
 
-	test("should delete a preset", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
-
+	test("should delete a preset", async () => {
 		// Create one first to be sure
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("To Delete");
@@ -70,9 +68,7 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(presetItem).not.toBeVisible();
 	});
 
-	test("should duplicate a preset", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
-
+	test("should duplicate a preset", async () => {
 		// Create one
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Original");
@@ -88,9 +84,7 @@ test.describe("Preset Management E2E Tests", () => {
 		).toBeVisible();
 	});
 
-	test("should edit an existing preset", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
-
+	test("should edit an existing preset", async () => {
 		// Create
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("To Edit");
@@ -117,9 +111,7 @@ test.describe("Preset Management E2E Tests", () => {
 		).toBeVisible();
 	});
 
-	test("should export and import presets", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
-
+	test("should export and import presets", async () => {
 		// Create a preset to export
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Export Test");
@@ -151,7 +143,7 @@ test.describe("Preset Management E2E Tests", () => {
 		await importInput.setInputFiles(path);
 
 		// Handle the alert if it appears
-		popupPage.once("dialog", (alert: any) => alert.accept());
+		popupPage.once("dialog", (alert) => alert.accept());
 
 		// Verify imported
 		await expect(

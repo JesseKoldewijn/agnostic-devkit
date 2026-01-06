@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./core/fixtures";
 
 /**
@@ -6,37 +7,35 @@ import { expect, test } from "./core/fixtures";
  */
 
 test.describe("Popup Interface E2E Tests", () => {
+	let popupPage: Page;
+
 	test.beforeEach(async ({ context, extensionId }) => {
-		const popupPage = await context.newPage();
+		popupPage = await context.newPage();
 		await popupPage.goto(`chrome-extension://${extensionId}/popup.html`, {
 			timeout: 15_000,
 			waitUntil: "domcontentloaded",
 		});
 		await popupPage.waitForSelector("#root", { timeout: 10_000 });
-		(context as any).popupPage = popupPage;
 	});
 
-	test.afterEach(async ({ context }) => {
-		if ((context as any).popupPage) {
-			await (context as any).popupPage.close();
+	test.afterEach(async () => {
+		if (popupPage) {
+			await popupPage.close();
 		}
 	});
 
-	test("should load popup correctly", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
+	test("should load popup correctly", async () => {
 		const heading = popupPage.locator('[data-testid="popup-heading"]');
 		await expect(heading).toBeVisible();
 		await expect(heading).toContainText("Devkit");
 	});
 
-	test("should display current theme indicator", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
+	test("should display current theme indicator", async () => {
 		const themeIndicator = popupPage.locator('[data-testid="theme-indicator"]');
 		await expect(themeIndicator).toBeVisible();
 	});
 
 	test("should open options page from footer button", async ({ context, extensionId }) => {
-		const popupPage = (context as any).popupPage;
 		const openOptionsButton = popupPage.locator('[data-testid="open-options-button"]');
 
 		// Wait for new page to open
@@ -52,9 +51,7 @@ test.describe("Popup Interface E2E Tests", () => {
 		await newPage.close();
 	});
 
-	test("should show current tab section", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
-
+	test("should show current tab section", async () => {
 		// By default should be visible if a tab is active
 		const currentTabSection = popupPage.locator('[data-testid="current-tab-section"]');
 		await expect(currentTabSection).toBeVisible();
@@ -63,8 +60,7 @@ test.describe("Popup Interface E2E Tests", () => {
 		await expect(currentTabUrl).toBeVisible();
 	});
 
-	test("should toggle preset manager view", async ({ context }) => {
-		const popupPage = (context as any).popupPage;
+	test("should toggle preset manager view", async () => {
 		const manageButton = popupPage.locator('[data-testid="manage-presets-button"]');
 
 		await manageButton.click();

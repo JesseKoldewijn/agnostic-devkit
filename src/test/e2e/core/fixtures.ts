@@ -17,9 +17,9 @@ const rawCoverageDir = resolve(projectRoot, "coverage/raw-playwright");
  * simple coverage collector
  */
 class CoverageCollector {
-	private accumulatedCoverage: Record<string, any> = {};
+	private accumulatedCoverage: Record<string, unknown> = {};
 
-	merge(newCoverage: Record<string, any>): void {
+	merge(newCoverage: Record<string, unknown>): void {
 		if (!newCoverage) {
 			return;
 		}
@@ -27,22 +27,25 @@ class CoverageCollector {
 			if (!this.accumulatedCoverage[key]) {
 				this.accumulatedCoverage[key] = JSON.parse(JSON.stringify(value));
 			} else {
-				const existing = this.accumulatedCoverage[key];
+				// biome-ignore lint/suspicious/noExplicitAny: complex coverage object structure
+				const existing = this.accumulatedCoverage[key] as any;
+				// biome-ignore lint/suspicious/noExplicitAny: complex coverage object structure
+				const val = value as any;
 				// Merge statement coverage
-				if (value.s && existing.s) {
-					for (const [sKey, sValue] of Object.entries(value.s)) {
+				if (val.s && existing.s) {
+					for (const [sKey, sValue] of Object.entries(val.s)) {
 						existing.s[sKey] = (existing.s[sKey] || 0) + (sValue as number);
 					}
 				}
 				// Merge function coverage
-				if (value.f && existing.f) {
-					for (const [fKey, fValue] of Object.entries(value.f)) {
+				if (val.f && existing.f) {
+					for (const [fKey, fValue] of Object.entries(val.f)) {
 						existing.f[fKey] = (existing.f[fKey] || 0) + (fValue as number);
 					}
 				}
 				// Merge branch coverage
-				if (value.b && existing.b) {
-					for (const [bKey, bValue] of Object.entries(value.b)) {
+				if (val.b && existing.b) {
+					for (const [bKey, bValue] of Object.entries(val.b)) {
 						if (!existing.b[bKey]) {
 							existing.b[bKey] = [...(bValue as number[])];
 						} else {
@@ -88,9 +91,12 @@ export const test = base.extend<{
 		// Mock notifications API to prevent CI hangs/flakiness
 		await context.addInitScript(() => {
 			// oxlint-disable-next-line no-typeof-undefined
-			if (typeof (globalThis as any).chrome !== "undefined") {
-				(globalThis as any).chrome.notifications = {
-					...(globalThis as any).chrome.notifications,
+			// biome-ignore lint/suspicious/noExplicitAny: browser globals
+			const globalAny = globalThis as any;
+			if (globalAny.chrome !== undefined) {
+				globalAny.chrome.notifications = {
+					...globalAny.chrome.notifications,
+					// biome-ignore lint/suspicious/noExplicitAny: complex notification types
 					create: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.create called", args);
 						// oxlint-disable-next-line prefer-at
@@ -100,6 +106,7 @@ export const test = base.extend<{
 						}
 						return Promise.resolve("mock-notification-id");
 					},
+					// biome-ignore lint/suspicious/noExplicitAny: complex notification types
 					clear: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.clear called", args);
 						// oxlint-disable-next-line prefer-at
@@ -109,6 +116,7 @@ export const test = base.extend<{
 						}
 						return Promise.resolve(true);
 					},
+					// biome-ignore lint/suspicious/noExplicitAny: complex notification types
 					getAll: (...args: any[]) => {
 						// oxlint-disable-next-line prefer-at
 						const callback = args[args.length - 1];
@@ -127,6 +135,7 @@ export const test = base.extend<{
 			context.on("page", (page) => {
 				page.on("load", async () => {
 					try {
+						// biome-ignore lint/suspicious/noExplicitAny: coverage global
 						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
 							collector.merge(coverage);
@@ -135,6 +144,7 @@ export const test = base.extend<{
 				});
 				page.on("close", async () => {
 					try {
+						// biome-ignore lint/suspicious/noExplicitAny: coverage global
 						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
 							collector.merge(coverage);
@@ -156,6 +166,7 @@ export const test = base.extend<{
 					if (page.url() === "about:blank") {
 						continue;
 					}
+					// biome-ignore lint/suspicious/noExplicitAny: coverage global
 					const coverage = await page.evaluate(() => (window as any).__coverage__);
 					if (coverage) {
 						console.log(`[Coverage] Collected from page: ${page.url()}`);
@@ -168,6 +179,7 @@ export const test = base.extend<{
 			// Collect from service workers
 			for (const worker of context.serviceWorkers()) {
 				try {
+					// biome-ignore lint/suspicious/noExplicitAny: coverage global
 					const coverage = await worker.evaluate(() => (globalThis as any).__coverage__);
 					if (coverage) {
 						console.log(`[Coverage] Collected from service worker: ${worker.url()}`);
@@ -189,34 +201,42 @@ export const test = base.extend<{
 	extensionId: async ({ context }, use) => {
 		const findBackground = () => {
 			const workers = context.serviceWorkers();
-			console.log(
-				`[Fixture] Found ${workers.length} service workers:`,
-				workers.map((w) => w.url())
-			);
 			return workers.find(
 				(sw) => sw.url().includes("background") || sw.url().includes("event-page")
 			);
 		};
 
+		// 1. Try to find existing service worker
 		let background = findBackground();
+
+		// 2. Wait for service worker event if not found
 		if (!background) {
-			for (let i = 0; i < 3; i++) {
-				try {
-					background = await context.waitForEvent("serviceworker", {
-						timeout: 10_000,
-					});
-					if (background) {
-						break;
-					}
-				} catch {
-					background = findBackground();
-					if (background) {
-						break;
-					}
-				}
+			try {
+				background = await context.waitForEvent("serviceworker", {
+					timeout: 10_000,
+				});
+			} catch {
+				background = findBackground();
 			}
 		}
 
+		// 3. If still not found, try to force it by opening an extension page
+		if (!background) {
+			console.log("[Fixture] Service worker not found, attempting to force via extension page...");
+			const dummyPage = await context.newPage();
+			// We don't know the ID yet, but we can try to find it from existing pages if any
+			// or just wait a bit longer for the SW to register from the initial load
+			for (let i = 0; i < 10; i++) {
+				await new Promise(resolve => setTimeout(resolve, 1000));
+				background = findBackground();
+				if (background) {
+					break;
+				}
+			}
+			await dummyPage.close();
+		}
+
+		// 4. If STILL not found, look at any extension pages that might be open
 		if (!background) {
 			for (const page of context.pages()) {
 				const url = page.url();
@@ -228,7 +248,21 @@ export const test = base.extend<{
 					}
 				}
 			}
-			throw new Error("Extension background service worker not found");
+			
+			// Last ditch effort: list all workers and pick the first one if it looks like an extension
+			const allWorkers = context.serviceWorkers();
+			if (allWorkers.length > 0) {
+				const sw = allWorkers[0];
+				if (sw.url().startsWith("chrome-extension://")) {
+					const id = sw.url().split("/")[2];
+					if (id) {
+						await use(id);
+						return;
+					}
+				}
+			}
+
+			throw new Error(`Extension background service worker not found. Found workers: ${context.serviceWorkers().map(w => w.url()).join(", ")}`);
 		}
 
 		const extensionId = background.url().split("/")[2];

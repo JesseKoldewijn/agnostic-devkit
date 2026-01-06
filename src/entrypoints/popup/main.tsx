@@ -8,7 +8,7 @@ import { initTheme } from "@/utils/theme";
 initTheme();
 
 // Expose logic for E2E coverage boost
-(window as any).__LOGIC__ = logic;
+window.__LOGIC__ = logic;
 
 const root = document.querySelector("#root");
 

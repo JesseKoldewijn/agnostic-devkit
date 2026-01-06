@@ -96,7 +96,7 @@ export default defineBackground(() => {
 					target: { tabId },
 					world: "MAIN",
 				})
-				.then((results: any) => sendResponse({ success: true, value: results[0]?.result }))
+				.then((results) => sendResponse({ success: true, value: results[0]?.result }))
 				.catch((error) => sendResponse({ error: error.message, success: false }));
 			return true;
 		}

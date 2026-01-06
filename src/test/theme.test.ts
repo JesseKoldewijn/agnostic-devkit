@@ -3,8 +3,15 @@ import { fakeBrowser } from "wxt/testing/fake-browser";
 import { applyTheme, getEffectiveTheme, getTheme, initTheme, setTheme } from "../utils/theme";
 
 describe("theme utilities", () => {
-	let mockMatchMedia: any;
-	let mockDocument: { documentElement: { classList: { add: any; remove: any } } };
+	let mockMatchMedia: ReturnType<typeof vi.fn>;
+	let mockDocument: {
+		documentElement: {
+			classList: {
+				add: ReturnType<typeof vi.fn>;
+				remove: ReturnType<typeof vi.fn>;
+			};
+		};
+	};
 
 	beforeEach(() => {
 		fakeBrowser.reset();

@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createIsolatedElement } from "../utils/dom";
 
 describe("dom utilities", () => {
-	let mockShadowRoot: any;
+	let mockShadowRoot: {
+		appendChild: ReturnType<typeof vi.fn>;
+		mode: string;
+		querySelector: ReturnType<typeof vi.fn>;
+		querySelectorAll: ReturnType<typeof vi.fn>;
+	};
 
 	beforeEach(() => {
 		// Create a mock shadow root
@@ -28,9 +33,9 @@ describe("dom utilities", () => {
 				setAttribute: vi.fn(),
 				style: {},
 				tagName: tagName.toUpperCase(),
-			} as any;
+			};
 
-			return element;
+			return element as unknown as HTMLElement;
 		});
 	});
 
@@ -43,14 +48,14 @@ describe("dom utilities", () => {
 		it("should set the class name to chrome-extension-root", () => {
 			createIsolatedElement();
 
-			const createElementCall = (document.createElement as any).mock.results[0].value;
+			const createElementCall = vi.mocked(document.createElement).mock.results[0].value;
 			expect(createElementCall.className).toBe("chrome-extension-root");
 		});
 
 		it("should attach a shadow DOM in open mode", () => {
 			createIsolatedElement();
 
-			const createElementCall = (document.createElement as any).mock.results[0].value;
+			const createElementCall = vi.mocked(document.createElement).mock.results[0].value;
 			expect(createElementCall.attachShadow).toHaveBeenCalledWith({ mode: "open" });
 		});
 
@@ -61,7 +66,7 @@ describe("dom utilities", () => {
 
 		it("should create isolated elements for CSS encapsulation", () => {
 			// Reset the mock count before this specific test
-			(document.createElement as any).mockClear();
+			vi.mocked(document.createElement).mockClear();
 
 			// Create two isolated elements to verify independent creation
 			createIsolatedElement();

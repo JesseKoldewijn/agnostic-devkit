@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,7 +20,7 @@ function getCoverageScore(type) {
 		// Handle different summary formats
 		// Vitest format: { total: { lines: { pct: ... } } }
 		// Monocart format: { total: { lines: { pct: ... } } }
-		if (summary.total && summary.total.lines && typeof summary.total.lines.pct === "number") {
+		if (summary.total?.lines && typeof summary.total.lines.pct === "number") {
 			return Math.round(summary.total.lines.pct);
 		}
 

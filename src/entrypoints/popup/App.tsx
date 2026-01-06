@@ -25,8 +25,8 @@ export const App: Component = () => {
 		const overrideTabId = urlParams.get("targetTabId");
 
 		if (overrideTabId) {
-			const parsed = parseInt(overrideTabId, 10);
-			if (!isNaN(parsed)) {
+			const parsed = Number.parseInt(overrideTabId, 10);
+			if (!Number.isNaN(parsed)) {
 				const tab = await browser.tabs?.get(parsed);
 				if (tab?.url) {
 					setCurrentUrl(tab.url);
@@ -64,10 +64,11 @@ export const App: Component = () => {
 		});
 
 		browser.tabs?.onUpdated.addListener(async (tabId, _changeInfo, tab) => {
-			const hasTestOverride = Boolean(urlParams.get("targetTabId"));
-			const targetId = hasTestOverride ? parseInt(urlParams.get("targetTabId")!, 10) : null;
+			const targetTabIdParam = urlParams.get("targetTabId");
+			const hasTestOverride = Boolean(targetTabIdParam);
+			const targetId = hasTestOverride ? Number.parseInt(targetTabIdParam ?? "", 10) : null;
 
-			if (hasTestOverride) {
+			if (hasTestOverride && targetId !== null) {
 				if (tabId === targetId && tab.url) {
 					setCurrentUrl(tab.url);
 				}
@@ -137,6 +138,7 @@ export const App: Component = () => {
 							class={cn("h-10 w-full")}
 							onClick={() =>
 								browser.tabs.create({
+									// biome-ignore lint/suspicious/noExplicitAny: WXT's browser.runtime type is missing getURL
 									url: (browser.runtime as any).getURL("settings.html"),
 								})
 							}
