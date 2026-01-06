@@ -1,3 +1,10 @@
+# [1.2.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0-canary.1...v1.2.0-canary.2) (2026-01-06)
+
+
+### Bug Fixes
+
+* biome config tweak and linting + type fixes run ([813f07b](https://github.com/JesseKoldewijn/agnostic-devkit/commit/813f07bb33a8af30bd6bf86db8be8bb80329c632))
+
 # [1.2.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.4...v1.2.0-canary.1) (2026-01-05)
 
 
