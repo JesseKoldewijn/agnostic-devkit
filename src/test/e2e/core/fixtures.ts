@@ -222,46 +222,43 @@ export const test = base.extend<{
 
 		// 3. If still not found, try to force it by opening an extension page
 		if (!background) {
-			console.log("[Fixture] Service worker not found, attempting to force via extension page...");
-			const dummyPage = await context.newPage();
-			// We don't know the ID yet, but we can try to find it from existing pages if any
-			// or just wait a bit longer for the SW to register from the initial load
-			for (let i = 0; i < 10; i++) {
-				await new Promise(resolve => setTimeout(resolve, 1000));
+			console.log("[Fixture] Service worker not found, waiting and checking again...");
+			for (let i = 0; i < 5; i++) {
+				await new Promise(resolve => setTimeout(resolve, 2000));
 				background = findBackground();
 				if (background) {
 					break;
 				}
 			}
-			await dummyPage.close();
 		}
 
 		// 4. If STILL not found, look at any extension pages that might be open
 		if (!background) {
+			console.log("[Fixture] Service worker still not found, looking for extension pages...");
 			for (const page of context.pages()) {
 				const url = page.url();
 				if (url.startsWith("chrome-extension://")) {
 					const id = url.split("/")[2];
 					if (id) {
+						console.log(`[Fixture] Found extension ID from open page: ${id}`);
 						await use(id);
 						return;
 					}
 				}
 			}
 			
-			// Last ditch effort: list all workers and pick the first one if it looks like an extension
+			// Try to find ANY service worker at all
 			const allWorkers = context.serviceWorkers();
+			console.log(`[Fixture] All service workers: ${allWorkers.map(w => w.url()).join(", ")}`);
 			if (allWorkers.length > 0) {
-				const sw = allWorkers[0];
-				if (sw.url().startsWith("chrome-extension://")) {
-					const id = sw.url().split("/")[2];
-					if (id) {
-						await use(id);
-						return;
-					}
+				const sw = allWorkers.find(w => w.url().startsWith("chrome-extension://"));
+				if (sw) {
+					background = sw;
 				}
 			}
+		}
 
+		if (!background) {
 			throw new Error(`Extension background service worker not found. Found workers: ${context.serviceWorkers().map(w => w.url()).join(", ")}`);
 		}
 

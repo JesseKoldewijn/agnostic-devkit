@@ -48,6 +48,7 @@ jobs:
                   fetch-depth: 0
                   token: ${{ steps.app-token.outputs.token }}
                   persist-credentials: true
+                  ref: ${{ github.ref_name }}
 
             - name: Fetch all tags
               run: git fetch --tags --force
