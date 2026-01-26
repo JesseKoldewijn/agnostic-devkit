@@ -30,7 +30,7 @@ interface PresetManagerProps {
 	class?: string;
 }
 
-type ViewMode = "list" | "create" | "edit";
+type ViewMode = "list" | "create" | "edit" | "export";
 
 /**
  * Full CRUD interface for managing presets and their parameters
@@ -43,8 +43,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
 	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
 
-	// Selection mode for bulk export
-	const [isSelectionMode, setIsSelectionMode] = createSignal(false);
+	// Selection for export view
 	const [selectedPresets, setSelectedPresets] = createSignal<Set<string>>(new Set());
 
 	// Form state - only track parameter IDs for rendering, not their values
@@ -251,11 +250,22 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 	const clearSelection = () => {
 		setSelectedPresets(new Set<string>());
-		setIsSelectionMode(false);
 	};
 
 	const selectAllPresets = () => {
 		setSelectedPresets(new Set(presets().map((p) => p.id)));
+	};
+
+	// Enter export view
+	const startExport = () => {
+		clearSelection();
+		setViewMode("export");
+	};
+
+	// Exit export view
+	const cancelExport = () => {
+		clearSelection();
+		setViewMode("list");
 	};
 
 	// Helper to download JSON
@@ -269,33 +279,25 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		URL.revokeObjectURL(url);
 	};
 
-	// Export all presets
-	const handleExportAll = async () => {
+	// Export from export view (selected or all)
+	const handleExportFromView = async () => {
 		try {
-			const json = await exportPresets();
+			const selected = Array.from(selectedPresets());
 			const date = new Date().toISOString().split("T")[0];
-			downloadJson(json, `presets-all-${date}.json`);
+
+			if (selected.length === 0) {
+				// Export all
+				const json = await exportPresets();
+				downloadJson(json, `presets-all-${date}.json`);
+			} else {
+				// Export selected
+				const json = await exportPresets(selected);
+				downloadJson(json, `presets-selected-${date}.json`);
+			}
+			cancelExport();
 		} catch (error) {
 			console.error("[PresetManager] Failed to export presets:", error);
 			alert("Failed to export presets.");
-		}
-	};
-
-	// Export selected presets
-	const handleExportSelected = async () => {
-		try {
-			const selected = Array.from(selectedPresets());
-			if (selected.length === 0) {
-				alert("No presets selected for export.");
-				return;
-			}
-			const json = await exportPresets(selected);
-			const date = new Date().toISOString().split("T")[0];
-			downloadJson(json, `presets-selected-${date}.json`);
-			clearSelection();
-		} catch (error) {
-			console.error("[PresetManager] Failed to export selected presets:", error);
-			alert("Failed to export selected presets.");
 		}
 	};
 
@@ -386,145 +388,71 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						"flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3"
 					)}
 				>
-					<Show
-						when={isSelectionMode()}
-						fallback={
-							<div class={cn("flex gap-2")}>
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={handleExportAll}
-									title="Export all presets to JSON"
-									data-testid="export-presets-button"
-								>
-									<svg
-										class={cn("size-3.5 opacity-70")}
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-										/>
-									</svg>
-									Export All
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setIsSelectionMode(true)}
-									title="Select presets to export"
-									data-testid="select-mode-button"
-								>
-									<svg
-										class={cn("size-3.5 opacity-70")}
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-										/>
-									</svg>
-									Select
-								</Button>
-								<div class={cn("relative")}>
-									<input
-										type="file"
-										id="import-presets-input"
-										accept=".json"
-										onChange={handleImport}
-										class={cn("hidden")}
-										data-testid="import-presets-input"
-									/>
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={() =>
-											(
-												document.querySelector("#import-presets-input") as HTMLInputElement
-											)?.click()
-										}
-										title="Import presets from JSON"
-										data-testid="import-presets-button"
-									>
-										<svg
-											class={cn("size-3.5 opacity-70")}
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											aria-hidden="true"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-											/>
-										</svg>
-										Import
-									</Button>
-								</div>
-							</div>
-						}
-					>
-						{/* Selection mode toolbar */}
-						<div class={cn("flex items-center gap-2")}>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={clearSelection}
-								data-testid="cancel-selection-button"
+					<div class={cn("flex gap-2")}>
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={startExport}
+							title="Export presets"
+							data-testid="export-presets-button"
+						>
+							<svg
+								class={cn("size-3.5 opacity-70")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
 							>
-								Cancel
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={selectAllPresets}
-								data-testid="select-all-button"
-							>
-								Select All
-							</Button>
-							<Show when={selectedPresets().size > 0}>
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={handleExportSelected}
-									data-testid="export-selected-button"
-								>
-									<svg
-										class={cn("size-3.5 opacity-70")}
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-										/>
-									</svg>
-									Export ({selectedPresets().size})
-								</Button>
-							</Show>
-						</div>
-					</Show>
-					<Show when={!isSelectionMode()}>
-						<Button size="sm" onClick={startCreate} data-testid="create-preset-button">
-							+ New Preset
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+								/>
+							</svg>
+							Export
 						</Button>
-					</Show>
+						<div class={cn("relative")}>
+							<input
+								type="file"
+								id="import-presets-input"
+								accept=".json"
+								onChange={handleImport}
+								class={cn("hidden")}
+								data-testid="import-presets-input"
+							/>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() =>
+									(
+										document.querySelector("#import-presets-input") as HTMLInputElement
+									)?.click()
+								}
+								title="Import presets from JSON"
+								data-testid="import-presets-button"
+							>
+								<svg
+									class={cn("size-3.5 opacity-70")}
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+									/>
+								</svg>
+								Import
+							</Button>
+						</div>
+					</div>
+					<Button size="sm" onClick={startCreate} data-testid="create-preset-button">
+						+ New Preset
+					</Button>
 				</div>
 			</div>
 
@@ -564,60 +492,17 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						{(preset) => (
 							<Card
 								class={cn(
-									"border-border/60 p-4 shadow-sm transition-all hover:border-primary/30",
-									isSelectionMode() &&
-										selectedPresets().has(preset.id) &&
-										"border-primary/50 bg-primary/5"
+									"border-border/60 p-4 shadow-sm transition-all hover:border-primary/30"
 								)}
 								data-testid="preset-item"
 								data-preset-id={preset.id}
 							>
 								<div class={cn("flex items-start justify-between gap-3")}>
-									{/* Selection checkbox */}
-									<Show when={isSelectionMode()}>
-										<button
-											type="button"
-											class={cn(
-												"mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-sm border-2 transition-colors",
-												selectedPresets().has(preset.id)
-													? "border-primary bg-primary text-primary-foreground"
-													: "border-border hover:border-primary/50"
-											)}
-											onClick={() => togglePresetSelection(preset.id)}
-											data-testid="preset-select-checkbox"
-											aria-label={
-												selectedPresets().has(preset.id)
-													? "Deselect preset"
-													: "Select preset"
-											}
-										>
-											<Show when={selectedPresets().has(preset.id)}>
-												<svg
-													class={cn("size-3")}
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-													aria-hidden="true"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														stroke-width="3"
-														d="M5 13l4 4L19 7"
-													/>
-												</svg>
-											</Show>
-										</button>
-									</Show>
 									<div class={cn("min-w-0 flex-1")}>
 										<button
 											type="button"
 											class={cn("group w-full text-left")}
-											onClick={() =>
-												isSelectionMode()
-													? togglePresetSelection(preset.id)
-													: toggleExpanded(preset.id)
-											}
+											onClick={() => toggleExpanded(preset.id)}
 											data-testid="preset-expand-button"
 										>
 											<div
@@ -652,75 +537,74 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											</div>
 										</button>
 									</div>
-									<Show when={!isSelectionMode()}>
-										<div class={cn("flex items-center space-x-1")}>
-											{/* Export single preset */}
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => handleExportSingle(preset)}
-												aria-label="Export preset"
-												data-testid="export-preset-button"
+									<div class={cn("flex items-center space-x-1")}>
+										{/* Export single preset */}
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => handleExportSingle(preset)}
+											aria-label="Export preset"
+											data-testid="export-preset-button"
+										>
+											<svg
+												class={cn("size-4")}
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
 											>
-												<svg
-													class={cn("size-4")}
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-													aria-hidden="true"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														stroke-width="2"
-														d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-													/>
-												</svg>
-											</Button>
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => handleDuplicate(preset.id)}
-												aria-label="Duplicate preset"
-												data-testid="duplicate-preset-button"
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+												/>
+											</svg>
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => handleDuplicate(preset.id)}
+											aria-label="Duplicate preset"
+											data-testid="duplicate-preset-button"
+										>
+											<svg
+												class={cn("size-4")}
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
 											>
-												<svg
-													class={cn("size-4")}
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-													aria-hidden="true"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														stroke-width="2"
-														d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
-													/>
-												</svg>
-											</Button>
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => startEdit(preset)}
-												aria-label="Edit preset"
-												data-testid="edit-preset-button"
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+												/>
+											</svg>
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => startEdit(preset)}
+											aria-label="Edit preset"
+											data-testid="edit-preset-button"
+										>
+											<svg
+												class={cn("size-4")}
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
 											>
-												<svg
-													class={cn("size-4")}
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-													aria-hidden="true"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														stroke-width="2"
-														d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-													/>
-												</svg>
-											</Button>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+												/>
+											</svg>
+										</Button>
 										<Show
 											when={confirmDelete() === preset.id}
 											fallback={
@@ -767,8 +651,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												</Button>
 											</div>
 										</Show>
-										</div>
-									</Show>
+									</div>
 								</div>
 
 								{/* Expanded parameter list */}
@@ -1081,10 +964,193 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		);
 	};
 
+	// Render the export view
+	const renderExportView = () => (
+		<div class={cn("flex h-full flex-col")} data-testid="preset-export-view">
+			<div class={cn("mb-4 flex flex-col space-y-4")}>
+				<div class={cn("flex items-center justify-between")}>
+					<h2
+						class={cn(
+							"font-black text-[10px] text-foreground uppercase tracking-[0.2em] opacity-70"
+						)}
+					>
+						Export Presets
+					</h2>
+					<Button
+						variant="ghost"
+						size="xs"
+						onClick={cancelExport}
+						data-testid="export-back-button"
+						aria-label="Back to preset list"
+					>
+						<svg
+							class={cn("size-3.5")}
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M10 19l-7-7m0 0l7-7m-7 7h18"
+							/>
+						</svg>
+						<span>Back</span>
+					</Button>
+				</div>
+
+				{/* Selection controls */}
+				<div
+					class={cn(
+						"flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3"
+					)}
+				>
+					<div class={cn("flex gap-2")}>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={selectAllPresets}
+							data-testid="export-select-all-button"
+						>
+							Select All
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={clearSelection}
+							disabled={selectedPresets().size === 0}
+							data-testid="export-deselect-all-button"
+						>
+							Deselect All
+						</Button>
+					</div>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={handleExportFromView}
+						disabled={presets().length === 0}
+						data-testid="export-confirm-button"
+					>
+						<svg
+							class={cn("size-3.5 opacity-70")}
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+							/>
+						</svg>
+						<Show when={selectedPresets().size > 0} fallback="Export All">
+							Export ({selectedPresets().size})
+						</Show>
+					</Button>
+				</div>
+			</div>
+
+			{/* Preset list with checkboxes */}
+			<Show
+				when={presets().length > 0}
+				fallback={
+					<Card
+						class={cn(
+							"flex flex-col items-center justify-center gap-4 border-dashed py-12 text-center"
+						)}
+					>
+						<p class={cn("font-black text-[10px] text-muted-foreground uppercase tracking-widest")}>
+							No presets to export
+						</p>
+						<Button variant="outline" size="sm" onClick={cancelExport}>
+							Back to Presets
+						</Button>
+					</Card>
+				}
+			>
+				<div class={cn("-mr-1 flex-1 space-y-2 overflow-y-auto pr-1")} data-testid="export-presets-list">
+					<For each={presets()}>
+						{(preset) => (
+							<button
+								type="button"
+								class={cn(
+									"flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
+									selectedPresets().has(preset.id)
+										? "border-primary/50 bg-primary/5"
+										: "border-border/60 hover:border-primary/30"
+								)}
+								onClick={() => togglePresetSelection(preset.id)}
+								data-testid="export-preset-item"
+								data-preset-id={preset.id}
+							>
+								{/* Checkbox */}
+								<div
+									class={cn(
+										"flex size-5 shrink-0 items-center justify-center rounded-sm border-2 transition-colors",
+										selectedPresets().has(preset.id)
+											? "border-primary bg-primary text-primary-foreground"
+											: "border-border"
+									)}
+								>
+									<Show when={selectedPresets().has(preset.id)}>
+										<svg
+											class={cn("size-3")}
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="3"
+												d="M5 13l4 4L19 7"
+											/>
+										</svg>
+									</Show>
+								</div>
+
+								{/* Preset info */}
+								<div class={cn("min-w-0 flex-1")}>
+									<div
+										class={cn(
+											"truncate font-black text-[13px] text-foreground uppercase tracking-tight"
+										)}
+									>
+										{preset.name}
+									</div>
+									<Show when={preset.description}>
+										<div
+											class={cn(
+												"mt-0.5 truncate text-[10px] text-muted-foreground"
+											)}
+										>
+											{preset.description}
+										</div>
+									</Show>
+								</div>
+
+								{/* Parameter count badge */}
+								<Badge variant="secondary" class={cn("text-[8px]! h-4 shrink-0 px-2 font-black")}>
+									{preset.parameters.length} VARS
+								</Badge>
+							</button>
+						)}
+					</For>
+				</div>
+			</Show>
+		</div>
+	);
+
 	return (
 		<div class={cn("flex flex-col", props.class)}>
 			<Show when={viewMode() === "list"}>{renderListView()}</Show>
 			<Show when={viewMode() === "create" || viewMode() === "edit"}>{renderFormView()}</Show>
+			<Show when={viewMode() === "export"}>{renderExportView()}</Show>
 		</div>
 	);
 };

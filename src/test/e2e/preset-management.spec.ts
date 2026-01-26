@@ -246,40 +246,36 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(presetItem.locator('[data-testid="export-preset-button"]')).toBeVisible();
 	});
 
-	test("should enter and exit selection mode", async () => {
-		// Create presets to select
+	test("should enter and exit export view", async () => {
+		// Create presets
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
-		await popupPage.locator('[data-testid="preset-name-input"]').fill("Select Test 1");
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Export Test 1");
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
-		await popupPage.locator('[data-testid="preset-name-input"]').fill("Select Test 2");
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Export Test 2");
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
-		// Click select button to enter selection mode
-		await popupPage.locator('[data-testid="select-mode-button"]').click();
+		// Click Export button to enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
 
-		// Checkboxes should be visible
-		await expect(popupPage.locator('[data-testid="preset-select-checkbox"]').first()).toBeVisible();
+		// Export view should be visible
+		await expect(popupPage.locator('[data-testid="preset-export-view"]')).toBeVisible();
 
-		// Export buttons should be hidden in selection mode
-		await expect(
-			popupPage.locator('[data-testid="export-preset-button"]').first()
-		).not.toBeVisible();
+		// Preset items in export view should be visible
+		await expect(popupPage.locator('[data-testid="export-preset-item"]').first()).toBeVisible();
 
-		// Cancel button should be visible
-		await expect(popupPage.locator('[data-testid="cancel-selection-button"]')).toBeVisible();
+		// Back button should be visible
+		await expect(popupPage.locator('[data-testid="export-back-button"]')).toBeVisible();
 
-		// Exit selection mode
-		await popupPage.locator('[data-testid="cancel-selection-button"]').click();
+		// Exit export view
+		await popupPage.locator('[data-testid="export-back-button"]').click();
 
-		// Checkboxes should be hidden again
-		await expect(
-			popupPage.locator('[data-testid="preset-select-checkbox"]').first()
-		).not.toBeVisible();
+		// Should be back to list view
+		await expect(popupPage.locator('[data-testid="preset-manager-list"]')).toBeVisible();
 	});
 
-	test("should select and deselect presets in selection mode", async () => {
+	test("should select and deselect presets in export view", async () => {
 		// Create presets
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Selectable 1");
@@ -289,35 +285,35 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Selectable 2");
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
-		// Enter selection mode
-		await popupPage.locator('[data-testid="select-mode-button"]').click();
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
 
 		// Select first preset
-		const checkbox1 = popupPage
-			.locator('[data-testid="preset-item"]', { hasText: "Selectable 1" })
-			.locator('[data-testid="preset-select-checkbox"]');
-		await checkbox1.click();
+		const item1 = popupPage.locator('[data-testid="export-preset-item"]', {
+			hasText: "Selectable 1",
+		});
+		await item1.click();
 
-		// Export selected button should show count
-		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("1");
+		// Export button should show count
+		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("1");
 
 		// Select second preset
-		const checkbox2 = popupPage
-			.locator('[data-testid="preset-item"]', { hasText: "Selectable 2" })
-			.locator('[data-testid="preset-select-checkbox"]');
-		await checkbox2.click();
+		const item2 = popupPage.locator('[data-testid="export-preset-item"]', {
+			hasText: "Selectable 2",
+		});
+		await item2.click();
 
-		// Export selected button should show updated count
-		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("2");
+		// Export button should show updated count
+		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("2");
 
 		// Deselect first preset
-		await checkbox1.click();
+		await item1.click();
 
 		// Count should be back to 1
-		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("1");
+		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("1");
 	});
 
-	test("should select all presets using Select All button", async () => {
+	test("should select all presets using Select All button in export view", async () => {
 		// Create presets
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 1");
@@ -327,13 +323,13 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 2");
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
-		// Enter selection mode
-		await popupPage.locator('[data-testid="select-mode-button"]').click();
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
 
 		// Click Select All
-		await popupPage.locator('[data-testid="select-all-button"]').click();
+		await popupPage.locator('[data-testid="export-select-all-button"]').click();
 
-		// Export selected should show count of all presets
-		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("2");
+		// Export button should show count of all presets
+		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("2");
 	});
 });
