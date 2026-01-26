@@ -27,9 +27,9 @@ class CoverageCollector {
 			if (!this.accumulatedCoverage[key]) {
 				this.accumulatedCoverage[key] = JSON.parse(JSON.stringify(value));
 			} else {
-				// biome-ignore lint/suspicious/noExplicitAny: complex coverage object structure
+				 
 				const existing = this.accumulatedCoverage[key] as any;
-				// biome-ignore lint/suspicious/noExplicitAny: complex coverage object structure
+				 
 				const val = value as any;
 				// Merge statement coverage
 				if (val.s && existing.s) {
@@ -91,12 +91,12 @@ export const test = base.extend<{
 		// Mock notifications API to prevent CI hangs/flakiness
 		await context.addInitScript(() => {
 			// oxlint-disable-next-line no-typeof-undefined
-			// biome-ignore lint/suspicious/noExplicitAny: browser globals
+			 
 			const globalAny = globalThis as any;
 			if (globalAny.chrome !== undefined) {
 				globalAny.chrome.notifications = {
 					...globalAny.chrome.notifications,
-					// biome-ignore lint/suspicious/noExplicitAny: complex notification types
+					 
 					create: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.create called", args);
 						// oxlint-disable-next-line prefer-at
@@ -106,7 +106,7 @@ export const test = base.extend<{
 						}
 						return Promise.resolve("mock-notification-id");
 					},
-					// biome-ignore lint/suspicious/noExplicitAny: complex notification types
+					 
 					clear: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.clear called", args);
 						// oxlint-disable-next-line prefer-at
@@ -116,7 +116,7 @@ export const test = base.extend<{
 						}
 						return Promise.resolve(true);
 					},
-					// biome-ignore lint/suspicious/noExplicitAny: complex notification types
+					 
 					getAll: (...args: any[]) => {
 						// oxlint-disable-next-line prefer-at
 						const callback = args[args.length - 1];
@@ -135,21 +135,25 @@ export const test = base.extend<{
 			context.on("page", (page) => {
 				page.on("load", async () => {
 					try {
-						// biome-ignore lint/suspicious/noExplicitAny: coverage global
+						 
 						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
 							collector.merge(coverage);
 						}
-					} catch {}
+					} catch {
+						// ignore errors from closed pages/workers
+					}
 				});
 				page.on("close", async () => {
 					try {
-						// biome-ignore lint/suspicious/noExplicitAny: coverage global
+						 
 						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
 							collector.merge(coverage);
 						}
-					} catch {}
+					} catch {
+						// ignore errors from closed pages/workers
+					}
 				});
 			});
 		}
@@ -166,27 +170,31 @@ export const test = base.extend<{
 					if (page.url() === "about:blank") {
 						continue;
 					}
-					// biome-ignore lint/suspicious/noExplicitAny: coverage global
+					 
 					const coverage = await page.evaluate(() => (window as any).__coverage__);
 					if (coverage) {
 						console.log(`[Coverage] Collected from page: ${page.url()}`);
 						collector.merge(coverage);
 						totalCollected++;
 					}
-				} catch {}
+				} catch {
+					// ignore
+				}
 			}
 
 			// Collect from service workers
 			for (const worker of context.serviceWorkers()) {
 				try {
-					// biome-ignore lint/suspicious/noExplicitAny: coverage global
+					 
 					const coverage = await worker.evaluate(() => (globalThis as any).__coverage__);
 					if (coverage) {
 						console.log(`[Coverage] Collected from service worker: ${worker.url()}`);
 						collector.merge(coverage);
 						totalCollected++;
 					}
-				} catch {}
+				} catch {
+					// ignore
+				}
 			}
 
 			if (totalCollected > 0) {

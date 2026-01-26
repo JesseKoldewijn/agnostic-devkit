@@ -77,9 +77,9 @@ export async function showNotification(
 	if ((await isNotificationDisabled()) && !force) {
 		return "";
 	}
-	// biome-ignore lint/suspicious/noExplicitAny: WXT's browser.runtime type is missing getURL
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- WXT's browser.runtime type is missing getURL
 	const iconUrl = (browser.runtime as any).getURL("/icons/icon-48.png");
-	// biome-ignore lint/suspicious/noExplicitAny: notification options are complex
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- notification options are complex
 	const options: any = {
 		iconUrl,
 		message,
@@ -87,7 +87,7 @@ export async function showNotification(
 		type: "basic",
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: notifications.create expects string or undefined as first arg
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- notifications.create expects string or undefined as first arg
 	return await browser.notifications.create(undefined as any, options);
 }
 
@@ -103,9 +103,9 @@ export async function showNotificationWithButtons(
 	if ((await isNotificationDisabled()) && !force) {
 		return "";
 	}
-	// biome-ignore lint/suspicious/noExplicitAny: WXT's browser.runtime type is missing getURL
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- WXT's browser.runtime type is missing getURL
 	const iconUrl = (browser.runtime as any).getURL("/icons/icon-48.png");
-	// biome-ignore lint/suspicious/noExplicitAny: notification options are complex
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- notification options are complex
 	const options: any = {
 		buttons,
 		iconUrl,
@@ -115,6 +115,6 @@ export async function showNotificationWithButtons(
 		type: "basic", // Keep notification visible until user interacts
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: notifications.create expects string or undefined as first arg
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- notifications.create expects string or undefined as first arg
 	return await browser.notifications.create(undefined as any, options);
 }

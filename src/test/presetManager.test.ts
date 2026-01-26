@@ -26,13 +26,13 @@ describe("presetManager", () => {
 		mockTabUrl = "https://example.com/page";
 
 		// Setup fake tabs
-		// biome-ignore lint/suspicious/noExplicitAny: complex fake-browser types
+		 
 		(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
 			id: tabId,
 			url: mockTabUrl,
 		}));
 
-		// biome-ignore lint/suspicious/noExplicitAny: complex fake-browser types
+		 
 		(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, props: any) => {
 			if (props.url) {
 				mockTabUrl = props.url;
@@ -41,15 +41,15 @@ describe("presetManager", () => {
 		});
 
 		// Setup fake cookies
-		// biome-ignore lint/suspicious/noExplicitAny: complex fake-browser types
+		 
 		(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
-		// biome-ignore lint/suspicious/noExplicitAny: complex fake-browser types
+		 
 		(fakeBrowser.cookies.get as any) = vi.fn(async () => null);
-		// biome-ignore lint/suspicious/noExplicitAny: complex fake-browser types
+		 
 		(fakeBrowser.cookies.remove as any) = vi.fn(async () => ({}));
 
 		// Setup fake scripting
-		// biome-ignore lint/suspicious/noExplicitAny: complex fake-browser types
+		 
 		(fakeBrowser.scripting.executeScript as any) = vi.fn(async () => [{ result: undefined }]);
 	});
 

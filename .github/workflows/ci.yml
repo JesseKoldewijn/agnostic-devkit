@@ -56,11 +56,11 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Lint (Oxlint)
+            - name: Lint (ESLint)
               run: yarn lint
 
-            - name: Format Check (Biome)
-              run: yarn check
+            - name: Format Check (Prettier)
+              run: yarn format:check
 
             - name: Type check
               run: yarn type-check

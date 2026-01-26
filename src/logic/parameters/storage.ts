@@ -209,7 +209,7 @@ export async function cleanupTabState(tabId: number): Promise<void> {
  * Subscribe to preset changes
  */
 export function onPresetsChanged(callback: (presets: Preset[]) => void): () => void {
-	// biome-ignore lint/suspicious/noExplicitAny: browser.storage.onChanged listener types are complex
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- browser.storage.onChanged listener types are complex
 	const listener = (changes: Record<string, any>, areaName: string) => {
 		if (areaName === "sync" && changes[PRESETS_KEY]) {
 			callback((changes[PRESETS_KEY].newValue as Preset[] | undefined) ?? []);
@@ -230,7 +230,7 @@ export function onPresetsChanged(callback: (presets: Preset[]) => void): () => v
 export function onTabPresetStatesChanged(
 	callback: (states: Record<string, string[]>) => void
 ): () => void {
-	// biome-ignore lint/suspicious/noExplicitAny: browser.storage.onChanged listener types are complex
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- browser.storage.onChanged listener types are complex
 	const listener = (changes: Record<string, any>, areaName: string) => {
 		if (areaName === "local" && changes[TAB_PRESET_STATES_KEY]) {
 			callback(

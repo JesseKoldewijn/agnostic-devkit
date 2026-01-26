@@ -138,7 +138,7 @@ export const App: Component = () => {
 							class={cn("h-10 w-full")}
 							onClick={() =>
 								browser.tabs.create({
-									// biome-ignore lint/suspicious/noExplicitAny: WXT's browser.runtime type is missing getURL
+									// eslint-disable-next-line @typescript-eslint/no-explicit-any -- WXT's browser.runtime type is missing getURL
 									url: (browser.runtime as any).getURL("settings.html"),
 								})
 							}
