@@ -17,6 +17,8 @@ jobs:
     release:
         name: Semantic Release
         runs-on: ubuntu-latest
+        # Skip if this is already a release commit (prevents infinite loop)
+        if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
         permissions:
             contents: write
             issues: write
