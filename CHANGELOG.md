@@ -1,3 +1,11 @@
+## [1.3.1-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0...v1.3.1-canary.1) (2026-01-26)
+
+
+### Bug Fixes
+
+* minor formatting tweak ([cca9276](https://github.com/JesseKoldewijn/agnostic-devkit/commit/cca927620b0d5066b4491f3818639b0389b74170))
+* small CI cleanup + re-trigger of build ([28e1790](https://github.com/JesseKoldewijn/agnostic-devkit/commit/28e1790e8666241682c9c3d26312c22795993de1))
+
 # [1.3.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0...v1.3.0) (2026-01-26)
 
 
