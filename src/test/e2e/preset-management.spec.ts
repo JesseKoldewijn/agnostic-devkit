@@ -332,4 +332,94 @@ test.describe("Preset Management E2E Tests", () => {
 		// Export button should show count of all presets
 		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("2");
 	});
+
+	test("should show boolean toggle when boolean primitive type is selected", async () => {
+		// Create preset with boolean parameter
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Boolean Test");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("boolKey");
+
+		// Select boolean primitive type
+		await popupPage.locator('[data-testid="parameter-primitive-type-select"]').selectOption("boolean");
+
+		// Value input should be replaced with a toggle
+		await expect(popupPage.locator('[data-testid="parameter-value-toggle"]')).toBeVisible();
+		await expect(popupPage.locator('[data-testid="parameter-value-input"]')).not.toBeVisible();
+	});
+
+	test("should toggle between true and false for boolean parameter", async () => {
+		// Create preset with boolean parameter
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Boolean Toggle Test");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("toggleKey");
+
+		// Select boolean primitive type
+		await popupPage.locator('[data-testid="parameter-primitive-type-select"]').selectOption("boolean");
+
+		// Toggle should default to true (enabled state)
+		const toggle = popupPage.locator('[data-testid="parameter-value-toggle"]');
+		await expect(toggle).toBeVisible();
+
+		// Get initial state indicator
+		const trueIndicator = popupPage.locator('[data-testid="parameter-value-true"]');
+		await expect(trueIndicator).toBeVisible();
+
+		// Click to toggle to false
+		await toggle.click();
+		const falseIndicator = popupPage.locator('[data-testid="parameter-value-false"]');
+		await expect(falseIndicator).toBeVisible();
+	});
+
+	test("should save and load preset with boolean parameter correctly", async () => {
+		// Create preset with boolean parameter
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Saved Boolean");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("savedBool");
+		await popupPage.locator('[data-testid="parameter-primitive-type-select"]').selectOption("boolean");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Wait for save
+		await popupPage.waitForSelector('[data-testid="preset-item"]');
+
+		// Edit the preset to verify it loads correctly
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', { hasText: "Saved Boolean" });
+		await presetItem.locator('[data-testid="edit-preset-button"]').click();
+
+		// Verify primitive type is still boolean
+		const primitiveTypeSelect = popupPage.locator('[data-testid="parameter-primitive-type-select"]').first();
+		await expect(primitiveTypeSelect).toHaveValue("boolean");
+
+		// Verify toggle is shown instead of text input
+		await expect(popupPage.locator('[data-testid="parameter-value-toggle"]')).toBeVisible();
+	});
+
+	test("should preserve string type for new preset with value 'true'", async () => {
+		// This test verifies that new presets created with value "true" but string type
+		// remain as string type (migration only applies to legacy presets without primitiveType)
+
+		// Create a preset with string type (default) and value "true"
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("String True Test");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("stringBool");
+		await popupPage.locator('[data-testid="parameter-value-input"]').fill("true");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Wait for save
+		await popupPage.waitForSelector('[data-testid="preset-item"]');
+
+		// Edit the preset
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', { hasText: "String True Test" });
+		await presetItem.locator('[data-testid="edit-preset-button"]').click();
+
+		// Should remain string type (migration doesn't apply to new presets with explicit primitiveType)
+		const primitiveTypeSelect = popupPage.locator('[data-testid="parameter-primitive-type-select"]').first();
+		await expect(primitiveTypeSelect).toHaveValue("string");
+
+		// Value input should be visible (not toggle)
+		await expect(popupPage.locator('[data-testid="parameter-value-input"]')).toBeVisible();
+	});
 });

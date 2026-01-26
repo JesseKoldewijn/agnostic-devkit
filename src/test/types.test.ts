@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Parameter, ParameterType, Preset } from "../logic/parameters/types";
+import type { Parameter, ParameterType, Preset, PrimitiveType } from "../logic/parameters/types";
 import { createEmptyParameter, createEmptyPreset, generateId } from "../logic/parameters/types";
 
 describe("types", () => {
@@ -184,6 +184,59 @@ describe("types", () => {
 			expect(preset.id).toBe("preset-id");
 			expect(preset.name).toBe("Test Preset");
 			expect(preset.parameters).toHaveLength(1);
+		});
+	});
+
+	describe("PrimitiveType", () => {
+		it("should allow valid PrimitiveType values", () => {
+			const types: PrimitiveType[] = ["string", "boolean"];
+
+			// Type check passes if this compiles
+			expect(types).toHaveLength(2);
+			expect(types).toContain("string");
+			expect(types).toContain("boolean");
+		});
+
+		it("should allow Parameter with primitiveType string", () => {
+			const param: Parameter = {
+				id: "test-id",
+				key: "testKey",
+				primitiveType: "string",
+				type: "queryParam",
+				value: "testValue",
+			};
+
+			expect(param.primitiveType).toBe("string");
+		});
+
+		it("should allow Parameter with primitiveType boolean", () => {
+			const param: Parameter = {
+				id: "test-id",
+				key: "testKey",
+				primitiveType: "boolean",
+				type: "queryParam",
+				value: "true",
+			};
+
+			expect(param.primitiveType).toBe("boolean");
+		});
+
+		it("should allow Parameter without primitiveType (optional)", () => {
+			const param: Parameter = {
+				id: "test-id",
+				key: "testKey",
+				type: "queryParam",
+				value: "testValue",
+			};
+
+			expect(param.primitiveType).toBeUndefined();
+		});
+
+		it("should not include primitiveType in createEmptyParameter by default", () => {
+			const param = createEmptyParameter();
+
+			// primitiveType should not be set (let it default during migration)
+			expect(param.primitiveType).toBeUndefined();
 		});
 	});
 });

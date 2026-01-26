@@ -524,4 +524,190 @@ describe("parameterApplicator", () => {
 			expect(result).toBeTruthy();
 		});
 	});
+
+	describe("getQueryParamValue", () => {
+		it("should return the value of an existing query parameter", async () => {
+			const { getQueryParamValue } = await import("../logic/parameters/parameterApplicator");
+			mockTabUrl = "https://example.com/page?testKey=testValue";
+
+			const value = await getQueryParamValue(123, "testKey");
+			expect(value).toBe("testValue");
+		});
+
+		it("should return null for non-existent query parameter", async () => {
+			const { getQueryParamValue } = await import("../logic/parameters/parameterApplicator");
+			mockTabUrl = "https://example.com/page";
+
+			const value = await getQueryParamValue(123, "testKey");
+			expect(value).toBeNull();
+		});
+
+		it("should return empty string for query parameter with no value", async () => {
+			const { getQueryParamValue } = await import("../logic/parameters/parameterApplicator");
+			mockTabUrl = "https://example.com/page?testKey=";
+
+			const value = await getQueryParamValue(123, "testKey");
+			expect(value).toBe("");
+		});
+	});
+
+	describe("getCookieValue", () => {
+		it("should return the value of an existing cookie", async () => {
+			const { getCookieValue } = await import("../logic/parameters/parameterApplicator");
+			(fakeBrowser.cookies.get as any).mockResolvedValue({ name: "testCookie", value: "cookieValue" });
+
+			const value = await getCookieValue(123, "testCookie");
+			expect(value).toBe("cookieValue");
+		});
+
+		it("should return null for non-existent cookie", async () => {
+			const { getCookieValue } = await import("../logic/parameters/parameterApplicator");
+			(fakeBrowser.cookies.get as any).mockResolvedValue(null);
+
+			const value = await getCookieValue(123, "nonexistent");
+			expect(value).toBeNull();
+		});
+	});
+
+	describe("getLocalStorageValue", () => {
+		it("should return the value of an existing localStorage item", async () => {
+			const { getLocalStorageValue } = await import("../logic/parameters/parameterApplicator");
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({ success: true, value: "storedValue" });
+
+			const value = await getLocalStorageValue(123, "storageKey");
+			expect(value).toBe("storedValue");
+		});
+
+		it("should return null for non-existent localStorage item", async () => {
+			const { getLocalStorageValue } = await import("../logic/parameters/parameterApplicator");
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({ success: true, value: null });
+
+			const value = await getLocalStorageValue(123, "nonexistent");
+			expect(value).toBeNull();
+		});
+	});
+
+	describe("getParameterCurrentValue", () => {
+		it("should dispatch to getQueryParamValue for queryParam type", async () => {
+			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
+			mockTabUrl = "https://example.com/page?myKey=myValue";
+
+			const param: Parameter = {
+				id: "1",
+				key: "myKey",
+				type: "queryParam",
+				value: "",
+			};
+
+			const value = await getParameterCurrentValue(123, param);
+			expect(value).toBe("myValue");
+		});
+
+		it("should dispatch to getCookieValue for cookie type", async () => {
+			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
+			(fakeBrowser.cookies.get as any).mockResolvedValue({ name: "myCookie", value: "cookieVal" });
+
+			const param: Parameter = {
+				id: "1",
+				key: "myCookie",
+				type: "cookie",
+				value: "",
+			};
+
+			const value = await getParameterCurrentValue(123, param);
+			expect(value).toBe("cookieVal");
+		});
+
+		it("should dispatch to getLocalStorageValue for localStorage type", async () => {
+			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({ success: true, value: "lsValue" });
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "",
+			};
+
+			const value = await getParameterCurrentValue(123, param);
+			expect(value).toBe("lsValue");
+		});
+	});
+
+	describe("boolean parameter removal", () => {
+		it("should set value to 'false' instead of removing for boolean queryParam", async () => {
+			mockTabUrl = "https://example.com/page?boolKey=true";
+
+			const param: Parameter = {
+				id: "1",
+				key: "boolKey",
+				primitiveType: "boolean",
+				type: "queryParam",
+				value: "true",
+			};
+
+			await removeParameter(123, param);
+
+			// Should set to false, not remove
+			expect(mockTabUrl).toContain("boolKey=false");
+		});
+
+		it("should remove parameter completely for string type", async () => {
+			mockTabUrl = "https://example.com/page?stringKey=value";
+
+			const param: Parameter = {
+				id: "1",
+				key: "stringKey",
+				primitiveType: "string",
+				type: "queryParam",
+				value: "value",
+			};
+
+			await removeParameter(123, param);
+
+			// Should be removed completely
+			expect(mockTabUrl).not.toContain("stringKey");
+		});
+
+		it("should set cookie value to 'false' for boolean type instead of removing", async () => {
+			const param: Parameter = {
+				id: "1",
+				key: "boolCookie",
+				primitiveType: "boolean",
+				type: "cookie",
+				value: "true",
+			};
+
+			await removeParameter(123, param);
+
+			// Should call cookies.set with value "false"
+			expect(fakeBrowser.cookies.set).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "boolCookie",
+					value: "false",
+				})
+			);
+		});
+
+		it("should set localStorage value to 'false' for boolean type instead of removing", async () => {
+			const param: Parameter = {
+				id: "1",
+				key: "boolLS",
+				primitiveType: "boolean",
+				type: "localStorage",
+				value: "true",
+			};
+
+			await removeParameter(123, param);
+
+			// Should send APPLY_LS with value "false"
+			expect(fakeBrowser.runtime.sendMessage).toHaveBeenCalledWith(
+				expect.objectContaining({
+					key: "boolLS",
+					type: "APPLY_LS",
+					value: "false",
+				})
+			);
+		});
+	});
 });
