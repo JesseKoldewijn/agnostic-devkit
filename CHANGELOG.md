@@ -1,3 +1,10 @@
+# [1.3.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0-canary.1...v1.3.0-canary.2) (2026-01-26)
+
+
+### Bug Fixes
+
+* minor tweak of export functionality and UI ([a6e2d13](https://github.com/JesseKoldewijn/agnostic-devkit/commit/a6e2d132e6213ea971df8d63dc962fcd6c654e3e))
+
 # [1.3.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0...v1.3.0-canary.1) (2026-01-26)
 
 
