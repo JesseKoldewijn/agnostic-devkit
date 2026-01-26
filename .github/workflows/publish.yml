@@ -17,8 +17,8 @@ jobs:
     release:
         name: Semantic Release
         runs-on: ubuntu-latest
-        # Skip if this is already a release commit (prevents infinite loop)
-        if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
+        # Always run on workflow_dispatch; skip push if release commit (prevents infinite loop)
+        if: github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(release):')
         permissions:
             contents: write
             issues: write
@@ -81,11 +81,11 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Lint (Oxlint)
+            - name: Lint (ESLint)
               run: yarn lint
 
-            - name: Format Check (Biome)
-              run: yarn check
+            - name: Format Check (Prettier)
+              run: yarn format:check
 
             - name: Type Check
               run: yarn type-check
