@@ -12,6 +12,14 @@
 ### Bug Fixes
 
 * tweak of firefox manifest info ([9398f3a](https://github.com/JesseKoldewijn/agnostic-devkit/commit/9398f3a4e417c94f80b2e8f2841c5852bcdb58f5))
+* UI tweak of preset editor ([f71bed1](https://github.com/JesseKoldewijn/agnostic-devkit/commit/f71bed1754039bb4f87d96d5ff1e80979aaf3100))
+
+# [1.3.0-canary.3](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0-canary.2...v1.3.0-canary.3) (2026-01-26)
+
+
+### Bug Fixes
+
+* tweak of firefox manifest info ([9398f3a](https://github.com/JesseKoldewijn/agnostic-devkit/commit/9398f3a4e417c94f80b2e8f2841c5852bcdb58f5))
 
 # [1.3.0-canary.3](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0-canary.2...v1.3.0-canary.3) (2026-01-26)
 
