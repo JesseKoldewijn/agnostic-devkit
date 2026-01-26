@@ -743,4 +743,145 @@ describe("presetManager", () => {
 			expect(preset.createdAt).toBeLessThanOrEqual(after);
 		});
 	});
+
+	describe("migrateParameter", () => {
+		it("should set primitiveType to boolean when value is 'true'", async () => {
+			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const param = {
+				id: "test-id",
+				key: "testKey",
+				type: "queryParam" as const,
+				value: "true",
+			};
+
+			const migrated = migrateParameter(param);
+			expect(migrated.primitiveType).toBe("boolean");
+		});
+
+		it("should set primitiveType to boolean when value is 'false'", async () => {
+			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const param = {
+				id: "test-id",
+				key: "testKey",
+				type: "queryParam" as const,
+				value: "false",
+			};
+
+			const migrated = migrateParameter(param);
+			expect(migrated.primitiveType).toBe("boolean");
+		});
+
+		it("should set primitiveType to string when value is not a boolean string", async () => {
+			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const param = {
+				id: "test-id",
+				key: "testKey",
+				type: "queryParam" as const,
+				value: "someValue",
+			};
+
+			const migrated = migrateParameter(param);
+			expect(migrated.primitiveType).toBe("string");
+		});
+
+		it("should return unchanged parameter when primitiveType already exists", async () => {
+			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const param = {
+				id: "test-id",
+				key: "testKey",
+				primitiveType: "string" as const,
+				type: "queryParam" as const,
+				value: "true", // Even though value is "true", should stay string
+			};
+
+			const migrated = migrateParameter(param);
+			expect(migrated.primitiveType).toBe("string");
+			expect(migrated).toBe(param); // Same reference = unchanged
+		});
+
+		it("should set primitiveType to string for empty value", async () => {
+			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const param = {
+				id: "test-id",
+				key: "testKey",
+				type: "queryParam" as const,
+				value: "",
+			};
+
+			const migrated = migrateParameter(param);
+			expect(migrated.primitiveType).toBe("string");
+		});
+	});
+
+	describe("migratePresetsIfNeeded", () => {
+		it("should migrate presets and save when migration is needed", async () => {
+			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+
+			// Set up legacy presets without primitiveType
+			await fakeBrowser.storage.sync.set({
+				presets: [
+					{
+						id: "preset-1",
+						name: "Legacy Preset",
+						parameters: [
+							{ id: "p1", key: "boolKey", type: "queryParam", value: "true" },
+							{ id: "p2", key: "stringKey", type: "queryParam", value: "hello" },
+						],
+					},
+				],
+			});
+
+			await migratePresetsIfNeeded();
+
+			const storage = await fakeBrowser.storage.sync.get("presets");
+			const preset = storage.presets[0];
+			expect(preset.parameters[0].primitiveType).toBe("boolean");
+			expect(preset.parameters[1].primitiveType).toBe("string");
+		});
+
+		it("should not save when no migration is needed", async () => {
+			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+
+			// Set up presets that are already migrated
+			await fakeBrowser.storage.sync.set({
+				presets: [
+					{
+						id: "preset-1",
+						name: "Migrated Preset",
+						parameters: [
+							{ id: "p1", key: "key", type: "queryParam", value: "val", primitiveType: "string" },
+						],
+					},
+				],
+			});
+
+			const setSpy = vi.spyOn(fakeBrowser.storage.sync, "set");
+			const callCountBefore = setSpy.mock.calls.length;
+
+			await migratePresetsIfNeeded();
+
+			// Should not have called set again (no changes needed)
+			expect(setSpy.mock.calls.length).toBe(callCountBefore);
+		});
+
+		it("should handle empty presets array", async () => {
+			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+
+			await fakeBrowser.storage.sync.set({ presets: [] });
+
+			// Should not throw
+			await expect(migratePresetsIfNeeded()).resolves.not.toThrow();
+		});
+
+		it("should handle presets with no parameters", async () => {
+			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+
+			await fakeBrowser.storage.sync.set({
+				presets: [{ id: "preset-1", name: "Empty Preset", parameters: [] }],
+			});
+
+			// Should not throw
+			await expect(migratePresetsIfNeeded()).resolves.not.toThrow();
+		});
+	});
 });

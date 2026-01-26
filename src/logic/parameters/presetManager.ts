@@ -298,3 +298,48 @@ export async function importPresets(
 		return { errors: [`Failed to parse JSON: ${error}`], imported: 0 };
 	}
 }
+
+/**
+ * Migrate a single parameter for backwards compatibility
+ * If primitiveType is not set, infer it from the value:
+ * - "true" or "false" → boolean
+ * - anything else → string
+ */
+export function migrateParameter(param: Parameter): Parameter {
+	// Already migrated
+	if (param.primitiveType !== undefined) {
+		return param;
+	}
+
+	// Infer boolean type from value
+	if (param.value === "true" || param.value === "false") {
+		return { ...param, primitiveType: "boolean" };
+	}
+
+	// Default to string
+	return { ...param, primitiveType: "string" };
+}
+
+/**
+ * Check all presets and migrate parameters that don't have primitiveType set
+ * Saves back to storage if any changes were made
+ */
+export async function migratePresetsIfNeeded(): Promise<void> {
+	const presets = await getPresets();
+	let needsUpdate = false;
+
+	const migratedPresets = presets.map((preset) => {
+		const migratedParams = preset.parameters.map((param) => {
+			const migrated = migrateParameter(param);
+			if (migrated !== param) {
+				needsUpdate = true;
+			}
+			return migrated;
+		});
+		return { ...preset, parameters: migratedParams };
+	});
+
+	if (needsUpdate) {
+		await savePresetsToStorage(migratedPresets);
+	}
+}

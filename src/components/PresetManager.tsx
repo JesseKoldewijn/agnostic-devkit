@@ -1,6 +1,6 @@
 import type { Component } from "solid-js";
 import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
-import type { Parameter, ParameterType, Preset } from "@/logic/parameters";
+import type { Parameter, ParameterType, PrimitiveType, Preset } from "@/logic/parameters";
 import {
 	createEmptyParameter,
 	createPreset,
@@ -10,6 +10,7 @@ import {
 	getParameterTypeIcon,
 	getPresets,
 	importPresets,
+	migratePresetsIfNeeded,
 	onPresetsChanged,
 	updatePresetData,
 } from "@/logic/parameters";
@@ -55,9 +56,54 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		new Map()
 	);
 
+	// Track primitive types for each parameter (for UI reactivity)
+	const [paramPrimitiveTypes, setParamPrimitiveTypes] = createSignal<Map<string, PrimitiveType>>(
+		new Map()
+	);
+
+	// Track boolean values for each parameter (for toggle state)
+	const [paramBoolValues, setParamBoolValues] = createSignal<Map<string, boolean>>(new Map());
+
+	// Get primitive type for a parameter
+	const getParamPrimitiveType = (paramId: string): PrimitiveType => {
+		return paramPrimitiveTypes().get(paramId) ?? initialParameterData().get(paramId)?.primitiveType ?? "string";
+	};
+
+	// Set primitive type for a parameter
+	const setParamPrimitiveType = (paramId: string, type: PrimitiveType) => {
+		setParamPrimitiveTypes((prev) => {
+			const next = new Map(prev);
+			next.set(paramId, type);
+			return next;
+		});
+		// If switching to boolean, set default value to true
+		if (type === "boolean") {
+			setParamBoolValue(paramId, true);
+		}
+	};
+
+	// Get boolean value for a parameter
+	const getParamBoolValue = (paramId: string): boolean => {
+		const cached = paramBoolValues().get(paramId);
+		if (cached !== undefined) return cached;
+		const paramData = initialParameterData().get(paramId);
+		return paramData?.value === "true";
+	};
+
+	// Set boolean value for a parameter
+	const setParamBoolValue = (paramId: string, value: boolean) => {
+		setParamBoolValues((prev) => {
+			const next = new Map(prev);
+			next.set(paramId, value);
+			return next;
+		});
+	};
+
 	// Load presets
 	const loadPresets = async () => {
 		try {
+			// Migrate legacy presets without primitiveType on first load
+			await migratePresetsIfNeeded();
 			const allPresets = await getPresets();
 			setPresets(allPresets);
 		} catch (error) {
@@ -87,6 +133,8 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		setParameterIds([]);
 		setInitialParameterData(new Map());
 		setEditingPreset(null);
+		setParamPrimitiveTypes(new Map());
+		setParamBoolValues(new Map());
 	};
 
 	// Start creating a new preset
@@ -168,6 +216,8 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			} // Skip empty parameters
 
 			const type = formData.get(`param-${paramId}-type`) as string as ParameterType;
+			const primitiveType = (formData.get(`param-${paramId}-primitiveType`) as string) as PrimitiveType;
+			// For boolean type, get value from the hidden input (controlled by toggle state)
 			const value = (formData.get(`param-${paramId}-value`) as string) || "";
 			const paramDescription =
 				(formData.get(`param-${paramId}-description`) as string)?.trim() || undefined;
@@ -176,6 +226,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 				description: paramDescription,
 				id: paramId,
 				key: key.trim(),
+				primitiveType: primitiveType || "string",
 				type,
 				value,
 			});
@@ -855,35 +906,16 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											class={cn("group relative border-border/40 p-4 shadow-sm")}
 											data-testid={`parameter-item-${index()}`}
 										>
-											<div class={cn("mb-4 flex items-center justify-between")}>
-												<div class={cn("flex items-center gap-2.5")}>
-													<Badge
-														variant="default"
-														class={cn(
-															"p-0! text-[9px]! flex size-5 items-center justify-center rounded-sm"
-														)}
-													>
-														{index() + 1}
-													</Badge>
-								<Select
-									name={`param-${paramId}-type`}
-									ref={(el) => {
-										if (el) {
-											queueMicrotask(() => {
-												el.value = paramData.type;
-											});
-										}
-									}}
-														class={cn(
-															"py-0! px-2! text-[10px]! h-7 w-28 rounded-md uppercase tracking-widest"
-														)}
-														data-testid="parameter-type-select"
-													>
-														<option value="queryParam">URL Query</option>
-														<option value="cookie">Cookie</option>
-														<option value="localStorage">Storage</option>
-													</Select>
-												</div>
+											{/* Header with badge and delete button */}
+											<div class={cn("mb-3 flex items-center justify-between")}>
+												<Badge
+													variant="default"
+													class={cn(
+														"p-0! text-[9px]! flex size-5 items-center justify-center rounded-sm"
+													)}
+												>
+													{index() + 1}
+												</Badge>
 												<Button
 													variant="ghost-destructive"
 													size="icon"
@@ -911,6 +943,57 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											</div>
 
 											<div class={cn("grid grid-cols-2 gap-3")}>
+												{/* Row 1: Storage Type and Value Type */}
+												<div class={cn("flex flex-col gap-1.5")}>
+													<Label class={cn("text-[10px]! font-black uppercase tracking-widest opacity-70")}>
+														Storage Type
+													</Label>
+													<Select
+														name={`param-${paramId}-type`}
+														ref={(el) => {
+															if (el) {
+																queueMicrotask(() => {
+																	el.value = paramData.type;
+																});
+															}
+														}}
+														class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg uppercase")}
+														data-testid="parameter-type-select"
+													>
+														<option value="queryParam">URL Query</option>
+														<option value="cookie">Cookie</option>
+														<option value="localStorage">Storage</option>
+													</Select>
+												</div>
+
+												<div class={cn("flex flex-col gap-1.5")}>
+													<Label class={cn("text-[10px]! font-black uppercase tracking-widest opacity-70")}>
+														Value Type
+													</Label>
+													<Select
+														name={`param-${paramId}-primitiveType`}
+														ref={(el) => {
+															if (el) {
+																queueMicrotask(() => {
+																	el.value = paramData.primitiveType ?? "string";
+																});
+															}
+														}}
+														onChange={(e) => {
+															setParamPrimitiveType(
+																paramId,
+																e.currentTarget.value as PrimitiveType
+															);
+														}}
+														class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg uppercase")}
+														data-testid="parameter-primitive-type-select"
+													>
+														<option value="string">String</option>
+														<option value="boolean">Boolean</option>
+													</Select>
+												</div>
+
+												{/* Row 2: Key and Value */}
 												<Input
 													label="Key"
 													name={`param-${paramId}-key`}
@@ -924,19 +1007,53 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													data-testid="parameter-key-input"
 												/>
 
-												<Input
-													label="Value"
-													name={`param-${paramId}-value`}
-													placeholder="value"
-													ref={(el) => {
-														if (el) {
-															el.value = paramData.value;
-														}
-													}}
-													class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg font-mono")}
-													data-testid="parameter-value-input"
-												/>
+												<Show
+													when={getParamPrimitiveType(paramId) === "boolean"}
+													fallback={
+														<Input
+															label="Value"
+															name={`param-${paramId}-value`}
+															placeholder="value"
+															ref={(el) => {
+																if (el) {
+																	el.value = paramData.value;
+																}
+															}}
+															class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg font-mono")}
+															data-testid="parameter-value-input"
+														/>
+													}
+												>
+													{/* Boolean value toggle */}
+													<div class={cn("flex min-w-0 flex-col")}>
+														<Label>Value</Label>
+														<input
+															type="hidden"
+															name={`param-${paramId}-value`}
+															value={getParamBoolValue(paramId) ? "true" : "false"}
+														/>
+														<button
+															type="button"
+															class={cn(
+																"flex h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 font-bold text-[13px] transition-colors",
+																getParamBoolValue(paramId)
+																	? "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
+																	: "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
+															)}
+															onClick={() => setParamBoolValue(paramId, !getParamBoolValue(paramId))}
+															data-testid="parameter-value-toggle"
+														>
+															<Show when={getParamBoolValue(paramId)}>
+																<span data-testid="parameter-value-true">True</span>
+															</Show>
+															<Show when={!getParamBoolValue(paramId)}>
+																<span data-testid="parameter-value-false">False</span>
+															</Show>
+														</button>
+													</div>
+												</Show>
 
+												{/* Row 3: Notes */}
 												<Input
 													label="Notes (Optional)"
 													name={`param-${paramId}-description`}

@@ -8,6 +8,13 @@
 export type ParameterType = "queryParam" | "cookie" | "localStorage";
 
 /**
+ * The primitive type of the parameter value - determines how it's handled
+ * - "string": Standard string value (default)
+ * - "boolean": Value is "true" or "false", uses toggle UI, sets "false" on disable
+ */
+export type PrimitiveType = "string" | "boolean";
+
+/**
  * A single parameter that can be applied to a page
  */
 export interface Parameter {
@@ -21,6 +28,8 @@ export interface Parameter {
 	value: string;
 	/** Optional description for this parameter */
 	description?: string;
+	/** The primitive type of the value (defaults to "string" if not set) */
+	primitiveType?: PrimitiveType;
 }
 
 /**

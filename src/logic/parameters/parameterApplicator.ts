@@ -153,6 +153,84 @@ async function removeLocalStorage(tabId: number, key: string): Promise<boolean> 
 }
 
 /**
+ * Get the current value of a query parameter from a tab's URL
+ */
+export async function getQueryParamValue(tabId: number, key: string): Promise<string | null> {
+	try {
+		const url = await getTabUrl(tabId);
+		if (!url) {
+			return null;
+		}
+
+		const urlObj = new URL(url);
+		if (!urlObj.searchParams.has(key)) {
+			return null;
+		}
+		return urlObj.searchParams.get(key);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Get the current value of a cookie from a tab's domain
+ */
+export async function getCookieValue(tabId: number, key: string): Promise<string | null> {
+	try {
+		const url = await getTabUrl(tabId);
+		if (!url) {
+			return null;
+		}
+
+		const urlObj = new URL(url);
+		const cookie = await browser.cookies.get({
+			name: key,
+			url: urlObj.origin,
+		});
+
+		return cookie?.value ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Get the current value of a localStorage item from a tab
+ */
+export async function getLocalStorageValue(tabId: number, key: string): Promise<string | null> {
+	try {
+		const response = await browser.runtime.sendMessage({
+			key,
+			tabId,
+			type: "GET_LS",
+		});
+		return response?.value ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Get the current value of a parameter from the page
+ * Dispatches to the appropriate getter based on parameter type
+ */
+export async function getParameterCurrentValue(
+	tabId: number,
+	param: Parameter
+): Promise<string | null> {
+	switch (param.type) {
+		case "queryParam":
+			return getQueryParamValue(tabId, param.key);
+		case "cookie":
+			return getCookieValue(tabId, param.key);
+		case "localStorage":
+			return getLocalStorageValue(tabId, param.key);
+		default:
+			return null;
+	}
+}
+
+/**
  * Apply a single parameter to a tab
  */
 export async function applyParameter(tabId: number, parameter: Parameter): Promise<boolean> {
@@ -175,8 +253,29 @@ export async function applyParameter(tabId: number, parameter: Parameter): Promi
 
 /**
  * Remove a single parameter from a tab
+ * For boolean parameters, sets value to "false" instead of removing
  */
 export async function removeParameter(tabId: number, parameter: Parameter): Promise<boolean> {
+	// For boolean parameters, set to "false" instead of removing
+	if (parameter.primitiveType === "boolean") {
+		switch (parameter.type) {
+			case "queryParam": {
+				return applyQueryParam(tabId, parameter.key, "false");
+			}
+			case "cookie": {
+				return applyCookie(tabId, parameter.key, "false");
+			}
+			case "localStorage": {
+				return applyLocalStorage(tabId, parameter.key, "false");
+			}
+			default: {
+				console.warn("[ParameterApplicator] Unknown parameter type:", parameter.type);
+				return false;
+			}
+		}
+	}
+
+	// For string parameters, remove completely
 	switch (parameter.type) {
 		case "queryParam": {
 			return removeQueryParam(tabId, parameter.key);

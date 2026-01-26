@@ -19,6 +19,8 @@ export {
 	exportPresets,
 	getPresetsWithActiveState,
 	importPresets,
+	migrateParameter,
+	migratePresetsIfNeeded,
 	togglePreset,
 	updatePreset,
 	updatePreset as updatePresetData,
@@ -42,6 +44,7 @@ export type {
 	ParameterMessageResponse,
 	ParameterType,
 	Preset,
+	PrimitiveType,
 	SyncStorageSchema,
 	TabPresetState,
 } from "./types";
