@@ -181,9 +181,6 @@ jobs:
                   EXTENSION_ENV: ${{ steps.env.outputs.val }}
               run: yarn package
 
-            - name: "Debug: List build artifacts"
-              run: ls -R build-output/
-
             - name: Upload build artifact
               uses: actions/upload-artifact@v4
               with:
@@ -327,9 +324,6 @@ jobs:
                   name: extension-build-${{ steps.env.outputs.val }}
                   path: build-output/
 
-            - name: "Debug: Verify downloaded artifacts"
-              run: ls -R build-output/
-
             - name: Run E2E tests
               env:
                   CI_COVERAGE: "true"
@@ -401,27 +395,6 @@ jobs:
               with:
                   name: playwright-coverage
                   path: coverage/playwright/
-
-            - name: Debug coverage files
-              run: |
-                  echo "=== Coverage directory structure ==="
-                  find coverage -type f -name "*.json" 2>/dev/null || echo "No JSON files found"
-                  echo ""
-                  echo "=== Vitest coverage summary ==="
-                  if [ -f "coverage/vitest/coverage-summary.json" ]; then
-                    cat coverage/vitest/coverage-summary.json | head -5
-                  else
-                    echo "ERROR: coverage/vitest/coverage-summary.json not found!"
-                    ls -la coverage/ 2>/dev/null || echo "coverage/ directory does not exist"
-                  fi
-                  echo ""
-                  echo "=== Playwright coverage summary ==="
-                  if [ -f "coverage/playwright/coverage-summary.json" ]; then
-                    cat coverage/playwright/coverage-summary.json | head -5
-                  else
-                    echo "WARNING: coverage/playwright/coverage-summary.json not found"
-                    ls -la coverage/playwright/ 2>/dev/null || echo "coverage/playwright/ directory does not exist"
-                  fi
 
             - name: Generate coverage badges
               run: yarn coverage:badges
