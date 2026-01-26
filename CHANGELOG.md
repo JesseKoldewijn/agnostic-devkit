@@ -1,3 +1,17 @@
+# [1.3.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0...v1.3.0) (2026-01-26)
+
+
+### Bug Fixes
+
+* minor tweak of export functionality and UI ([994c7df](https://github.com/JesseKoldewijn/agnostic-devkit/commit/994c7df02f5d675668c51e7b145d3dfd083ccc81))
+* tweak of firefox manifest info ([0a07c56](https://github.com/JesseKoldewijn/agnostic-devkit/commit/0a07c56e4cbee48820411d373a39caf5143ea72e))
+* UI tweak of preset editor ([9b8c971](https://github.com/JesseKoldewijn/agnostic-devkit/commit/9b8c9714c474cff8fd2f1fe1dba4b7f17dd2d668))
+
+
+### Features
+
+* bulk/selective/single preset export ([77e9417](https://github.com/JesseKoldewijn/agnostic-devkit/commit/77e9417bbcc994e67416300c5713b77b2577fe22))
+
 # [1.3.0-canary.3](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0-canary.2...v1.3.0-canary.3) (2026-01-26)
 
 
