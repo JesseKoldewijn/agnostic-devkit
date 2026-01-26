@@ -54,6 +54,7 @@ declare global {
   const injectScript: typeof import('wxt/utils/inject-script').injectScript
   const isNotificationDisabled: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/browser').isNotificationDisabled
   const isNotificationsSupported: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/browser').isNotificationsSupported
+  const isSelectionMode: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/PresetManager').isSelectionMode
   const isServer: typeof import('solid-js/web').isServer
   const isSidebarSupported: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/browser').isSidebarSupported
   const lazy: typeof import('solid-js').lazy
@@ -72,6 +73,7 @@ declare global {
   const renderToString: typeof import('solid-js/web').renderToString
   const renderToStringAsync: typeof import('solid-js/web').renderToStringAsync
   const setDisplayMode: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/displayMode').setDisplayMode
+  const setIsSelectionMode: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/PresetManager').setIsSelectionMode
   const setTheme: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/theme').setTheme
   const showNotification: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/browser').showNotification
   const showNotificationWithButtons: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/browser').showNotificationWithButtons

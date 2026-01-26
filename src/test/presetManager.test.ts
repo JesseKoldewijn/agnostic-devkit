@@ -563,6 +563,63 @@ describe("presetManager", () => {
 			const json = await exportPresets();
 			expect(json).toContain("\n");
 		});
+
+		it("should export only specified presets when IDs provided", async () => {
+			const presets: Preset[] = [
+				{ id: "p1", name: "Preset 1", parameters: [] },
+				{ id: "p2", name: "Preset 2", parameters: [] },
+				{ id: "p3", name: "Preset 3", parameters: [] },
+			];
+			await fakeBrowser.storage.sync.set({ presets });
+
+			const json = await exportPresets(["p1", "p3"]);
+			const parsed = JSON.parse(json);
+
+			expect(parsed).toHaveLength(2);
+			expect(parsed[0].name).toBe("Preset 1");
+			expect(parsed[1].name).toBe("Preset 3");
+		});
+
+		it("should export single preset when one ID provided", async () => {
+			const presets: Preset[] = [
+				{ id: "p1", name: "Preset 1", parameters: [] },
+				{ id: "p2", name: "Preset 2", parameters: [] },
+			];
+			await fakeBrowser.storage.sync.set({ presets });
+
+			const json = await exportPresets(["p2"]);
+			const parsed = JSON.parse(json);
+
+			expect(parsed).toHaveLength(1);
+			expect(parsed[0].name).toBe("Preset 2");
+		});
+
+		it("should return empty array when no IDs match", async () => {
+			const presets: Preset[] = [
+				{ id: "p1", name: "Preset 1", parameters: [] },
+				{ id: "p2", name: "Preset 2", parameters: [] },
+			];
+			await fakeBrowser.storage.sync.set({ presets });
+
+			const json = await exportPresets(["nonexistent"]);
+			const parsed = JSON.parse(json);
+
+			expect(parsed).toStrictEqual([]);
+		});
+
+		it("should export all presets when empty array provided", async () => {
+			const presets: Preset[] = [
+				{ id: "p1", name: "Preset 1", parameters: [] },
+				{ id: "p2", name: "Preset 2", parameters: [] },
+			];
+			await fakeBrowser.storage.sync.set({ presets });
+
+			// Empty array should filter nothing, resulting in empty export
+			const json = await exportPresets([]);
+			const parsed = JSON.parse(json);
+
+			expect(parsed).toStrictEqual([]);
+		});
 	});
 
 	describe("importPresets", () => {

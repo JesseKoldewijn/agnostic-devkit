@@ -223,10 +223,14 @@ export async function reorderParameters(presetId: string, parameterIds: string[]
 
 /**
  * Export presets as JSON
+ * @param presetIds Optional array of preset IDs to export. If not provided, exports all presets.
  */
-export async function exportPresets(): Promise<string> {
-	const presets = await getPresets();
-	return JSON.stringify(presets, null, 2);
+export async function exportPresets(presetIds?: string[]): Promise<string> {
+	const allPresets = await getPresets();
+	const presetsToExport = presetIds
+		? allPresets.filter((p) => presetIds.includes(p.id))
+		: allPresets;
+	return JSON.stringify(presetsToExport, null, 2);
 }
 
 /**
