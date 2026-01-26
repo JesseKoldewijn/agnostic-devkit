@@ -5,6 +5,13 @@ declare module "wxt/browser" {
   export type PublicPath =
     | ""
     | "/"
+    | "/assets/fonts/Geist-Black.woff2"
+    | "/assets/fonts/Geist-Bold.woff2"
+    | "/assets/fonts/Geist-Medium.woff2"
+    | "/assets/fonts/Geist-Regular.woff2"
+    | "/assets/fonts/Geist-SemiBold.woff2"
+    | "/assets/fonts/GeistMono-Medium.woff2"
+    | "/assets/fonts/GeistMono-Regular.woff2"
     | "/background.js"
     | "/content-scripts/content.js"
     | "/icons/README.md"

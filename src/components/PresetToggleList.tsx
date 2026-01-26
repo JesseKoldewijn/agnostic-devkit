@@ -181,7 +181,6 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 						variant="ghost"
 						size="xs"
 						onClick={props.onManagePresets}
-						class={cn("font-black text-[9px] uppercase tracking-widest")}
 						data-testid="manage-presets-button"
 					>
 						Manage
@@ -207,7 +206,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 					<Show when={props.onManagePresets}>
 						<Button
 							variant="link"
-							size="xs"
+							size="sm"
 							onClick={props.onManagePresets}
 							class={cn("mt-2")}
 							data-testid="create-first-preset-button"

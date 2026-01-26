@@ -7,6 +7,7 @@ import {
 	deletePreset,
 	duplicatePreset,
 	exportPresets,
+	getParameterTypeIcon,
 	getPresets,
 	importPresets,
 	onPresetsChanged,
@@ -40,6 +41,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	const [viewMode, setViewMode] = createSignal<ViewMode>("list");
 	const [editingPreset, setEditingPreset] = createSignal<Preset | null>(null);
 	const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
+	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
 
 	// Form state - only track parameter IDs for rendering, not their values
 	const [parameterIds, setParameterIds] = createSignal<string[]>([]);
@@ -106,6 +108,11 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	const cancelForm = () => {
 		resetForm();
 		setViewMode("list");
+	};
+
+	// Toggle expanded state for a preset in list view
+	const toggleExpanded = (presetId: string) => {
+		setExpandedPresetId((current) => (current === presetId ? null : presetId));
 	};
 
 	// Add a new parameter to the form
@@ -287,21 +294,18 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					<Show when={props.onClose}>
 						<Button
 							variant="ghost"
-							size="icon"
+							size="xs"
 							onClick={props.onClose}
-							class={cn("h-6 w-6 text-foreground/50 hover:text-foreground")}
 							data-testid="close-manager-button"
-							title="Close manager"
+							aria-label="Close preset manager"
 						>
 							<svg
-								class={cn("h-4 w-4")}
+								class={cn("h-3.5 w-3.5")}
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
 								aria-hidden="true"
-								role="img"
 							>
-								<title>Close</title>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -309,6 +313,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									d="M6 18L18 6M6 6l12 12"
 								/>
 							</svg>
+							<span>Close</span>
 						</Button>
 					</Show>
 				</div>
@@ -321,21 +326,18 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					<div class={cn("flex gap-2")}>
 						<Button
 							variant="secondary"
-							size="xs"
+							size="sm"
 							onClick={handleExport}
-							class={cn("h-8 min-w-[85px] border border-border/40 shadow-sm")}
 							title="Export presets to JSON"
 							data-testid="export-presets-button"
 						>
 							<svg
-								class={cn("mr-1.5 h-3.5 w-3.5 opacity-70")}
+								class={cn("h-3.5 w-3.5 opacity-70")}
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
 								aria-hidden="true"
-								role="img"
 							>
-								<title>Export</title>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -356,23 +358,20 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 							/>
 							<Button
 								variant="secondary"
-								size="xs"
+								size="sm"
 								onClick={() =>
 									(document.querySelector("#import-presets-input") as HTMLInputElement)?.click()
 								}
-								class={cn("h-8 min-w-[85px] border border-border/40 shadow-sm")}
 								title="Import presets from JSON"
 								data-testid="import-presets-button"
 							>
 								<svg
-									class={cn("mr-1.5 h-3.5 w-3.5 opacity-70")}
+									class={cn("h-3.5 w-3.5 opacity-70")}
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
 									aria-hidden="true"
-									role="img"
 								>
-									<title>Import</title>
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
@@ -385,12 +384,11 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						</div>
 					</div>
 					<Button
-						size="xs"
+						size="sm"
 						onClick={startCreate}
 						data-testid="create-preset-button"
-						class={cn("h-8 px-4")}
 					>
-						<span>+ New Preset</span>
+						+ New Preset
 					</Button>
 				</div>
 			</div>
@@ -419,7 +417,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					>
 						No presets found
 					</p>
-					<Button variant="outline" size="xs" onClick={startCreate} class={cn("h-8")}>
+					<Button variant="outline" size="sm" onClick={startCreate}>
 						Create First Preset
 					</Button>
 				</Card>
@@ -434,59 +432,61 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								data-testid="preset-item"
 								data-preset-id={preset.id}
 							>
-								<div class={cn("flex items-start justify-between gap-4")}>
+								<div class={cn("flex items-start justify-between gap-3")}>
 									<div class={cn("min-w-0 flex-1")}>
-										<div
-											class={cn(
-												"truncate font-black text-[14px] text-foreground uppercase tracking-tight"
-											)}
-											data-testid="preset-name"
+										<button
+											type="button"
+											class={cn("group w-full text-left")}
+											onClick={() => toggleExpanded(preset.id)}
+											data-testid="preset-expand-button"
 										>
-											{preset.name}
-										</div>
-										<Show when={preset.description}>
 											<div
 												class={cn(
-													"mt-1 line-clamp-1 font-bold text-[11px] text-muted-foreground leading-tight"
+													"truncate font-black text-[14px] text-foreground uppercase tracking-tight transition-colors group-hover:text-primary"
 												)}
-												data-testid="preset-description"
+												data-testid="preset-name"
 											>
-												{preset.description}
+												{preset.name}
 											</div>
-										</Show>
-										<div class={cn("mt-2.5 flex flex-wrap gap-1.5")}>
-											<For each={preset.parameters.slice(0, 3)}>
-												{(param) => (
-													<Badge variant="outline" class={cn("!text-[8px] h-4 px-1.5")}>
-														{param.key}
-													</Badge>
-												)}
-											</For>
-											<Show when={preset.parameters.length > 3}>
-												<Badge variant="outline" class={cn("!text-[8px] h-4 px-1.5 italic")}>
-													+{preset.parameters.length - 3}
-												</Badge>
+											<Show when={preset.description}>
+												<div
+													class={cn(
+														"mt-1 truncate font-bold text-[11px] text-muted-foreground leading-tight"
+													)}
+													data-testid="preset-description"
+												>
+													{preset.description}
+												</div>
 											</Show>
-										</div>
+											<div class={cn("mt-2.5 flex items-center gap-2")}>
+												<Badge variant="secondary" class={cn("!text-[8px] h-4 px-2 font-black")}>
+													{preset.parameters.length} VARS
+												</Badge>
+												<span
+													class={cn(
+														"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
+													)}
+												>
+													{expandedPresetId() === preset.id ? "Hide" : "View"}
+												</span>
+											</div>
+										</button>
 									</div>
 									<div class={cn("flex items-center space-x-1")}>
 										<Button
 											variant="ghost"
 											size="icon"
 											onClick={() => handleDuplicate(preset.id)}
-											class={cn("h-7 w-7 text-foreground/50 hover:bg-muted hover:text-foreground")}
-											title="Duplicate preset"
+											aria-label="Duplicate preset"
 											data-testid="duplicate-preset-button"
 										>
 											<svg
-												class={cn("h-3.5 w-3.5")}
+												class={cn("h-4 w-4")}
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
 												aria-hidden="true"
-												role="img"
 											>
-												<title>Duplicate</title>
 												<path
 													stroke-linecap="round"
 													stroke-linejoin="round"
@@ -499,19 +499,16 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											variant="ghost"
 											size="icon"
 											onClick={() => startEdit(preset)}
-											class={cn("h-7 w-7 text-foreground/50 hover:bg-muted hover:text-foreground")}
-											title="Edit preset"
+											aria-label="Edit preset"
 											data-testid="edit-preset-button"
 										>
 											<svg
-												class={cn("h-3.5 w-3.5")}
+												class={cn("h-4 w-4")}
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
 												aria-hidden="true"
-												role="img"
 											>
-												<title>Edit</title>
 												<path
 													stroke-linecap="round"
 													stroke-linejoin="round"
@@ -524,24 +521,19 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											when={confirmDelete() === preset.id}
 											fallback={
 												<Button
-													variant="ghost"
+													variant="ghost-destructive"
 													size="icon"
 													onClick={() => setConfirmDelete(preset.id)}
-													class={cn(
-														"h-7 w-7 text-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-													)}
-													title="Delete preset"
+													aria-label="Delete preset"
 													data-testid="delete-preset-button"
 												>
 													<svg
-														class={cn("h-3.5 w-3.5")}
+														class={cn("h-4 w-4")}
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
 														aria-hidden="true"
-														role="img"
 													>
-														<title>Delete</title>
 														<path
 															stroke-linecap="round"
 															stroke-linejoin="round"
@@ -557,24 +549,61 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													variant="destructive"
 													size="xs"
 													onClick={() => handleDelete(preset.id)}
-													class={cn("!text-[8px] h-6 px-2")}
 													data-testid="confirm-delete-button"
 												>
-													Confirm
+													Yes
 												</Button>
 												<Button
 													variant="secondary"
 													size="xs"
 													onClick={() => setConfirmDelete(null)}
-													class={cn("!text-[8px] h-6 px-2")}
 													data-testid="cancel-delete-button"
 												>
-													X
+													No
 												</Button>
 											</div>
 										</Show>
 									</div>
 								</div>
+
+								{/* Expanded parameter list */}
+								<Show when={expandedPresetId() === preset.id}>
+									<div class={cn("mt-4")} data-testid="preset-expanded-params">
+										<Separator class={cn("mb-4 opacity-50")} />
+										<div class={cn("space-y-2")}>
+											<For each={preset.parameters}>
+												{(param) => (
+													<div
+														class={cn(
+															"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-3 py-2 text-[11px] shadow-sm"
+														)}
+														data-testid="preset-expanded-param"
+													>
+														<div class={cn("flex min-w-0 flex-1 items-center")}>
+															<span class={cn("mr-2 scale-90 opacity-60")}>
+																{getParameterTypeIcon(param.type)}
+															</span>
+															<span
+																class={cn(
+																	"truncate font-black text-foreground uppercase tracking-tighter"
+																)}
+															>
+																{param.key}
+															</span>
+														</div>
+														<span
+															class={cn(
+																"ml-2 max-w-[55%] truncate rounded border border-border/20 bg-background/60 px-2 py-1 font-mono text-muted-foreground/90"
+															)}
+														>
+															{param.value}
+														</span>
+													</div>
+												)}
+											</For>
+										</div>
+									</div>
+								</Show>
 							</Card>
 						)}
 					</For>
@@ -608,22 +637,19 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						</h2>
 						<Button
 							variant="ghost"
-							size="icon"
+							size="xs"
 							type="button"
 							onClick={cancelForm}
-							class={cn("h-6 w-6")}
 							data-testid="cancel-form-button"
-							title="Cancel"
+							aria-label="Cancel and go back"
 						>
 							<svg
-								class={cn("h-4 w-4")}
+								class={cn("h-3.5 w-3.5")}
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
 								aria-hidden="true"
-								role="img"
 							>
-								<title>Cancel</title>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -631,6 +657,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									d="M6 18L18 6M6 6l12 12"
 								/>
 							</svg>
+							<span>Cancel</span>
 						</Button>
 					</div>
 
@@ -646,16 +673,15 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						</p>
 						<Button
 							type="submit"
-							size="xs"
-							class={cn("h-8 px-4")}
+							size="sm"
 							disabled={saving()}
 							data-testid="save-preset-button"
 						>
 							<Show
 								when={saving()}
-								fallback={<span>{viewMode() === "create" ? "Save Preset" : "Update Preset"}</span>}
+								fallback={viewMode() === "create" ? "Save Preset" : "Update Preset"}
 							>
-								<span>Saving...</span>
+								Saving...
 							</Show>
 						</Button>
 					</div>
@@ -706,7 +732,6 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								variant="ghost"
 								size="xs"
 								onClick={addParameter}
-								class={cn("!text-[10px] h-7 px-3")}
 								data-testid="add-parameter-button"
 							>
 								+ Add Variable
@@ -723,9 +748,8 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								<Button
 									type="button"
 									variant="outline"
-									size="xs"
+									size="sm"
 									onClick={addParameter}
-									class={cn("h-9 px-5")}
 									data-testid="add-first-parameter-button"
 								>
 									Add First Parameter
@@ -753,13 +777,15 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													>
 														{index() + 1}
 													</Badge>
-													<Select
-														name={`param-${paramId}-type`}
-														ref={(el) => {
-															if (el) {
-																el.value = paramData.type;
-															}
-														}}
+								<Select
+									name={`param-${paramId}-type`}
+									ref={(el) => {
+										if (el) {
+											queueMicrotask(() => {
+												el.value = paramData.type;
+											});
+										}
+									}}
 														class={cn(
 															"!py-0 !px-2 !text-[10px] h-7 w-28 rounded-md uppercase tracking-widest"
 														)}
@@ -771,14 +797,12 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													</Select>
 												</div>
 												<Button
-													variant="ghost"
+													variant="ghost-destructive"
 													size="icon"
 													type="button"
 													onClick={() => removeFormParameter(paramId)}
-													class={cn(
-														"h-7 w-7 text-destructive/40 opacity-0 transition-opacity hover:bg-destructive/5 hover:text-destructive group-hover:opacity-100"
-													)}
-													title="Remove parameter"
+													class={cn("opacity-0 transition-opacity group-hover:opacity-100")}
+													aria-label="Remove this parameter"
 													data-testid="remove-parameter-button"
 												>
 													<svg
@@ -787,9 +811,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														stroke="currentColor"
 														viewBox="0 0 24 24"
 														aria-hidden="true"
-														role="img"
 													>
-														<title>Remove</title>
 														<path
 															stroke-linecap="round"
 															stroke-linejoin="round"
