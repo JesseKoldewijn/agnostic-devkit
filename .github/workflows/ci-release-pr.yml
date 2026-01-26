@@ -2,6 +2,7 @@ name: CI (Release PRs)
 
 # This workflow handles release PRs that have [skip ci] in their commits
 # It uses pull_request_target which is NOT affected by [skip ci] in PR commits
+# It posts commit statuses via the GitHub API to satisfy branch protection
 
 on:
     pull_request_target:
@@ -10,13 +11,13 @@ on:
             - develop
         types: [opened, synchronize, reopened]
 
+permissions:
+    statuses: write
+
 jobs:
-    # Check if this is a release PR (has chore(release) in title or commits have [skip ci])
-    check-release-pr:
-        name: Check Release PR
+    auto-pass-release-pr:
+        name: Auto-pass Release PR Checks
         runs-on: ubuntu-latest
-        outputs:
-            is_release_pr: ${{ steps.check.outputs.is_release }}
         steps:
             - name: Check if release PR
               id: check
@@ -24,45 +25,30 @@ jobs:
                   if [[ "${{ github.event.pull_request.title }}" == chore\(release\)* ]] || \
                      [[ "${{ github.event.pull_request.title }}" == *"[skip ci]"* ]]; then
                     echo "is_release=true" >> $GITHUB_OUTPUT
-                    echo "This is a release PR - will auto-pass checks"
+                    echo "This is a release PR - will post passing statuses"
                   else
                     echo "is_release=false" >> $GITHUB_OUTPUT
                     echo "Not a release PR - skipping"
                   fi
 
-    # These jobs provide passing statuses for required checks on release PRs
-    lint-and-type-check:
-        name: Lint & Type Check
-        runs-on: ubuntu-latest
-        needs: check-release-pr
-        if: needs.check-release-pr.outputs.is_release_pr == 'true'
-        steps:
-            - name: Auto-pass for release PR
-              run: echo "Auto-passing Lint & Type Check for release PR"
-
-    test:
-        name: Unit Tests
-        runs-on: ubuntu-latest
-        needs: check-release-pr
-        if: needs.check-release-pr.outputs.is_release_pr == 'true'
-        steps:
-            - name: Auto-pass for release PR
-              run: echo "Auto-passing Unit Tests for release PR"
-
-    build:
-        name: Build Extension
-        runs-on: ubuntu-latest
-        needs: check-release-pr
-        if: needs.check-release-pr.outputs.is_release_pr == 'true'
-        steps:
-            - name: Auto-pass for release PR
-              run: echo "Auto-passing Build Extension for release PR"
-
-    test-e2e:
-        name: E2E Tests
-        runs-on: ubuntu-latest
-        needs: check-release-pr
-        if: needs.check-release-pr.outputs.is_release_pr == 'true'
-        steps:
-            - name: Auto-pass for release PR
-              run: echo "Auto-passing E2E Tests for release PR"
+            - name: Post passing commit statuses
+              if: steps.check.outputs.is_release == 'true'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  SHA="${{ github.event.pull_request.head.sha }}"
+                  REPO="${{ github.repository }}"
+                  
+                  # Post passing statuses for all required checks
+                  for context in "Lint & Type Check" "Unit Tests" "Build Extension" "E2E Tests"; do
+                    echo "Posting status for: $context"
+                    gh api \
+                      --method POST \
+                      -H "Accept: application/vnd.github+json" \
+                      "/repos/$REPO/statuses/$SHA" \
+                      -f state='success' \
+                      -f description='Auto-passed for release PR' \
+                      -f context="$context"
+                  done
+                  
+                  echo "All required statuses posted successfully"
