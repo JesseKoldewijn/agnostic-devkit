@@ -198,6 +198,14 @@
 * patch of firefox manifest setup ([19c795e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/19c795ed37958ee181fe1cef6749850126b65c58))
 * patched up preset edit default values, ui refactor and change of default font ([405456f](https://github.com/JesseKoldewijn/agnostic-devkit/commit/405456fde9c2a69345b2375daaee3b2fffc104ed))
 
+# [1.2.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0-canary.1...v1.2.0-canary.2) (2026-01-26)
+
+
+### Bug Fixes
+
+* patch of firefox manifest setup ([19c795e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/19c795ed37958ee181fe1cef6749850126b65c58))
+* patched up preset edit default values, ui refactor and change of default font ([405456f](https://github.com/JesseKoldewijn/agnostic-devkit/commit/405456fde9c2a69345b2375daaee3b2fffc104ed))
+
 # [1.2.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.4...v1.2.0-canary.1) (2026-01-06)
 
 
