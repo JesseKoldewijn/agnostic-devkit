@@ -78,8 +78,9 @@ export default defineConfig({
 								// Required for Firefox Add-ons - declare no data collection
 								// See: https://mzl.la/firefox-builtin-data-consent
 								data_collection_permissions: {
-									required: false,
-									optional: false,
+									// Empty arrays = no data collected
+									required: [],
+									optional: [],
 									// No user data is collected by this extension
 									reason: "This extension does not collect any user data.",
 								},
