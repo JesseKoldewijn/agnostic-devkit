@@ -82,10 +82,15 @@ test.describe("Preset Lifecycle", () => {
 		const popupPage = await openPopupPage(context, extensionId);
 		await popupPage.locator('[data-testid="manage-presets-button"]').click();
 
-		// Export
+		// Verify export button opens export view
 		await popupPage.locator('[data-testid="export-presets-button"]').click();
+		await expect(popupPage.locator('[data-testid="preset-export-view"]')).toBeVisible();
 
-		// Import
+		// Go back to list view
+		await popupPage.locator('[data-testid="export-back-button"]').click();
+		await expect(popupPage.locator('[data-testid="preset-manager-list"]')).toBeVisible();
+
+		// Verify import input is available in list view
 		const importInput = popupPage.locator('[data-testid="import-presets-input"]');
 		await expect(importInput).toBeAttached();
 	});
