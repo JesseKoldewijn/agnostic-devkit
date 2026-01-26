@@ -1,3 +1,10 @@
+# [1.3.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0...v1.3.0-canary.1) (2026-01-26)
+
+
+### Features
+
+* bulk/selective/single preset export ([0a08534](https://github.com/JesseKoldewijn/agnostic-devkit/commit/0a08534dd108eb566b7033ff7c207dc9fd272192))
+
 # [1.2.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.4...v1.2.0) (2026-01-26)
 
 
