@@ -1,3 +1,18 @@
+# [1.2.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.4...v1.2.0) (2026-01-26)
+
+
+### Bug Fixes
+
+* biome config tweak and linting + type fixes run ([813f07b](https://github.com/JesseKoldewijn/agnostic-devkit/commit/813f07bb33a8af30bd6bf86db8be8bb80329c632))
+* patch of firefox manifest setup ([19c795e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/19c795ed37958ee181fe1cef6749850126b65c58))
+* patched up preset edit default values, ui refactor and change of default font ([405456f](https://github.com/JesseKoldewijn/agnostic-devkit/commit/405456fde9c2a69345b2375daaee3b2fffc104ed))
+
+
+### Features
+
+* allow for canary build release cycle to be CI/CD'd ([05c4aed](https://github.com/JesseKoldewijn/agnostic-devkit/commit/05c4aedfe205373392bbe51ca528dfe91262d88a))
+* slight patch of project setup ([e260c6f](https://github.com/JesseKoldewijn/agnostic-devkit/commit/e260c6fb97d9bec9512fab9e59f47eb51997b3b7))
+
 # [1.2.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0-canary.1...v1.2.0-canary.2) (2026-01-26)
 
 
