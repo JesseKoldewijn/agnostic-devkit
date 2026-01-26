@@ -1,3 +1,10 @@
+# [1.2.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.2.0-canary.1...v1.2.0-canary.2) (2026-01-26)
+
+
+### Bug Fixes
+
+* patched up preset edit default values, ui refactor and change of default font ([ada831e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/ada831e5ccf0556f9c7fafbb6f5cb63f4e9568b6))
+
 # [1.2.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.1.4...v1.2.0-canary.1) (2026-01-06)
 
 
