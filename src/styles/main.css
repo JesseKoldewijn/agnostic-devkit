@@ -1,5 +1,63 @@
 @import "tailwindcss";
 
+/* Geist Sans Font */
+@font-face {
+	font-family: "Geist";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/assets/fonts/Geist-Regular.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Geist";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("/assets/fonts/Geist-Medium.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Geist";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("/assets/fonts/Geist-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Geist";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("/assets/fonts/Geist-Bold.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Geist";
+	font-style: normal;
+	font-weight: 900;
+	font-display: swap;
+	src: url("/assets/fonts/Geist-Black.woff2") format("woff2");
+}
+
+/* Geist Mono Font */
+@font-face {
+	font-family: "Geist Mono";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/assets/fonts/GeistMono-Regular.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Geist Mono";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("/assets/fonts/GeistMono-Medium.woff2") format("woff2");
+}
+
 /* Tailwind CSS v4 CSS-based configuration (shadcn-style) */
 
 /* Light theme (default) */
@@ -63,8 +121,8 @@
 	--color-accent: #27272a;
 	--color-accent-foreground: #fafafa;
 
-	--color-destructive: #7f1d1d;
-	--color-destructive-foreground: #fafafa;
+	--color-destructive: #dc2626;
+	--color-destructive-foreground: #fefefe;
 
 	--color-border: #27272a;
 	--color-input: #27272a;
@@ -140,9 +198,14 @@
 
 body {
 	margin: 0;
-	font-family:
-		-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
-		"Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+	font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+
+code,
+pre,
+kbd,
+.font-mono {
+	font-family: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
 }

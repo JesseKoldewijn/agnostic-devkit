@@ -60,7 +60,7 @@ export const App: Component = () => {
 	});
 
 	return (
-		<Layout class={cn("!p-5 min-h-screen w-full")} data-testid="sidebar-container">
+		<Layout class={cn("p-5! min-h-screen w-full")} data-testid="sidebar-container">
 			<Show
 				when={!showManager()}
 				fallback={

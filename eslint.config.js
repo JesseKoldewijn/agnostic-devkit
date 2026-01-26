@@ -4,6 +4,7 @@ import tseslint from "typescript-eslint";
 import solid from "eslint-plugin-solid/configs/recommended";
 import eslintConfigPrettier from "eslint-config-prettier";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import betterTailwindcss from "eslint-plugin-better-tailwindcss";
 
 export default tseslint.config(
 	{
@@ -20,7 +21,13 @@ export default tseslint.config(
 	js.configs.recommended,
 	...tseslint.configs.recommended,
 	jsxA11y.flatConfigs.recommended,
+	betterTailwindcss.configs.recommended,
 	{
+		settings: {
+			"better-tailwindcss": {
+				entryPoint: "src/styles/main.css",
+			},
+		},
 		rules: {
 			"@typescript-eslint/no-unused-vars": [
 				"error",
@@ -30,6 +37,18 @@ export default tseslint.config(
 					caughtErrorsIgnorePattern: "^_",
 				},
 			],
+			// Disable class order since Prettier handles it via prettier-plugin-tailwindcss
+			"better-tailwindcss/enforce-consistent-class-order": "off",
+			// Disable line wrapping since we prefer single-line classes
+			"better-tailwindcss/enforce-consistent-line-wrapping": "off",
+			// Disable canonical-classes as it overlaps with other rules
+			"better-tailwindcss/enforce-canonical-classes": "off",
+			// Disable no-unknown-classes as it has false positives with object keys
+			"better-tailwindcss/no-unknown-classes": "off",
+			// Enable canonical important position (suffix ! instead of prefix !)
+			"better-tailwindcss/enforce-consistent-important-position": "warn",
+			// Enable shorthand classes
+			"better-tailwindcss/enforce-shorthand-classes": "warn",
 		},
 	},
 	{

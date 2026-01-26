@@ -86,7 +86,7 @@ export const App: Component = () => {
 	});
 
 	return (
-		<Layout class={cn("!p-4 min-h-[400px] w-[400px]")} data-testid="popup-container">
+		<Layout class={cn("p-4! min-h-[400px] w-[400px]")} data-testid="popup-container">
 			<Show
 				when={!showManager()}
 				fallback={

@@ -32,7 +32,7 @@ export const Select: Component<SelectProps> = (props) => {
 				</select>
 				<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-muted-foreground transition-colors group-hover:text-foreground">
 					<svg
-						class="h-4 w-4"
+						class="size-4"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"

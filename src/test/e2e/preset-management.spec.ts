@@ -102,13 +102,92 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="parameter-value-input"]').fill("newValue");
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
-		// Verify changes
-		await expect(
-			popupPage.locator('[data-testid="preset-item"]', { hasText: "Edited Name" })
-		).toBeVisible();
-		await expect(
-			popupPage.locator('[data-testid="preset-item"]', { hasText: "newKey" })
-		).toBeVisible();
+		// Verify changes - name should be visible
+		const editedPreset = popupPage.locator('[data-testid="preset-item"]', { hasText: "Edited Name" });
+		await expect(editedPreset).toBeVisible();
+
+		// Expand the preset to see parameters
+		await editedPreset.locator('[data-testid="preset-expand-button"]').click();
+		await expect(editedPreset.locator('[data-testid="preset-expanded-param"]')).toContainText(
+			"newKey"
+		);
+	});
+
+	test("should prefill queryParam type correctly when editing", async () => {
+		// Create preset with queryParam (default) type
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("QueryParam Prefill Test");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+
+		// queryParam is the default, so we just need to fill key/value
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("testKey");
+		await popupPage.locator('[data-testid="parameter-value-input"]').fill("testValue");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Wait for list to show
+		await popupPage.waitForSelector('[data-testid="preset-item"]');
+
+		// Edit the preset
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "QueryParam Prefill Test",
+		});
+		await presetItem.locator('[data-testid="edit-preset-button"]').click();
+
+		// Verify the select shows queryParam
+		const typeSelect = popupPage.locator('[data-testid="parameter-type-select"]').first();
+		await expect(typeSelect).toHaveValue("queryParam");
+	});
+
+	test("should prefill cookie type correctly when editing", async () => {
+		// Create preset with cookie type
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Cookie Prefill Test");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+
+		// Select cookie type
+		await popupPage.locator('[data-testid="parameter-type-select"]').selectOption("cookie");
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("cookieKey");
+		await popupPage.locator('[data-testid="parameter-value-input"]').fill("cookieValue");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Wait for list to show
+		await popupPage.waitForSelector('[data-testid="preset-item"]');
+
+		// Edit the preset
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "Cookie Prefill Test",
+		});
+		await presetItem.locator('[data-testid="edit-preset-button"]').click();
+
+		// Verify the select shows cookie
+		const typeSelect = popupPage.locator('[data-testid="parameter-type-select"]').first();
+		await expect(typeSelect).toHaveValue("cookie");
+	});
+
+	test("should prefill localStorage type correctly when editing", async () => {
+		// Create preset with localStorage type
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("LocalStorage Prefill Test");
+		await popupPage.locator('[data-testid="add-parameter-button"]').click();
+
+		// Select localStorage type
+		await popupPage.locator('[data-testid="parameter-type-select"]').selectOption("localStorage");
+		await popupPage.locator('[data-testid="parameter-key-input"]').fill("storageKey");
+		await popupPage.locator('[data-testid="parameter-value-input"]').fill("storageValue");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Wait for list to show
+		await popupPage.waitForSelector('[data-testid="preset-item"]');
+
+		// Edit the preset
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "LocalStorage Prefill Test",
+		});
+		await presetItem.locator('[data-testid="edit-preset-button"]').click();
+
+		// Verify the select shows localStorage
+		const typeSelect = popupPage.locator('[data-testid="parameter-type-select"]').first();
+		await expect(typeSelect).toHaveValue("localStorage");
 	});
 
 	test("should export and import presets", async () => {

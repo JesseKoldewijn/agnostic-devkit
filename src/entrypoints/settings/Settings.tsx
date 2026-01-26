@@ -284,7 +284,7 @@ export const Settings: Component = () => {
 					)}
 				>
 					<svg
-						class={cn("h-4 w-4")}
+						class={cn("size-4")}
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"

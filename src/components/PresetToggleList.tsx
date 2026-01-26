@@ -181,7 +181,6 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 						variant="ghost"
 						size="xs"
 						onClick={props.onManagePresets}
-						class={cn("font-black text-[9px] uppercase tracking-widest")}
 						data-testid="manage-presets-button"
 					>
 						Manage
@@ -193,7 +192,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 				<div class={cn("flex items-center justify-center py-6")}>
 					<div
 						class={cn(
-							"h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+							"size-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
 						)}
 					/>
 				</div>
@@ -207,7 +206,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 					<Show when={props.onManagePresets}>
 						<Button
 							variant="link"
-							size="xs"
+							size="sm"
 							onClick={props.onManagePresets}
 							class={cn("mt-2")}
 							data-testid="create-first-preset-button"
@@ -257,7 +256,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 												</div>
 											</Show>
 											<div class={cn("mt-3 flex items-center space-x-2")}>
-												<Badge variant="secondary" class={cn("!text-[8px] h-4 px-2 font-black")}>
+												<Badge variant="secondary" class={cn("text-[8px]! h-4 px-2 font-black")}>
 													{preset.parameters.length} VARS
 												</Badge>
 												<Show when={props.expanded}>
@@ -310,7 +309,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 														</div>
 														<span
 															class={cn(
-																"ml-2 max-w-[55%] truncate rounded border border-border/20 bg-background/60 px-2 py-1 font-mono text-muted-foreground/90"
+																"ml-2 max-w-[55%] truncate rounded-sm border border-border/20 bg-background/60 px-2 py-1 font-mono text-muted-foreground/90"
 															)}
 														>
 															{param.value}
