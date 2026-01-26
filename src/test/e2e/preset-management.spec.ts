@@ -232,4 +232,108 @@ test.describe("Preset Management E2E Tests", () => {
 		// Cleanup
 		fs.unlinkSync(path);
 	});
+
+	test("should show individual export button for each preset", async () => {
+		// Create a preset
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Export Single Test");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Verify export button is visible on the preset
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "Export Single Test",
+		});
+		await expect(presetItem.locator('[data-testid="export-preset-button"]')).toBeVisible();
+	});
+
+	test("should enter and exit selection mode", async () => {
+		// Create presets to select
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Select Test 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Select Test 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Click select button to enter selection mode
+		await popupPage.locator('[data-testid="select-mode-button"]').click();
+
+		// Checkboxes should be visible
+		await expect(popupPage.locator('[data-testid="preset-select-checkbox"]').first()).toBeVisible();
+
+		// Export buttons should be hidden in selection mode
+		await expect(
+			popupPage.locator('[data-testid="export-preset-button"]').first()
+		).not.toBeVisible();
+
+		// Cancel button should be visible
+		await expect(popupPage.locator('[data-testid="cancel-selection-button"]')).toBeVisible();
+
+		// Exit selection mode
+		await popupPage.locator('[data-testid="cancel-selection-button"]').click();
+
+		// Checkboxes should be hidden again
+		await expect(
+			popupPage.locator('[data-testid="preset-select-checkbox"]').first()
+		).not.toBeVisible();
+	});
+
+	test("should select and deselect presets in selection mode", async () => {
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Selectable 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Selectable 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter selection mode
+		await popupPage.locator('[data-testid="select-mode-button"]').click();
+
+		// Select first preset
+		const checkbox1 = popupPage
+			.locator('[data-testid="preset-item"]', { hasText: "Selectable 1" })
+			.locator('[data-testid="preset-select-checkbox"]');
+		await checkbox1.click();
+
+		// Export selected button should show count
+		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("1");
+
+		// Select second preset
+		const checkbox2 = popupPage
+			.locator('[data-testid="preset-item"]', { hasText: "Selectable 2" })
+			.locator('[data-testid="preset-select-checkbox"]');
+		await checkbox2.click();
+
+		// Export selected button should show updated count
+		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("2");
+
+		// Deselect first preset
+		await checkbox1.click();
+
+		// Count should be back to 1
+		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("1");
+	});
+
+	test("should select all presets using Select All button", async () => {
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter selection mode
+		await popupPage.locator('[data-testid="select-mode-button"]').click();
+
+		// Click Select All
+		await popupPage.locator('[data-testid="select-all-button"]').click();
+
+		// Export selected should show count of all presets
+		await expect(popupPage.locator('[data-testid="export-selected-button"]')).toContainText("2");
+	});
 });
