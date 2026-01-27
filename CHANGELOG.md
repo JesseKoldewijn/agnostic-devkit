@@ -1,3 +1,12 @@
+## [1.3.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0...v1.3.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* minor formatting tweak ([53a82fb](https://github.com/JesseKoldewijn/agnostic-devkit/commit/53a82fb327463e48a206d9f5daa0d0e154ba06e4))
+* small CI cleanup + re-trigger of build ([7d0304a](https://github.com/JesseKoldewijn/agnostic-devkit/commit/7d0304a820854c0fd9c04571f586f953715ee1a7))
+* stabilize CI workflow and simplify release process ([1dfd89d](https://github.com/JesseKoldewijn/agnostic-devkit/commit/1dfd89d2a2fac738ba655ca82d72ce77af03238e))
+
 ## [1.3.1-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0...v1.3.1-canary.1) (2026-01-27)
 
 
