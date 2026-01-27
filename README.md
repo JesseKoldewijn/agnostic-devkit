@@ -8,9 +8,6 @@ A platform-agnostic developer toolkit for web development, built as a modern Bro
 ## Status
 
 [![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![Total Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/develop/.badges/coverage-total.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![Unit Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/develop/.badges/coverage-unit.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
-[![E2E Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JesseKoldewijn/agnostic-devkit/develop/.badges/coverage-e2e.json)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
 
 ## Features
 
@@ -55,7 +52,7 @@ Works across all Chromium-based browsers with automatic fallbacks for unsupporte
 | Styling              | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config)                                              |
 | Unit Testing         | [Vitest](https://vitest.dev) 4.x                                                                            |
 | E2E Testing          | [Playwright](https://playwright.dev) 1.57                                                                   |
-| Linting & Formatting | [Oxlint](https://oxlint.js.org) & [Biome](https://biomejs.dev)                                              |
+| Linting & Formatting | [ESLint](https://eslint.org) & [Prettier](https://prettier.io)                                              |
 | Package Manager      | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                                                              |
 | Releases             | [semantic-release](https://semantic-release.gitbook.io)                                                     |
 
@@ -185,10 +182,10 @@ src/
 ## Linting & Formatting
 
 ```bash
-yarn lint          # Run Oxlint
-yarn lint:fix      # Run Oxlint with auto-fix
-yarn check         # Run Biome check (format & lint)
-yarn format        # Run Biome format
+yarn lint          # Run ESLint
+yarn lint:fix      # Run ESLint with auto-fix
+yarn format        # Run Prettier format
+yarn format:check  # Check Prettier formatting
 yarn type-check    # Run TypeScript type check
 ```
 
@@ -196,10 +193,10 @@ yarn type-check    # Run TypeScript type check
 
 The project uses GitHub Actions for continuous integration and deployment:
 
--   **CI Workflow** — Runs on all branches: Oxlint, Biome check, type checking, unit tests, E2E tests, and coverage badge generation
--   **Release Workflow** — Triggered on `main`: semantic versioning and packaging
+-   **CI Workflow** — Runs on all branches: ESLint, Prettier check, type checking, unit tests, E2E tests
+-   **Release Workflow** — Triggered on `main` and `develop`: semantic versioning and packaging
 
-Coverage badges are automatically updated on each push for the current branch.
+Coverage reports are available as downloadable artifacts on each CI run and linked in PR comments.
 
 ## Tailwind CSS v4 Configuration
 

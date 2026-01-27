@@ -1,42 +1,99 @@
 name: CI
 
 on:
-    # Run on every push to any branch
     push:
         branches: ["*"]
     pull_request:
         branches: ["*"]
     workflow_dispatch:
         inputs:
-            pr_number:
-                description: "PR number to run CI for (leave empty for current branch)"
+            profiles:
+                description: "Build profiles (comma-separated: development, canary, production)"
                 required: false
+                default: "canary,production"
                 type: string
-            environment:
-                description: "Environment to build (development, canary, production)"
+            run_release:
+                description: "Run semantic-release"
                 required: false
-                default: "development"
-                type: choice
-                options:
-                    - development
-                    - canary
-                    - production
+                default: true
+                type: boolean
+            dry_run:
+                description: "Dry run mode (skip push/upload operations, for local testing with act)"
+                required: false
+                default: false
+                type: boolean
 
-concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+env:
+    # Detect dry run mode: explicit input OR running locally with act
+    IS_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' || github.event.inputs.dry_run == true }}
 
 jobs:
+    # Setup job determines build profiles and skip conditions
+    setup:
+        name: Setup
+        runs-on: ubuntu-latest
+        outputs:
+            profiles: ${{ steps.profiles.outputs.json }}
+            should_skip: ${{ steps.skip.outputs.should_skip }}
+            is_release_branch: ${{ steps.check.outputs.is_release_branch }}
+            is_dry_run: ${{ steps.check.outputs.is_dry_run }}
+        steps:
+            - name: Check conditions
+              id: check
+              run: |
+                  # Check if this is a release branch
+                  if [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo "is_release_branch=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "is_release_branch=false" >> $GITHUB_OUTPUT
+                  fi
+                  
+                  # Check dry run mode
+                  if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+                    echo "is_dry_run=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "is_dry_run=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Check skip conditions
+              id: skip
+              run: |
+                  # Skip if this is a release commit (prevents infinite loops)
+                  if [[ "${{ github.event.head_commit.message }}" == chore\(release\):* ]]; then
+                    echo "should_skip=true" >> $GITHUB_OUTPUT
+                    echo "Skipping: release commit detected"
+                  # Skip if [skip ci] in commit message on push
+                  elif [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[skip ci]"* ]]; then
+                    echo "should_skip=true" >> $GITHUB_OUTPUT
+                    echo "Skipping: [skip ci] in commit message"
+                  else
+                    echo "should_skip=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Determine build profiles
+              id: profiles
+              run: |
+                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                    # Parse comma-separated input into JSON array (compact, single-line output)
+                    input="${{ github.event.inputs.profiles }}"
+                    profiles=$(echo "$input" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | jq -R . | jq -sc .)
+                    echo "json=$profiles" >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "main" ]; then
+                    echo 'json=["production"]' >> $GITHUB_OUTPUT
+                  elif [ "${{ github.ref_name }}" == "develop" ]; then
+                    echo 'json=["canary"]' >> $GITHUB_OUTPUT
+                  else
+                    echo 'json=["development"]' >> $GITHUB_OUTPUT
+                  fi
+
     lint-and-type-check:
         name: Lint & Type Check
         runs-on: ubuntu-latest
-        # Always run on workflow_dispatch and pull_request; skip push only if [skip-push-ci]
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[skip-push-ci]')
+        needs: [setup]
+        if: needs.setup.outputs.should_skip != 'true'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.inputs.pr_number && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.ref }}
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -76,14 +133,11 @@ jobs:
     test:
         name: Unit Tests
         runs-on: ubuntu-latest
-        needs: [lint-and-type-check]
-        # Always run on workflow_dispatch and pull_request; skip push only if [skip-push-ci]
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[skip-push-ci]')
+        needs: [setup, lint-and-type-check]
+        if: needs.setup.outputs.should_skip != 'true'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.inputs.pr_number && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.ref }}
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -115,6 +169,7 @@ jobs:
               run: yarn test:coverage
 
             - name: Upload coverage reports
+              if: env.IS_DRY_RUN != 'true'
               uses: actions/upload-artifact@v4
               with:
                   name: coverage-report
@@ -122,19 +177,17 @@ jobs:
                   retention-days: 7
 
     build:
-        name: Build Extension
+        name: Build (${{ matrix.profile }})
         runs-on: ubuntu-latest
-        needs: [lint-and-type-check]
-        # Always run on workflow_dispatch; on PR always run; on push only main/develop and not [skip-push-ci]
-        if: |
-            github.event_name == 'workflow_dispatch' ||
-            github.event_name == 'pull_request' ||
-            (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'develop') && !contains(github.event.head_commit.message, '[skip-push-ci]'))
+        needs: [setup, lint-and-type-check]
+        if: needs.setup.outputs.should_skip != 'true'
+        strategy:
+            fail-fast: false
+            matrix:
+                profile: ${{ fromJson(needs.setup.outputs.profiles) }}
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.inputs.pr_number && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.ref }}
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -161,112 +214,33 @@ jobs:
 
             - name: Install dependencies
               run: yarn install --immutable
-
-            - name: Determine Environment
-              id: env
-              run: |
-                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-                    echo "val=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref_name }}" == "main" ]; then
-                    echo "val=production" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref_name }}" == "develop" ]; then
-                    echo "val=canary" >> $GITHUB_OUTPUT
-                  else
-                    echo "val=development" >> $GITHUB_OUTPUT
-                  fi
 
             - name: Build and Package extension
               env:
                   CI_COVERAGE: "true"
-                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
+                  EXTENSION_ENV: ${{ matrix.profile }}
               run: yarn package
 
             - name: Upload build artifact
+              if: env.IS_DRY_RUN != 'true'
               uses: actions/upload-artifact@v4
               with:
-                  name: extension-build-${{ steps.env.outputs.val }}
+                  name: extension-build-${{ matrix.profile }}
                   path: build-output/
                   retention-days: 7
 
-    package:
-        name: Package Extension
-        runs-on: ubuntu-latest
-        needs: [build]
-        # Always run on workflow_dispatch; on push only main/develop and not [skip-push-ci]
-        if: |
-            github.event_name == 'workflow_dispatch' ||
-            (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'develop') && !contains(github.event.head_commit.message, '[skip-push-ci]'))
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.inputs.pr_number && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.ref }}
-
-            - name: Determine Environment
-              id: env
-              run: |
-                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-                    echo "val=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref_name }}" == "main" ]; then
-                    echo "val=production" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref_name }}" == "develop" ]; then
-                    echo "val=canary" >> $GITHUB_OUTPUT
-                  else
-                    echo "val=development" >> $GITHUB_OUTPUT
-                  fi
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "25.0.0"
-
-            - name: Enable Corepack
-              run: corepack enable
-
-            - name: Setup Yarn
-              run: corepack prepare yarn@4.10.3 --activate
-
-            - name: Get Yarn cache directory path
-              id: yarn-cache-dir-path
-              run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-
-            - name: Cache Yarn dependencies
-              uses: actions/cache@v4
-              with:
-                  path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-                  restore-keys: |
-                      ${{ runner.os }}-yarn-
-
-            - name: Install dependencies
-              run: yarn install --immutable
-
-            - name: Package extension
-              env:
-                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
-              run: yarn package
-
-            - name: Upload package artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: extension-package-${{ steps.env.outputs.val }}
-                  path: build-output/*.zip
-                  retention-days: 7
-
     test-e2e:
-        name: E2E Tests
+        name: E2E Tests (${{ matrix.profile }})
         runs-on: ubuntu-latest
-        needs: [build]
-        # Always run on workflow_dispatch; on PR always run; on push only main/develop and not [skip-push-ci]
-        if: |
-            github.event_name == 'workflow_dispatch' ||
-            github.event_name == 'pull_request' ||
-            (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'develop') && !contains(github.event.head_commit.message, '[skip-push-ci]'))
+        needs: [setup, build]
+        if: needs.setup.outputs.should_skip != 'true'
+        strategy:
+            fail-fast: false
+            matrix:
+                profile: ${{ fromJson(needs.setup.outputs.profiles) }}
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.inputs.pr_number && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.ref }}
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -305,24 +279,18 @@ jobs:
             - name: Install Playwright browsers
               run: yarn playwright install --with-deps chromium
 
-            - name: Determine Environment
-              id: env
-              run: |
-                  if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-                    echo "val=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref_name }}" == "main" ]; then
-                    echo "val=production" >> $GITHUB_OUTPUT
-                  elif [ "${{ github.ref_name }}" == "develop" ]; then
-                    echo "val=canary" >> $GITHUB_OUTPUT
-                  else
-                    echo "val=development" >> $GITHUB_OUTPUT
-                  fi
-
             - name: Download build artifact
+              if: env.IS_DRY_RUN != 'true'
               uses: actions/download-artifact@v4
               with:
-                  name: extension-build-${{ steps.env.outputs.val }}
+                  name: extension-build-${{ matrix.profile }}
                   path: build-output/
+
+            - name: Build extension (dry run mode)
+              if: env.IS_DRY_RUN == 'true'
+              env:
+                  EXTENSION_ENV: ${{ matrix.profile }}
+              run: yarn package
 
             - name: Run E2E tests
               env:
@@ -334,29 +302,49 @@ jobs:
               run: yarn coverage:playwright
 
             - name: Upload E2E coverage
+              if: env.IS_DRY_RUN != 'true'
               uses: actions/upload-artifact@v4
               with:
-                  name: playwright-coverage
+                  name: playwright-coverage-${{ matrix.profile }}
                   path: coverage/playwright/
                   retention-days: 7
 
-    coverage-badges:
-        name: Generate Coverage Badges
+    release:
+        name: Semantic Release
         runs-on: ubuntu-latest
-        needs: [test, test-e2e]
-        # Always run on workflow_dispatch and pull_request; skip push if [skip-push-ci] or release commit
+        needs: [setup, test, test-e2e]
+        concurrency:
+            group: release-${{ github.ref }}
+            cancel-in-progress: false
         if: |
-            github.event_name == 'workflow_dispatch' ||
-            github.event_name == 'pull_request' ||
-            (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-push-ci]') && !startsWith(github.event.head_commit.message, 'chore(release):'))
+            needs.setup.outputs.should_skip != 'true' &&
+            needs.setup.outputs.is_release_branch == 'true' &&
+            (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_release == 'true'))
         permissions:
             contents: write
+            issues: write
+            pull-requests: write
+        outputs:
+            new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+            new_release_version: ${{ steps.semantic.outputs.new_release_version }}
         steps:
+            - name: Generate App Token
+              id: app-token
+              uses: actions/create-github-app-token@v1
+              with:
+                  app-id: ${{ secrets.APP_ID }}
+                  private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
             - name: Checkout code
               uses: actions/checkout@v4
               with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  ref: ${{ github.event.inputs.pr_number && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.ref }}
+                  fetch-depth: 0
+                  token: ${{ steps.app-token.outputs.token }}
+                  persist-credentials: true
+                  ref: ${{ github.ref_name }}
+
+            - name: Fetch all tags
+              run: git fetch --tags --force
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -384,36 +372,129 @@ jobs:
             - name: Install dependencies
               run: yarn install --immutable
 
-            - name: Download Vitest coverage
-              uses: actions/download-artifact@v4
-              with:
-                  name: coverage-report
-                  path: coverage/
-
-            - name: Download Playwright coverage
-              uses: actions/download-artifact@v4
-              with:
-                  name: playwright-coverage
-                  path: coverage/playwright/
-
-            - name: Generate coverage badges
-              run: yarn coverage:badges
-
-            - name: Commit and push coverage badges
-              if: github.event_name == 'push' && github.ref_type == 'branch'
+            - name: Determine Environment
+              id: env
               run: |
-                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                  git config --local user.name "github-actions[bot]"
-
-                  # Update branch name in README.md links
-                  perl -pi -e "s|/agnostic-devkit/.*?/.badges/|/agnostic-devkit/${{ github.ref_name }}/.badges/|g" README.md
-                  perl -pi -e "s|badge.svg\?branch=.*?([\) ])|badge.svg?branch=${{ github.ref_name }}\$1|g" README.md
-
-                  git add .badges/ README.md
-                  if ! git diff --staged --quiet; then
-                    git commit -m "chore: update coverage badges for ${{ github.ref_name }} [skip-push-ci]"
-                    # Discard any other unstaged changes (e.g. yarn.lock) to ensure a clean rebase
-                    git checkout .
-                    git pull --rebase origin ${{ github.ref_name }}
-                    git push origin ${{ github.ref_name }}
+                  if [ "${{ github.ref_name }}" == "main" ]; then
+                    echo "val=production" >> $GITHUB_OUTPUT
+                  else
+                    echo "val=canary" >> $GITHUB_OUTPUT
                   fi
+
+            - name: Semantic Release
+              id: semantic
+              if: env.IS_DRY_RUN != 'true'
+              env:
+                  GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
+              run: |
+                  npx semantic-release | tee semantic.log
+                  
+                  if grep -q "Published release" semantic.log || grep -q "Published prerelease" semantic.log; then
+                    echo "new_release_published=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "new_release_published=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Semantic Release (Dry Run)
+              if: env.IS_DRY_RUN == 'true'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  EXTENSION_ENV: ${{ steps.env.outputs.val }}
+              run: |
+                  echo "DRY RUN: Would run semantic-release here"
+                  npx semantic-release --dry-run || true
+
+    pr-comment:
+        name: Post PR Summary
+        runs-on: ubuntu-latest
+        needs: [setup, build, test, test-e2e]
+        if: |
+            needs.setup.outputs.should_skip != 'true' &&
+            github.event_name == 'pull_request'
+        permissions:
+            pull-requests: write
+        steps:
+            - name: Post PR summary comment
+              if: env.IS_DRY_RUN != 'true'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { owner, repo } = context.repo;
+                      const runId = context.runId;
+                      
+                      // Get artifacts from this run
+                      const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+                        owner,
+                        repo,
+                        run_id: runId
+                      });
+                      
+                      // Filter artifacts by type
+                      const buildArtifacts = artifacts.filter(a => a.name.startsWith('extension-build-'));
+                      const coverageArtifact = artifacts.find(a => a.name === 'coverage-report');
+                      const playwrightCoverageArtifacts = artifacts.filter(a => a.name.startsWith('playwright-coverage-'));
+                      
+                      // Build comment body
+                      let body = '## CI Summary\n\n';
+                      
+                      // Coverage section
+                      body += '### Coverage Reports\n\n';
+                      body += '| Type | Download |\n';
+                      body += '|------|----------|\n';
+                      
+                      if (coverageArtifact) {
+                        const url = `https://github.com/${owner}/${repo}/actions/runs/${runId}/artifacts/${coverageArtifact.id}`;
+                        body += `| Unit Tests | [Download](${url}) |\n`;
+                      }
+                      
+                      for (const artifact of playwrightCoverageArtifacts) {
+                        const profile = artifact.name.replace('playwright-coverage-', '');
+                        const url = `https://github.com/${owner}/${repo}/actions/runs/${runId}/artifacts/${artifact.id}`;
+                        body += `| E2E Tests (${profile}) | [Download](${url}) |\n`;
+                      }
+                      
+                      // Build artifacts section
+                      if (buildArtifacts.length > 0) {
+                        body += '\n### Build Artifacts\n\n';
+                        body += '| Profile | Download |\n';
+                        body += '|---------|----------|\n';
+                        
+                        for (const artifact of buildArtifacts) {
+                          const profile = artifact.name.replace('extension-build-', '');
+                          const url = `https://github.com/${owner}/${repo}/actions/runs/${runId}/artifacts/${artifact.id}`;
+                          body += `| ${profile} | [Download](${url}) |\n`;
+                        }
+                      }
+                      
+                      body += '\n> Note: Artifacts expire after 7 days.';
+                      
+                      // Find existing comment
+                      const { data: comments } = await github.rest.issues.listComments({
+                        owner,
+                        repo,
+                        issue_number: context.issue.number
+                      });
+                      
+                      const botComment = comments.find(c => 
+                        c.user.type === 'Bot' && 
+                        c.body.includes('## CI Summary')
+                      );
+                      
+                      if (botComment) {
+                        // Update existing comment
+                        await github.rest.issues.updateComment({
+                          owner,
+                          repo,
+                          comment_id: botComment.id,
+                          body
+                        });
+                      } else {
+                        // Create new comment
+                        await github.rest.issues.createComment({
+                          owner,
+                          repo,
+                          issue_number: context.issue.number,
+                          body
+                        });
+                      }
