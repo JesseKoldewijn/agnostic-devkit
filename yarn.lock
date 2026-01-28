@@ -2363,6 +2363,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lz-string@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@types/lz-string@npm:1.5.0"
+  dependencies:
+    lz-string: "npm:*"
+  checksum: 10c0/201878368ba68fc270ada4710488054e0841427c888968dcc093134693645259be3a972801649b5b1e818ee2f24886ba08a651b5cb36c778b857f1a18ef14d7f
+  languageName: node
+  linkType: hard
+
 "@types/minimatch@npm:^3.0.5":
   version: 3.0.5
   resolution: "@types/minimatch@npm:3.0.5"
@@ -2863,6 +2872,7 @@ __metadata:
     "@types/archiver": "npm:^7"
     "@types/eslint-plugin-jsx-a11y": "npm:^6"
     "@types/jsdom": "npm:^27"
+    "@types/lz-string": "npm:^1.5.0"
     "@types/node": "npm:^25.0.3"
     "@vitest/coverage-v8": "npm:^4.0.16"
     "@vitest/ui": "npm:^4.0.16"
@@ -2879,6 +2889,7 @@ __metadata:
     happy-dom: "npm:^20.0.10"
     jsdom: "npm:^27.2.0"
     knip: "npm:^5.70.2"
+    lz-string: "npm:^1.5.0"
     monocart-coverage-reports: "npm:^2.12.9"
     playwright: "npm:^1.57.0"
     prettier: "npm:^3.8.1"
@@ -7652,6 +7663,15 @@ __metadata:
   dependencies:
     yallist: "npm:^3.0.2"
   checksum: 10c0/89b2ef2ef45f543011e38737b8a8622a2f8998cddf0e5437174ef8f1f70a8b9d14a918ab3e232cb3ba343b7abddffa667f0b59075b2b80e6b4d63c3de6127482
+  languageName: node
+  linkType: hard
+
+"lz-string@npm:*, lz-string@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "lz-string@npm:1.5.0"
+  bin:
+    lz-string: bin/bin.js
+  checksum: 10c0/36128e4de34791838abe979b19927c26e67201ca5acf00880377af7d765b38d1c60847e01c5ec61b1a260c48029084ab3893a3925fd6e48a04011364b089991b
   languageName: node
   linkType: hard
 
