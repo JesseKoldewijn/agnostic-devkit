@@ -57,7 +57,6 @@
 		"@types/archiver": "^7",
 		"@types/eslint-plugin-jsx-a11y": "^6",
 		"@types/jsdom": "^27",
-		"@types/lz-string": "^1.5.0",
 		"@types/node": "^25.0.3",
 		"@vitest/coverage-v8": "^4.0.16",
 		"@vitest/ui": "^4.0.16",

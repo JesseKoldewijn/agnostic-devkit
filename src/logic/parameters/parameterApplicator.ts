@@ -2,8 +2,8 @@
  * Parameter applicator - handles applying and removing parameters to tabs
  * Supports queryParam, cookie, and localStorage parameter types
  */
-
 import { browser } from "wxt/browser";
+
 import { getActivePresetsForTab, getPresetById, getPresets } from "./storage";
 import type { Parameter, ParameterType, Preset } from "./types";
 

@@ -1,5 +1,6 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
 
 interface LayoutProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -13,7 +14,7 @@ export const Layout: Component<LayoutProps> = (props) => {
 		<div
 			{...others}
 			class={cn(
-				"min-h-screen w-full bg-background p-4 text-foreground selection:bg-primary/10",
+				"bg-background text-foreground selection:bg-primary/10 min-h-screen w-full p-4",
 				local.class
 			)}
 		>

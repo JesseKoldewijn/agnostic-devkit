@@ -1,7 +1,9 @@
 import { render } from "solid-js/web";
-import { Settings } from "./Settings";
+
 import "@/styles/main.css";
 import { initTheme } from "@/utils/theme";
+
+import { Settings } from "./Settings";
 
 // Initialize theme
 initTheme();

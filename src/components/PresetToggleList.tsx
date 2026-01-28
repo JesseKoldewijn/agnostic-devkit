@@ -1,6 +1,8 @@
 import type { Component } from "solid-js";
-import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
+
 import { browser } from "wxt/browser";
+
 import type { Preset } from "@/logic/parameters";
 import {
 	getParameterTypeIcon,
@@ -10,6 +12,7 @@ import {
 	togglePreset,
 } from "@/logic/parameters";
 import { cn } from "@/utils/cn";
+
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
@@ -175,7 +178,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 		<div class={cn("flex flex-col space-y-3", props.class)} data-testid="preset-toggle-list">
 			<div class={cn("flex items-center justify-between")}>
 				<h2
-					class={cn("font-black text-[10px] text-foreground/50 uppercase tracking-[0.2em]")}
+					class={cn("text-foreground/50 text-[10px] font-black tracking-[0.2em] uppercase")}
 					data-testid="presets-heading"
 				>
 					Active Presets
@@ -196,15 +199,15 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 				<div class={cn("flex items-center justify-center py-6")}>
 					<div
 						class={cn(
-							"size-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+							"border-primary/30 border-t-primary size-4 animate-spin rounded-full border-2"
 						)}
 					/>
 				</div>
 			</Show>
 
 			<Show when={!loading() && presets().length === 0}>
-				<Card class={cn("border-border/50 border-dashed bg-muted/10 px-4 py-10 text-center")}>
-					<p class={cn("font-black text-[10px] text-muted-foreground uppercase tracking-widest")}>
+				<Card class={cn("border-border/50 bg-muted/10 border-dashed px-4 py-10 text-center")}>
+					<p class={cn("text-muted-foreground text-[10px] font-black tracking-widest uppercase")}>
 						No presets active
 					</p>
 					<Show when={props.onManagePresets}>
@@ -243,7 +246,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 										>
 											<div
 												class={cn(
-													"mb-1 truncate font-black text-[14px] text-foreground uppercase leading-tight tracking-tight transition-colors group-hover:text-primary"
+													"text-foreground group-hover:text-primary mb-1 truncate text-[14px] leading-tight font-black tracking-tight uppercase transition-colors"
 												)}
 												data-testid="preset-toggle-name"
 											>
@@ -252,7 +255,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 											<Show when={preset.description}>
 												<div
 													class={cn(
-														"truncate font-bold text-[11px] text-muted-foreground leading-none"
+														"text-muted-foreground truncate text-[11px] leading-none font-bold"
 													)}
 													data-testid="preset-toggle-description"
 												>
@@ -260,13 +263,13 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 												</div>
 											</Show>
 											<div class={cn("mt-3 flex items-center space-x-2")}>
-												<Badge variant="secondary" class={cn("text-[8px]! h-4 px-2 font-black")}>
+												<Badge variant="secondary" class={cn("h-4 px-2 text-[8px]! font-black")}>
 													{preset.parameters.length} VARS
 												</Badge>
 												<Show when={props.expanded}>
 													<span
 														class={cn(
-															"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
+															"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
 														)}
 													>
 														{expandedPresetId() === preset.id ? "Hide Details" : "View Details"}
@@ -295,7 +298,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 												{(param) => (
 													<div
 														class={cn(
-															"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-3 py-2 text-[11px] shadow-sm"
+															"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-3 py-2 text-[11px] shadow-sm"
 														)}
 														data-testid="preset-expanded-param"
 													>
@@ -305,7 +308,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 															</span>
 															<span
 																class={cn(
-																	"truncate font-black text-foreground uppercase tracking-tighter"
+																	"text-foreground truncate font-black tracking-tighter uppercase"
 																)}
 															>
 																{param.key}
@@ -313,7 +316,7 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 														</div>
 														<span
 															class={cn(
-																"ml-2 max-w-[55%] truncate rounded-sm border border-border/20 bg-background/60 px-2 py-1 font-mono text-muted-foreground/90"
+																"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-2 py-1 font-mono"
 															)}
 														>
 															{param.value}

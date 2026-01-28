@@ -1,7 +1,7 @@
+import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import tailwindcss from "@tailwindcss/vite";
 import istanbul from "vite-plugin-istanbul";
 import { defineConfig } from "wxt";
 
@@ -81,12 +81,12 @@ export default defineConfig({
 								id: "agnostic-devkit@jessekoldewijn.dev",
 								// Required for Firefox Add-ons - declare no data collection
 								// See: https://mzl.la/firefox-builtin-data-consent
-							data_collection_permissions: {
-								// Explicitly declare no data collection
-								// See: https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent
-								required: ["none"],
-								optional: [],
-							},
+								data_collection_permissions: {
+									// Explicitly declare no data collection
+									// See: https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent
+									required: ["none"],
+									optional: [],
+								},
 							},
 						},
 					}

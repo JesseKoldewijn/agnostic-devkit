@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+
 import { getBrowserName, isSidebarSupported } from "@/utils/browser";
 
 export type DisplayMode = "popup" | "sidebar";

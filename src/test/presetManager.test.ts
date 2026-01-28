@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
+
 import {
 	activatePreset,
 	addParameterToPreset,
@@ -26,13 +27,12 @@ describe("presetManager", () => {
 		mockTabUrl = "https://example.com/page";
 
 		// Setup fake tabs
-		 
+
 		(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
 			id: tabId,
 			url: mockTabUrl,
 		}));
 
-		 
 		(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, props: any) => {
 			if (props.url) {
 				mockTabUrl = props.url;
@@ -41,15 +41,15 @@ describe("presetManager", () => {
 		});
 
 		// Setup fake cookies
-		 
+
 		(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
-		 
+
 		(fakeBrowser.cookies.get as any) = vi.fn(async () => null);
-		 
+
 		(fakeBrowser.cookies.remove as any) = vi.fn(async () => ({}));
 
 		// Setup fake scripting
-		 
+
 		(fakeBrowser.scripting.executeScript as any) = vi.fn(async () => [{ result: undefined }]);
 	});
 
@@ -917,9 +917,7 @@ describe("presetManager", () => {
 					createdAt: 1700000000000,
 					id: "test-1",
 					name: "Special chars: &?=#",
-					parameters: [
-						{ id: "p1", key: "foo&bar", type: "queryParam" as const, value: "baz=qux" },
-					],
+					parameters: [{ id: "p1", key: "foo&bar", type: "queryParam" as const, value: "baz=qux" }],
 					updatedAt: 1700000000000,
 				},
 			];
@@ -965,9 +963,7 @@ describe("presetManager", () => {
 
 	describe("parseShareUrl", () => {
 		it("should parse share URL and return presets", async () => {
-			const { generateShareUrl, parseShareUrl } = await import(
-				"../logic/parameters/presetManager"
-			);
+			const { generateShareUrl, parseShareUrl } = await import("../logic/parameters/presetManager");
 
 			const originalPresets = [
 				{
@@ -1005,9 +1001,7 @@ describe("presetManager", () => {
 		});
 
 		it("should handle multiple presets in share URL", async () => {
-			const { generateShareUrl, parseShareUrl } = await import(
-				"../logic/parameters/presetManager"
-			);
+			const { generateShareUrl, parseShareUrl } = await import("../logic/parameters/presetManager");
 
 			const originalPresets = [
 				{
@@ -1043,9 +1037,7 @@ describe("presetManager", () => {
 		});
 
 		it("should regenerate IDs when parsing", async () => {
-			const { generateShareUrl, parseShareUrl } = await import(
-				"../logic/parameters/presetManager"
-			);
+			const { generateShareUrl, parseShareUrl } = await import("../logic/parameters/presetManager");
 
 			const originalPresets = [
 				{

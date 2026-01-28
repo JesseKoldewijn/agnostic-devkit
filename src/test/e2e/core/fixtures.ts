@@ -1,9 +1,9 @@
+import type { BrowserContext } from "@playwright/test";
+import { test as base, chromium } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BrowserContext } from "@playwright/test";
-import { test as base, chromium } from "@playwright/test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,9 +27,8 @@ class CoverageCollector {
 			if (!this.accumulatedCoverage[key]) {
 				this.accumulatedCoverage[key] = JSON.parse(JSON.stringify(value));
 			} else {
-				 
 				const existing = this.accumulatedCoverage[key] as any;
-				 
+
 				const val = value as any;
 				// Merge statement coverage
 				if (val.s && existing.s) {
@@ -91,12 +90,12 @@ export const test = base.extend<{
 		// Mock notifications API to prevent CI hangs/flakiness
 		await context.addInitScript(() => {
 			// oxlint-disable-next-line no-typeof-undefined
-			 
+
 			const globalAny = globalThis as any;
 			if (globalAny.chrome !== undefined) {
 				globalAny.chrome.notifications = {
 					...globalAny.chrome.notifications,
-					 
+
 					create: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.create called", args);
 						// oxlint-disable-next-line prefer-at
@@ -106,7 +105,7 @@ export const test = base.extend<{
 						}
 						return Promise.resolve("mock-notification-id");
 					},
-					 
+
 					clear: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.clear called", args);
 						// oxlint-disable-next-line prefer-at
@@ -116,7 +115,7 @@ export const test = base.extend<{
 						}
 						return Promise.resolve(true);
 					},
-					 
+
 					getAll: (...args: any[]) => {
 						// oxlint-disable-next-line prefer-at
 						const callback = args[args.length - 1];
@@ -135,7 +134,6 @@ export const test = base.extend<{
 			context.on("page", (page) => {
 				page.on("load", async () => {
 					try {
-						 
 						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
 							collector.merge(coverage);
@@ -146,7 +144,6 @@ export const test = base.extend<{
 				});
 				page.on("close", async () => {
 					try {
-						 
 						const coverage = await page.evaluate(() => (window as any).__coverage__);
 						if (coverage) {
 							collector.merge(coverage);
@@ -170,7 +167,7 @@ export const test = base.extend<{
 					if (page.url() === "about:blank") {
 						continue;
 					}
-					 
+
 					const coverage = await page.evaluate(() => (window as any).__coverage__);
 					if (coverage) {
 						console.log(`[Coverage] Collected from page: ${page.url()}`);
@@ -185,7 +182,6 @@ export const test = base.extend<{
 			// Collect from service workers
 			for (const worker of context.serviceWorkers()) {
 				try {
-					 
 					const coverage = await worker.evaluate(() => (globalThis as any).__coverage__);
 					if (coverage) {
 						console.log(`[Coverage] Collected from service worker: ${worker.url()}`);
@@ -232,7 +228,7 @@ export const test = base.extend<{
 		if (!background) {
 			console.log("[Fixture] Service worker not found, waiting and checking again...");
 			for (let i = 0; i < 5; i++) {
-				await new Promise(resolve => setTimeout(resolve, 2000));
+				await new Promise((resolve) => setTimeout(resolve, 2000));
 				background = findBackground();
 				if (background) {
 					break;
@@ -254,12 +250,12 @@ export const test = base.extend<{
 					}
 				}
 			}
-			
+
 			// Try to find ANY service worker at all
 			const allWorkers = context.serviceWorkers();
-			console.log(`[Fixture] All service workers: ${allWorkers.map(w => w.url()).join(", ")}`);
+			console.log(`[Fixture] All service workers: ${allWorkers.map((w) => w.url()).join(", ")}`);
 			if (allWorkers.length > 0) {
-				const sw = allWorkers.find(w => w.url().startsWith("chrome-extension://"));
+				const sw = allWorkers.find((w) => w.url().startsWith("chrome-extension://"));
 				if (sw) {
 					background = sw;
 				}
@@ -267,7 +263,12 @@ export const test = base.extend<{
 		}
 
 		if (!background) {
-			throw new Error(`Extension background service worker not found. Found workers: ${context.serviceWorkers().map(w => w.url()).join(", ")}`);
+			throw new Error(
+				`Extension background service worker not found. Found workers: ${context
+					.serviceWorkers()
+					.map((w) => w.url())
+					.join(", ")}`
+			);
 		}
 
 		const extensionId = background.url().split("/")[2];

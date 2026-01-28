@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+
 import { getLatestRelease, getUpdateInfo } from "../logic/releaseService";
 
 describe("releaseService", () => {
 	beforeAll(() => {
 		// Mock global constants
-		 
+
 		const globalAny = global as any;
 		globalAny.__REPO_URL__ = "https://github.com/owner/repo";
 		globalAny.__EXTENSION_ENV__ = "development";

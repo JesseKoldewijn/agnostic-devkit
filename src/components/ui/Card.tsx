@@ -1,5 +1,6 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
 
 interface CardProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -13,7 +14,7 @@ export const Card: Component<CardProps> = (props) => {
 		<div
 			{...others}
 			class={cn(
-				"rounded-2xl border-2 border-border bg-card shadow-md transition-all",
+				"border-border bg-card rounded-2xl border-2 shadow-md transition-all",
 				local.hoverable && "hover:border-primary/30 hover:shadow-lg",
 				local.class
 			)}
@@ -38,7 +39,7 @@ export const CardTitle: Component<JSX.HTMLAttributes<HTMLHeadingElement>> = (pro
 		<h3
 			{...others}
 			class={cn(
-				"font-black text-[15px] text-foreground uppercase leading-none tracking-tight",
+				"text-foreground text-[15px] leading-none font-black tracking-tight uppercase",
 				local.class
 			)}
 		>
@@ -51,7 +52,7 @@ export const CardDescription: Component<JSX.HTMLAttributes<HTMLParagraphElement>
 	const [local, others] = splitProps(props, ["class", "children"]);
 	return (
 		<p
-			class={cn("font-bold text-[11px] text-muted-foreground opacity-80", local.class)}
+			class={cn("text-muted-foreground text-[11px] font-bold opacity-80", local.class)}
 			{...others}
 		>
 			{local.children}

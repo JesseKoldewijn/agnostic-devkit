@@ -1,6 +1,8 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
+
 import { Label } from "./Label";
 
 interface TextareaProps extends JSX.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -18,7 +20,7 @@ export const Textarea: Component<TextareaProps> = (props) => {
 				{...others}
 				required={local.required as boolean}
 				class={cn(
-					"w-full resize-none rounded-xl border-2 border-border bg-background px-3 py-2 font-bold text-foreground text-sm transition-all placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50",
+					"border-border bg-background text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:ring-primary/10 w-full resize-none rounded-xl border-2 px-3 py-2 text-sm font-bold transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
 					local.class
 				)}
 			/>

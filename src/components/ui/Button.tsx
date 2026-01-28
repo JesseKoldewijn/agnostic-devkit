@@ -1,5 +1,6 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
 
 interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -26,8 +27,7 @@ export const Button: Component<ButtonProps> = (props) => {
 		"ghost-destructive":
 			"bg-transparent text-destructive/70 hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/30 active:scale-95",
 		link: "text-primary underline-offset-4 hover:underline active:scale-95",
-		outline:
-			"bg-transparent border-2 border-border text-foreground hover:bg-muted active:scale-95",
+		outline: "bg-transparent border-2 border-border text-foreground hover:bg-muted active:scale-95",
 		secondary:
 			"bg-secondary text-secondary-foreground hover:brightness-105 border border-border/40 shadow-sm active:scale-95",
 	};

@@ -2,9 +2,9 @@
  * High-level preset management operations
  * Combines storage and applicator functionality for toggling presets
  */
-
 import { browser } from "wxt/browser";
 
+import { type DecompressResult, PresetCoder } from "../../utils/presetCoder";
 import {
 	applyPreset as applyPresetToTab,
 	removePreset as removePresetFromTab,
@@ -26,7 +26,6 @@ import {
 } from "./storage";
 import type { Parameter, Preset } from "./types";
 import { createEmptyPreset, generateId } from "./types";
-import { type DecompressResult, PresetCoder } from "../../utils/presetCoder";
 
 /**
  * Toggle a preset on/off for a specific tab

@@ -7,7 +7,6 @@
  * 3. Encode enum values (queryParam -> q, etc.)
  * 4. LZ compression with URL-safe encoding
  */
-
 import LZString from "lz-string";
 
 import type { Parameter, ParameterType, Preset, PrimitiveType } from "../logic/parameters/types";

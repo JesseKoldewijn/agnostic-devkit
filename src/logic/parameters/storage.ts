@@ -2,8 +2,8 @@
  * Storage management for parameters and presets
  * All changes sync immediately to browser.storage.sync
  */
-
 import { browser } from "wxt/browser";
+
 import type { Parameter, Preset } from "./types";
 
 const PRESETS_KEY = "presets";

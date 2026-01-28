@@ -1,6 +1,8 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
+
 import { Label } from "./Label";
 
 interface InputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
@@ -19,7 +21,7 @@ export const Input: Component<InputProps> = (props) => {
 				{...others}
 				required={local.required}
 				class={cn(
-					"w-full rounded-xl border-2 border-border bg-background px-4 py-2 font-bold text-[13px] text-foreground transition-all placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50",
+					"border-border bg-background text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:ring-primary/10 w-full rounded-xl border-2 px-4 py-2 text-[13px] font-bold transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
 					local.class
 				)}
 			/>

@@ -1,6 +1,8 @@
 import type { Component, JSX } from "solid-js";
 import { Show } from "solid-js";
+
 import { cn } from "@/utils/cn";
+
 import { Badge } from "../ui/Badge";
 import { Separator } from "../ui/Separator";
 
@@ -17,7 +19,7 @@ export const PageHeader: Component<PageHeaderProps> = (props) => (
 		<div class="flex items-center justify-between">
 			<div class="flex flex-col">
 				<h1
-					class={cn("font-black text-2xl text-foreground uppercase leading-none tracking-tight")}
+					class={cn("text-foreground text-2xl leading-none font-black tracking-tight uppercase")}
 					data-testid={props.titleTestId}
 				>
 					{props.title}
@@ -25,7 +27,7 @@ export const PageHeader: Component<PageHeaderProps> = (props) => (
 				<Show when={props.subtitle}>
 					<p
 						class={cn(
-							"mt-1.5 font-black text-[11px] text-muted-foreground uppercase tracking-widest opacity-70"
+							"text-muted-foreground mt-1.5 text-[11px] font-black tracking-widest uppercase opacity-70"
 						)}
 					>
 						{props.subtitle}

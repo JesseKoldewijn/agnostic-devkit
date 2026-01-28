@@ -1,5 +1,6 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
 
 interface BadgeProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -21,7 +22,7 @@ export const Badge: Component<BadgeProps> = (props) => {
 		<div
 			{...others}
 			class={cn(
-				"inline-flex items-center rounded-full border px-2 py-0.5 font-black text-[10px] uppercase tracking-widest transition-colors",
+				"inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-black tracking-widest uppercase transition-colors",
 				variantStyles[local.variant ?? "default"],
 				local.class
 			)}

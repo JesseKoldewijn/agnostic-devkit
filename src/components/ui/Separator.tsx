@@ -11,7 +11,7 @@ export const Separator: Component<SeparatorProps> = (props) => {
 	return (
 		<div
 			{...others}
-			class={`shrink-0 bg-border ${
+			class={`bg-border shrink-0 ${
 				local.orientation === "vertical" ? "h-full w-[2px]" : "h-[2px] w-full"
 			} ${local.class ?? ""}`}
 		/>
