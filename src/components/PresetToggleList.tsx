@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
 import type { Preset } from "@/logic/parameters";
 import {
@@ -152,11 +152,15 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	});
 
 	// Subscribe to storage changes
-	createEffect(() => {
+	// Note: loadPresets reads currentTabId() which is a signal, but we intentionally
+	// want the callback to only run on storage changes, not on currentTabId changes.
+	onMount(() => {
+		// eslint-disable-next-line solid/reactivity
 		const unsubPresets = onPresetsChanged(() => {
 			loadPresets();
 		});
 
+		// eslint-disable-next-line solid/reactivity
 		const unsubTabStates = onTabPresetStatesChanged(() => {
 			loadPresets();
 		});

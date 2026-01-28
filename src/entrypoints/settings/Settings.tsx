@@ -387,7 +387,7 @@ export const Settings: Component = () => {
 					)}
 					data-testid="share-import-modal"
 				>
-				<Card class={cn("m-4 flex h-full max-h-[400px] w-full max-w-md flex-col")}>
+					<Card class={cn("m-4 flex max-h-[400px] max-w-md flex-col size-full")}>
 					<div class={cn("flex h-full flex-col gap-4 overflow-hidden p-6")}>
 							{/* Header */}
 							<div class={cn("flex items-center justify-between")}>
