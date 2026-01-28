@@ -48,7 +48,11 @@ export default defineConfig({
 		}
 
 		const prettyBrowserTarget = browserTarget.charAt(0).toUpperCase() + browserTarget.slice(1);
-		const name = `Agnostic Devkit for ${prettyBrowserTarget}${nameSuffix}`;
+		let name = `Agnostic Devkit for ${prettyBrowserTarget}${nameSuffix}`;
+		// Cant ommit the name for Firefox due to trademark infringement
+		if (browserTarget === "firefox") {
+			name = `Agnostic Devkit${nameSuffix}`;
+		}
 
 		const isDevIcon = extensionEnv === "development" || extensionEnv === "canary" || !isProduction;
 
