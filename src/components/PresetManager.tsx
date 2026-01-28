@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import type { Parameter, ParameterType, PrimitiveType, Preset } from "@/logic/parameters";
 import {
 	createEmptyParameter,
@@ -635,6 +635,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						onInput={(e) => setShareUrlInput(e.currentTarget.value)}
 						placeholder="Paste share URL here..."
 						class={cn("h-8 flex-1 text-[11px]")}
+						containerClass={cn("flex-1")}
 						data-testid="share-url-input"
 						onKeyDown={(e) => {
 							if (e.key === "Enter") {
@@ -1060,8 +1061,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						<div class={cn("space-y-4")} data-testid="parameters-list">
 							<For each={parameterIds()}>
 								{(paramId, index) => {
-									const param = createMemo(() => getParameterData(paramId));
-									const paramData = param();
+									const getParam = () => getParameterData(paramId);
 									return (
 										<Card
 											class={cn("group relative border-border/40 p-4 shadow-sm")}
@@ -1109,15 +1109,16 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													<Label class={cn("text-[10px]! font-black uppercase tracking-widest opacity-70")}>
 														Storage Type
 													</Label>
-													<Select
-														name={`param-${paramId}-type`}
-														ref={(el) => {
-															if (el) {
-																queueMicrotask(() => {
-																	el.value = paramData.type;
-																});
-															}
-														}}
+												<Select
+													name={`param-${paramId}-type`}
+													ref={(el) => {
+														if (el) {
+															const paramType = getParam().type;
+															queueMicrotask(() => {
+																el.value = paramType;
+															});
+														}
+													}}
 														class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg uppercase")}
 														data-testid="parameter-type-select"
 													>
@@ -1131,15 +1132,16 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													<Label class={cn("text-[10px]! font-black uppercase tracking-widest opacity-70")}>
 														Value Type
 													</Label>
-													<Select
-														name={`param-${paramId}-primitiveType`}
-														ref={(el) => {
-															if (el) {
-																queueMicrotask(() => {
-																	el.value = paramData.primitiveType ?? "string";
-																});
-															}
-														}}
+												<Select
+													name={`param-${paramId}-primitiveType`}
+													ref={(el) => {
+														if (el) {
+															const primitiveType = getParam().primitiveType ?? "string";
+															queueMicrotask(() => {
+																el.value = primitiveType;
+															});
+														}
+													}}
 														onChange={(e) => {
 															setParamPrimitiveType(
 																paramId,
@@ -1161,7 +1163,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													placeholder="variable_name"
 													ref={(el) => {
 														if (el) {
-															el.value = paramData.key;
+															el.value = getParam().key;
 														}
 													}}
 													class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg font-mono")}
@@ -1171,15 +1173,15 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												<Show
 													when={getParamPrimitiveType(paramId) === "boolean"}
 													fallback={
-														<Input
-															label="Value"
-															name={`param-${paramId}-value`}
-															placeholder="value"
-															ref={(el) => {
-																if (el) {
-																	el.value = paramData.value;
-																}
-															}}
+													<Input
+														label="Value"
+														name={`param-${paramId}-value`}
+														placeholder="value"
+														ref={(el) => {
+															if (el) {
+																el.value = getParam().value;
+															}
+														}}
 															class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg font-mono")}
 															data-testid="parameter-value-input"
 														/>
@@ -1221,7 +1223,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													placeholder="How is this variable used?"
 													ref={(el) => {
 														if (el) {
-															el.value = paramData.description ?? "";
+															el.value = getParam().description ?? "";
 														}
 													}}
 													containerClass={cn("col-span-2")}
@@ -1488,7 +1490,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			)}
 			data-testid="share-import-modal"
 		>
-			<Card class={cn("m-4 flex h-full max-h-[400px] w-full max-w-md flex-col")}>
+			<Card class={cn("m-4 flex max-h-[400px] max-w-md flex-col size-full")}>
 				<div class={cn("flex h-full flex-col gap-4 p-5")}>
 					{/* Header */}
 					<div class={cn("flex items-center justify-between")}>
