@@ -1,3 +1,10 @@
+# [1.4.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.0-canary.1...v1.4.0-canary.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* removed omit of firefox trademark in extension name ([5876aa2](https://github.com/JesseKoldewijn/agnostic-devkit/commit/5876aa2b97e0ca67276622d23bb7ff75088522ec))
+
 # [1.4.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.1...v1.4.0-canary.1) (2026-01-28)
 
 
