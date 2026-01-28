@@ -57,7 +57,14 @@ export default defineConfig({
 		const isDevIcon = extensionEnv === "development" || extensionEnv === "canary" || !isProduction;
 
 		// Base permissions for all browsers
-		const basePermissions = ["storage", "activeTab", "tabs", "notifications", "cookies"];
+		const basePermissions = [
+			"storage",
+			"activeTab",
+			"tabs",
+			"notifications",
+			"cookies",
+			"clipboardWrite",
+		];
 
 		// Chrome-specific permissions (MV3)
 		const chromePermissions = [...basePermissions, "scripting", "sidePanel"];
