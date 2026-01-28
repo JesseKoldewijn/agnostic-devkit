@@ -71,7 +71,7 @@ test.describe("Preset URL Sharing", () => {
 		await popupPage.locator('[data-testid="preset-name-input"]').fill(presetName);
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
-			// Go to export view and copy URL
+		// Go to export view and copy URL
 		await popupPage.locator('[data-testid="export-presets-button"]').click();
 		await popupPage.locator('[data-testid="export-preset-item"]').first().click();
 		await popupPage.context().grantPermissions(["clipboard-read", "clipboard-write"]);

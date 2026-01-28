@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
+
 import {
 	applyParameter,
 	applyPreset,
@@ -21,13 +22,12 @@ describe("parameterApplicator", () => {
 		mockTabUrl = "https://example.com/page";
 
 		// Setup fake tabs
-		 
+
 		(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
 			id: tabId,
 			url: mockTabUrl,
 		}));
 
-		 
 		(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, updateProperties: any) => {
 			if (updateProperties.url) {
 				mockTabUrl = updateProperties.url;
@@ -36,19 +36,19 @@ describe("parameterApplicator", () => {
 		});
 
 		// Setup fake cookies
-		 
+
 		(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
-		 
+
 		(fakeBrowser.cookies.get as any) = vi.fn(async () => null);
-		 
+
 		(fakeBrowser.cookies.remove as any) = vi.fn(async () => ({}));
 
 		// Setup fake scripting
-		 
+
 		(fakeBrowser.scripting.executeScript as any) = vi.fn(async () => [{ result: undefined }]);
 
 		// Setup fake runtime.sendMessage for LS operations
-		 
+
 		(fakeBrowser.runtime.sendMessage as any) = vi.fn(async (msg: any) => {
 			if (msg.type === "APPLY_LS") {
 				return { success: true };
@@ -120,7 +120,7 @@ describe("parameterApplicator", () => {
 			const param = {
 				id: "1",
 				key: "key",
-				 
+
 				type: "unknown" as any,
 				value: "value",
 			};
@@ -130,7 +130,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return false when tab URL is not available", async () => {
-			 
 			(fakeBrowser.tabs.get as any).mockResolvedValueOnce({ id: 123, url: undefined });
 
 			const param: Parameter = {
@@ -145,7 +144,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should handle errors gracefully for query params", async () => {
-			 
 			(fakeBrowser.tabs.update as any).mockRejectedValueOnce(new Error("Tab error"));
 
 			const param: Parameter = {
@@ -160,7 +158,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should handle errors gracefully for cookies", async () => {
-			 
 			(fakeBrowser.cookies.set as any).mockRejectedValueOnce(new Error("Cookie error"));
 
 			const param: Parameter = {
@@ -175,7 +172,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should handle errors gracefully for localStorage", async () => {
-			 
 			(fakeBrowser.runtime.sendMessage as any).mockRejectedValueOnce(new Error("Script error"));
 
 			const param: Parameter = {
@@ -295,14 +291,13 @@ describe("parameterApplicator", () => {
 
 			// Should be called once with both params in URL
 			expect(fakeBrowser.tabs.update).toHaveBeenCalledTimes(1);
-			 
+
 			const callArg = (fakeBrowser.tabs.update as any).mock.calls[0][1];
 			expect(callArg.url).toContain("qp1=v1");
 			expect(callArg.url).toContain("qp2=v2");
 		});
 
 		it("should handle errors during batch query param application", async () => {
-			 
 			(fakeBrowser.tabs.update as any).mockRejectedValueOnce(new Error("Update error"));
 
 			const preset: Preset = {
@@ -371,7 +366,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return Unknown for invalid type", () => {
-			 
 			expect(getParameterTypeLabel("invalid" as any)).toBe("Unknown");
 		});
 	});
@@ -390,7 +384,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return question mark for invalid type", () => {
-			 
 			expect(getParameterTypeIcon("invalid" as any)).toBe("❓");
 		});
 	});
@@ -425,7 +418,6 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should verify cookie is set correctly", async () => {
-			 
 			(fakeBrowser.cookies.get as any).mockResolvedValueOnce({
 				value: "cookieValue",
 			});
@@ -463,7 +455,7 @@ describe("parameterApplicator", () => {
 	describe("verifyPreset", () => {
 		it("should verify all parameters in a preset", async () => {
 			mockTabUrl = "https://example.com/page?qp1=v1";
-			 
+
 			(fakeBrowser.cookies.get as any).mockResolvedValueOnce({ value: "cv1" });
 
 			const preset: Preset = {
@@ -502,7 +494,6 @@ describe("parameterApplicator", () => {
 			mockTabUrl = "https://example.com/page";
 			let callCount = 0;
 
-			 
 			(fakeBrowser.tabs.update as any).mockImplementation(async (tabId: number, props: any) => {
 				callCount++;
 				// First call fails verification, second succeeds
@@ -554,7 +545,10 @@ describe("parameterApplicator", () => {
 	describe("getCookieValue", () => {
 		it("should return the value of an existing cookie", async () => {
 			const { getCookieValue } = await import("../logic/parameters/parameterApplicator");
-			(fakeBrowser.cookies.get as any).mockResolvedValue({ name: "testCookie", value: "cookieValue" });
+			(fakeBrowser.cookies.get as any).mockResolvedValue({
+				name: "testCookie",
+				value: "cookieValue",
+			});
 
 			const value = await getCookieValue(123, "testCookie");
 			expect(value).toBe("cookieValue");
@@ -572,7 +566,10 @@ describe("parameterApplicator", () => {
 	describe("getLocalStorageValue", () => {
 		it("should return the value of an existing localStorage item", async () => {
 			const { getLocalStorageValue } = await import("../logic/parameters/parameterApplicator");
-			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({ success: true, value: "storedValue" });
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
+				success: true,
+				value: "storedValue",
+			});
 
 			const value = await getLocalStorageValue(123, "storageKey");
 			expect(value).toBe("storedValue");
@@ -620,7 +617,10 @@ describe("parameterApplicator", () => {
 
 		it("should dispatch to getLocalStorageValue for localStorage type", async () => {
 			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
-			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({ success: true, value: "lsValue" });
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
+				success: true,
+				value: "lsValue",
+			});
 
 			const param: Parameter = {
 				id: "1",

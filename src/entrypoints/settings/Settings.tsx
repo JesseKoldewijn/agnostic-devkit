@@ -1,6 +1,10 @@
 import type { Component } from "solid-js";
-import { createResource, createSignal, For, onMount, Show } from "solid-js";
+import { For, Show, createResource, createSignal, onMount } from "solid-js";
+
 import { browser } from "wxt/browser";
+
+import { Layout } from "@/components/ui-shared/Layout";
+import { PageHeader } from "@/components/ui-shared/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -8,8 +12,6 @@ import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/Separator";
 import { Switch } from "@/components/ui/Switch";
-import { Layout } from "@/components/ui-shared/Layout";
-import { PageHeader } from "@/components/ui-shared/PageHeader";
 import { createPreset, getParameterTypeIcon, parseShareUrl } from "@/logic/parameters";
 import { getUpdateInfo } from "@/logic/releaseService";
 import { getBrowserName, isSidebarSupported } from "@/utils/browser";
@@ -183,13 +185,13 @@ export const Settings: Component = () => {
 									Sidebar
 								</option>
 							</Select>
-							<p class={cn("ml-1 text-[11px] text-muted-foreground")}>
+							<p class={cn("text-muted-foreground ml-1 text-[11px]")}>
 								Choose your preferred view for the extension interface.
 							</p>
 							<Show when={!sidebarSupported()}>
 								<div
 									class={cn(
-										"rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 font-bold text-[10px] text-amber-600 dark:text-amber-400"
+										"rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 text-[10px] font-bold text-amber-600 dark:text-amber-400"
 									)}
 									data-testid="sidebar-warning"
 								>
@@ -215,7 +217,7 @@ export const Settings: Component = () => {
 									System Preference
 								</option>
 							</Select>
-							<p class={cn("ml-1 text-[11px] text-muted-foreground")}>
+							<p class={cn("text-muted-foreground ml-1 text-[11px]")}>
 								The extension will adapt its appearance based on this selection.
 							</p>
 						</div>
@@ -230,10 +232,10 @@ export const Settings: Component = () => {
 					<CardContent>
 						<div
 							class={cn(
-								"flex items-center justify-between rounded-xl border-2 border-border/50 bg-muted/50 p-4"
+								"border-border/50 bg-muted/50 flex items-center justify-between rounded-xl border-2 p-4"
 							)}
 						>
-							<Label class={cn("mb-0! ml-0! font-black text-[11px]")}>Enable Notifications</Label>
+							<Label class={cn("mb-0! ml-0! text-[11px] font-black")}>Enable Notifications</Label>
 							<Switch
 								checked={notifications()}
 								onCheckedChange={handleNotificationsChange}
@@ -251,7 +253,7 @@ export const Settings: Component = () => {
 					<CardContent class={cn("space-y-3")}>
 						<div
 							class={cn(
-								"flex items-center justify-between px-1 font-black text-[11px] text-foreground/60 uppercase tracking-widest"
+								"text-foreground/60 flex items-center justify-between px-1 text-[11px] font-black tracking-widest uppercase"
 							)}
 							data-testid="browser-info"
 						>
@@ -260,7 +262,7 @@ export const Settings: Component = () => {
 						</div>
 						<div
 							class={cn(
-								"flex items-center justify-between px-1 font-black text-[11px] text-foreground/60 uppercase tracking-widest"
+								"text-foreground/60 flex items-center justify-between px-1 text-[11px] font-black tracking-widest uppercase"
 							)}
 						>
 							<span>Build Version</span>
@@ -279,15 +281,15 @@ export const Settings: Component = () => {
 					<CardContent class={cn("space-y-4")}>
 						<div
 							class={cn(
-								"flex items-center justify-between rounded-xl border-2 border-border/50 bg-muted/50 p-4"
+								"border-border/50 bg-muted/50 flex items-center justify-between rounded-xl border-2 p-4"
 							)}
 						>
 							<div class="space-y-1">
-								<p class="font-black text-[11px] uppercase tracking-widest">Active Channel</p>
+								<p class="text-[11px] font-black tracking-widest uppercase">Active Channel</p>
 								<div class="flex items-center gap-2">
 									<span
 										class={cn(
-											"inline-flex items-center rounded-full px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter",
+											"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-tighter uppercase",
 											extensionEnv === "production"
 												? "bg-blue-500/10 text-blue-500"
 												: "bg-red-500/10 text-red-500"
@@ -302,7 +304,7 @@ export const Settings: Component = () => {
 
 						<div class="space-y-2 px-1">
 							<Show when={updateInfo.loading}>
-								<p class="animate-pulse text-[11px] text-muted-foreground">
+								<p class="text-muted-foreground animate-pulse text-[11px]">
 									Checking for updates...
 								</p>
 							</Show>
@@ -310,14 +312,14 @@ export const Settings: Component = () => {
 								<div class="flex flex-col gap-2" data-testid="update-status">
 									<Show when={updateInfo()?.isUpdateAvailable}>
 										<div class="flex items-center justify-between">
-											<span class="animate-pulse font-bold text-[11px] text-amber-500 uppercase tracking-widest">
+											<span class="animate-pulse text-[11px] font-bold tracking-widest text-amber-500 uppercase">
 												Update available: {updateInfo()?.latestVersion}
 											</span>
 											<a
 												href={updateInfo()?.url}
 												target="_blank"
 												rel="noopener noreferrer"
-												class="font-black text-[10px] text-foreground uppercase tracking-widest hover:underline"
+												class="text-foreground text-[10px] font-black tracking-widest uppercase hover:underline"
 												data-testid="latest-release-link"
 											>
 												View Release
@@ -325,7 +327,7 @@ export const Settings: Component = () => {
 										</div>
 									</Show>
 									<Show when={!updateInfo()?.isUpdateAvailable}>
-										<p class="text-[11px] text-muted-foreground uppercase tracking-widest">
+										<p class="text-muted-foreground text-[11px] tracking-widest uppercase">
 											You are on the latest {extensionEnv} version
 										</p>
 									</Show>
@@ -335,7 +337,7 @@ export const Settings: Component = () => {
 
 						<Show when={extensionEnv === "production"}>
 							<div class="mt-4 rounded-lg border border-red-500/10 bg-red-500/5 p-3">
-								<p class="font-medium text-[10px] text-red-500/80 leading-relaxed">
+								<p class="text-[10px] leading-relaxed font-medium text-red-500/80">
 									Want to try early features? Push to the <span class="font-bold">develop</span>{" "}
 									branch to trigger a Canary build.
 								</p>
@@ -350,7 +352,7 @@ export const Settings: Component = () => {
 				<div
 					data-testid="settings-saved-indicator"
 					class={cn(
-						"fade-in slide-in-from-bottom-4 fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background shadow-2xl duration-300"
+						"fade-in slide-in-from-bottom-4 animate-in bg-foreground text-background fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 shadow-2xl duration-300"
 					)}
 				>
 					<svg
@@ -369,12 +371,12 @@ export const Settings: Component = () => {
 							d="M5 13l4 4L19 7"
 						/>
 					</svg>
-					<span class={cn("font-black text-[11px] uppercase tracking-widest")}>Settings Saved</span>
+					<span class={cn("text-[11px] font-black tracking-widest uppercase")}>Settings Saved</span>
 				</div>
 			</Show>
 
 			<div class={cn("pt-20 pb-10 text-center")}>
-				<p class={cn("font-black text-[10px] text-muted-foreground uppercase tracking-[0.4em]")}>
+				<p class={cn("text-muted-foreground text-[10px] font-black tracking-[0.4em] uppercase")}>
 					Agnostic Devkit | {new Date().getFullYear()}
 				</p>
 			</div>
@@ -383,18 +385,16 @@ export const Settings: Component = () => {
 			<Show when={shareImportData() || shareImportError()}>
 				<div
 					class={cn(
-						"fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
 					)}
 					data-testid="share-import-modal"
 				>
-					<Card class={cn("m-4 flex max-h-[400px] max-w-md flex-col size-full")}>
-					<div class={cn("flex h-full flex-col gap-4 overflow-hidden p-6")}>
+					<Card class={cn("m-4 flex size-full max-h-[400px] max-w-md flex-col")}>
+						<div class={cn("flex h-full flex-col gap-4 overflow-hidden p-6")}>
 							{/* Header */}
 							<div class={cn("flex items-center justify-between")}>
 								<h2
-									class={cn(
-										"font-black text-[13px] text-foreground uppercase tracking-[0.15em]"
-									)}
+									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
 								>
 									Import Shared Presets
 								</h2>
@@ -426,7 +426,7 @@ export const Settings: Component = () => {
 								fallback={
 									<div
 										class={cn(
-											"rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive"
+											"border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-4 text-[13px]"
 										)}
 										data-testid="share-import-error"
 									>
@@ -436,110 +436,107 @@ export const Settings: Component = () => {
 							>
 								{/* Content */}
 								<div class={cn("flex-1 space-y-4")}>
-									<p class={cn("text-[13px] text-muted-foreground")}>
-										<span
-											class={cn("font-bold text-foreground")}
-											data-testid="share-import-count"
-										>
+									<p class={cn("text-muted-foreground text-[13px]")}>
+										<span class={cn("text-foreground font-bold")} data-testid="share-import-count">
 											{shareImportData()?.count}
 										</span>{" "}
 										preset{shareImportData()?.isMultiplePresets ? "s" : ""} to import:
 									</p>
 
-								<div
-									class={cn(
-										"flex-1 space-y-2 overflow-y-auto rounded-xl border border-border/50 bg-muted/30 p-3"
-									)}
-								>
-									<For each={shareImportData()?.result ?? []}>
-										{(preset) => (
-											<Card
-												class={cn(
-													"border-border/60 p-3 shadow-sm transition-all hover:border-primary/30"
-												)}
-												data-testid="share-import-preset-item"
-											>
-												<button
-													type="button"
-													class={cn("group w-full text-left")}
-													onClick={() => toggleShareImportExpanded(preset.id)}
-													data-testid="share-import-preset-expand"
+									<div
+										class={cn(
+											"border-border/50 bg-muted/30 flex-1 space-y-2 overflow-y-auto rounded-xl border p-3"
+										)}
+									>
+										<For each={shareImportData()?.result ?? []}>
+											{(preset) => (
+												<Card
+													class={cn(
+														"border-border/60 hover:border-primary/30 p-3 shadow-sm transition-all"
+													)}
+													data-testid="share-import-preset-item"
 												>
-													<div
-														class={cn(
-															"truncate font-black text-[13px] text-foreground uppercase tracking-tight transition-colors group-hover:text-primary"
-														)}
+													<button
+														type="button"
+														class={cn("group w-full text-left")}
+														onClick={() => toggleShareImportExpanded(preset.id)}
+														data-testid="share-import-preset-expand"
 													>
-														{preset.name}
-													</div>
-													<Show when={preset.description}>
 														<div
 															class={cn(
-																"mt-1 truncate font-bold text-[10px] text-muted-foreground leading-tight"
+																"text-foreground group-hover:text-primary truncate text-[13px] font-black tracking-tight uppercase transition-colors"
 															)}
 														>
-															{preset.description}
+															{preset.name}
 														</div>
-													</Show>
-													<div class={cn("mt-2 flex items-center gap-2")}>
-														<Badge
-															variant="secondary"
-															class={cn("text-[8px]! h-4 px-2 font-black")}
-														>
-															{preset.parameters.length} VARS
-														</Badge>
-														<span
-															class={cn(
-																"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
-															)}
-														>
-															{shareImportExpandedId() === preset.id ? "Hide" : "View"}
-														</span>
-													</div>
-												</button>
+														<Show when={preset.description}>
+															<div
+																class={cn(
+																	"text-muted-foreground mt-1 truncate text-[10px] leading-tight font-bold"
+																)}
+															>
+																{preset.description}
+															</div>
+														</Show>
+														<div class={cn("mt-2 flex items-center gap-2")}>
+															<Badge
+																variant="secondary"
+																class={cn("h-4 px-2 text-[8px]! font-black")}
+															>
+																{preset.parameters.length} VARS
+															</Badge>
+															<span
+																class={cn(
+																	"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
+																)}
+															>
+																{shareImportExpandedId() === preset.id ? "Hide" : "View"}
+															</span>
+														</div>
+													</button>
 
-												{/* Expanded parameter list */}
-												<Show when={shareImportExpandedId() === preset.id}>
-													<div class={cn("mt-3")} data-testid="share-import-preset-params">
-														<Separator class={cn("mb-3 opacity-50")} />
-														<div class={cn("space-y-1.5")}>
-															<For each={preset.parameters}>
-																{(param) => (
-																	<div
-																		class={cn(
-																			"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-2.5 py-1.5 text-[10px] shadow-sm"
-																		)}
-																		data-testid="share-import-preset-param"
-																	>
-																		<div class={cn("flex min-w-0 flex-1 items-center")}>
-																			<span class={cn("mr-1.5 scale-90 opacity-60")}>
-																				{getParameterTypeIcon(param.type)}
-																			</span>
+													{/* Expanded parameter list */}
+													<Show when={shareImportExpandedId() === preset.id}>
+														<div class={cn("mt-3")} data-testid="share-import-preset-params">
+															<Separator class={cn("mb-3 opacity-50")} />
+															<div class={cn("space-y-1.5")}>
+																<For each={preset.parameters}>
+																	{(param) => (
+																		<div
+																			class={cn(
+																				"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-[10px] shadow-sm"
+																			)}
+																			data-testid="share-import-preset-param"
+																		>
+																			<div class={cn("flex min-w-0 flex-1 items-center")}>
+																				<span class={cn("mr-1.5 scale-90 opacity-60")}>
+																					{getParameterTypeIcon(param.type)}
+																				</span>
+																				<span
+																					class={cn(
+																						"text-foreground truncate font-black tracking-tighter uppercase"
+																					)}
+																				>
+																					{param.key}
+																				</span>
+																			</div>
 																			<span
 																				class={cn(
-																					"truncate font-black text-foreground uppercase tracking-tighter"
+																					"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-1.5 py-0.5 font-mono"
 																				)}
 																			>
-																				{param.key}
+																				{param.value}
 																			</span>
 																		</div>
-																		<span
-																			class={cn(
-																				"ml-2 max-w-[55%] truncate rounded-sm border border-border/20 bg-background/60 px-1.5 py-0.5 font-mono text-muted-foreground/90"
-																			)}
-																		>
-																			{param.value}
-																		</span>
-																	</div>
-																)}
-															</For>
+																	)}
+																</For>
+															</div>
 														</div>
-													</div>
-												</Show>
-											</Card>
-										)}
-									</For>
-								</div>
+													</Show>
+												</Card>
+											)}
+										</For>
+									</div>
 								</div>
 							</Show>
 
@@ -588,7 +585,7 @@ export const Settings: Component = () => {
 				<div
 					data-testid="import-success-indicator"
 					class={cn(
-						"fade-in slide-in-from-bottom-4 fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background shadow-2xl duration-300"
+						"fade-in slide-in-from-bottom-4 animate-in bg-foreground text-background fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 shadow-2xl duration-300"
 					)}
 				>
 					<svg
@@ -607,7 +604,7 @@ export const Settings: Component = () => {
 							d="M5 13l4 4L19 7"
 						/>
 					</svg>
-					<span class={cn("font-black text-[11px] uppercase tracking-widest")}>
+					<span class={cn("text-[11px] font-black tracking-widest uppercase")}>
 						Presets Imported
 					</span>
 				</div>

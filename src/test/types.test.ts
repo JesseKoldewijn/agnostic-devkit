@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import type { Parameter, ParameterType, Preset, PrimitiveType } from "../logic/parameters/types";
 import { createEmptyParameter, createEmptyPreset, generateId } from "../logic/parameters/types";
 

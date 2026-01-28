@@ -5,6 +5,7 @@ node_modules
 dist
 dist-ssr
 build-output
+.wxt
 *.local
 
 # Yarn
@@ -45,4 +46,3 @@ Thumbs.db
 
 # Public assets that shouldn't be formatted
 public/assets
-CHANGELOG.md

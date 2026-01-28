@@ -1,5 +1,6 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
 
 interface SwitchProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "type"> {
@@ -13,7 +14,7 @@ export const Switch: Component<SwitchProps> = (props) => {
 
 	return (
 		<label
-			class={cn("group relative inline-flex cursor-pointer select-none items-center", local.class)}
+			class={cn("group relative inline-flex cursor-pointer items-center select-none", local.class)}
 		>
 			<input
 				type="checkbox"
@@ -30,13 +31,13 @@ export const Switch: Component<SwitchProps> = (props) => {
 			>
 				<div
 					class={cn(
-						"pointer-events-none inline-block size-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out",
+						"bg-background pointer-events-none inline-block size-5 transform rounded-full shadow-lg ring-0 transition duration-200 ease-in-out",
 						local.checked ? "translate-x-5" : "translate-x-0"
 					)}
 				/>
 			</div>
 			{local.label && (
-				<span class="ml-2 font-black text-[10px] text-foreground/70 uppercase tracking-widest">
+				<span class="text-foreground/70 ml-2 text-[10px] font-black tracking-widest uppercase">
 					{local.label}
 				</span>
 			)}

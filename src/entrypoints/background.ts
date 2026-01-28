@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
+
 import { cleanupTabState } from "@/logic/parameters";
 import { logBrowserInfo } from "@/utils/browser";
 import { initDisplayMode } from "@/utils/displayMode";

@@ -15,9 +15,9 @@ A platform-agnostic developer toolkit for web development, built as a modern Bro
 
 Create and manage reusable presets of parameters that can be instantly applied to any tab:
 
--   **Query Parameters** — Add or modify URL query strings
--   **Cookies** — Set browser cookies for the current domain
--   **Local Storage** — Inject localStorage values
+- **Query Parameters** — Add or modify URL query strings
+- **Cookies** — Set browser cookies for the current domain
+- **Local Storage** — Inject localStorage values
 
 Perfect for testing different feature flags, user segments, or debug modes across environments.
 
@@ -25,8 +25,8 @@ Perfect for testing different feature flags, user segments, or debug modes acros
 
 Choose between two display modes based on your workflow:
 
--   **Popup** — Traditional extension popup for quick access
--   **Sidebar** — Full-height side panel for extended functionality
+- **Popup** — Traditional extension popup for quick access
+- **Sidebar** — Full-height side panel for extended functionality
 
 ### 🌓 Theme System
 
@@ -36,32 +36,32 @@ Supports Light, Dark, and System theme modes that persist across sessions.
 
 Works across all Chromium-based browsers with automatic fallbacks for unsupported features:
 
--   ✅ Chrome 114+
--   ✅ Brave
--   ✅ Edge
--   ✅ Opera
--   ⚠️ Other Chromium browsers (with potential feature limitations)
+- ✅ Chrome 114+
+- ✅ Brave
+- ✅ Edge
+- ✅ Opera
+- ⚠️ Other Chromium browsers (with potential feature limitations)
 
 ## Tech Stack
 
-| Category             | Technology                                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Build                | [WXT](https://wxt.dev) 0.20.x & [Vite](https://vite.dev) 7.x                                                 |
-| Language             | [TypeScript](https://www.typescriptlang.org) 5.9                                                            |
-| UI Framework         | [SolidJS](https://www.solidjs.com) 1.9                                                                      |
-| Styling              | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config)                                              |
-| Unit Testing         | [Vitest](https://vitest.dev) 4.x                                                                            |
-| E2E Testing          | [Playwright](https://playwright.dev) 1.57                                                                   |
-| Linting & Formatting | [ESLint](https://eslint.org) & [Prettier](https://prettier.io)                                              |
-| Package Manager      | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                                                              |
-| Releases             | [semantic-release](https://semantic-release.gitbook.io)                                                     |
+| Category             | Technology                                                     |
+| -------------------- | -------------------------------------------------------------- |
+| Build                | [WXT](https://wxt.dev) 0.20.x & [Vite](https://vite.dev) 7.x   |
+| Language             | [TypeScript](https://www.typescriptlang.org) 5.9               |
+| UI Framework         | [SolidJS](https://www.solidjs.com) 1.9                         |
+| Styling              | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config) |
+| Unit Testing         | [Vitest](https://vitest.dev) 4.x                               |
+| E2E Testing          | [Playwright](https://playwright.dev) 1.57                      |
+| Linting & Formatting | [ESLint](https://eslint.org) & [Prettier](https://prettier.io) |
+| Package Manager      | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                 |
+| Releases             | [semantic-release](https://semantic-release.gitbook.io)        |
 
 ## Getting Started
 
 ### Prerequisites
 
--   **Node.js**: 25.0.0 (managed via Volta)
--   **Yarn**: 4.10.3 (managed via Corepack)
+- **Node.js**: 25.0.0 (managed via Volta)
+- **Yarn**: 4.10.3 (managed via Corepack)
 
 Enable Corepack if you haven't already:
 
@@ -148,8 +148,8 @@ yarn coverage:open:playwright  # Open Playwright coverage report
 
 Coverage reports are generated separately:
 
--   **Vitest coverage**: `coverage/vitest/index.html` - Unit test coverage
--   **Playwright coverage**: `coverage/playwright/index.html` - E2E test coverage
+- **Vitest coverage**: `coverage/vitest/index.html` - Unit test coverage
+- **Playwright coverage**: `coverage/playwright/index.html` - E2E test coverage
 
 Coverage scores are displayed automatically when running coverage commands and can also be viewed separately using the `coverage:score:*` commands.
 
@@ -193,8 +193,8 @@ yarn type-check    # Run TypeScript type check
 
 The project uses GitHub Actions for continuous integration and deployment:
 
--   **CI Workflow** — Runs on all branches: ESLint, Prettier check, type checking, unit tests, E2E tests
--   **Release Workflow** — Triggered on `main` and `develop`: semantic versioning and packaging
+- **CI Workflow** — Runs on all branches: ESLint, Prettier check, type checking, unit tests, E2E tests
+- **Release Workflow** — Triggered on `main` and `develop`: semantic versioning and packaging
 
 Coverage reports are available as downloadable artifacts on each CI run and linked in PR comments.
 

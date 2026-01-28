@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { createIsolatedElement } from "../utils/dom";
 
 describe("dom utilities", () => {

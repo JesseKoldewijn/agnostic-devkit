@@ -1,12 +1,14 @@
 import type { Component } from "solid-js";
-import { createSignal, onMount, Show } from "solid-js";
+import { Show, createSignal, onMount } from "solid-js";
+
 import { browser } from "wxt/browser";
+
 import { PresetManager } from "@/components/PresetManager";
 import { PresetToggleList } from "@/components/PresetToggleList";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/utils/cn";
 import type { Theme } from "@/utils/theme";
 import { getTheme } from "@/utils/theme";
@@ -60,7 +62,7 @@ export const App: Component = () => {
 	});
 
 	return (
-		<Layout class={cn("p-5! min-h-screen w-full")} data-testid="sidebar-container">
+		<Layout class={cn("min-h-screen w-full p-5!")} data-testid="sidebar-container">
 			<Show
 				when={!showManager()}
 				fallback={
@@ -83,14 +85,14 @@ export const App: Component = () => {
 						<CardContent class={cn("p-4")}>
 							<div
 								class={cn(
-									"mb-2.5 font-black text-[10px] text-muted-foreground uppercase tracking-widest opacity-70"
+									"text-muted-foreground mb-2.5 text-[10px] font-black tracking-widest uppercase opacity-70"
 								)}
 							>
 								Active Tab
 							</div>
 							<Show when={currentTabTitle()}>
 								<div
-									class={cn("mb-1 truncate font-black text-[13px] text-foreground")}
+									class={cn("text-foreground mb-1 truncate text-[13px] font-black")}
 									title={currentTabTitle()}
 									data-testid="current-tab-title"
 								>
@@ -100,13 +102,13 @@ export const App: Component = () => {
 							<Show
 								when={currentUrl()}
 								fallback={
-									<div class={cn("text-[11px] text-muted-foreground italic")}>
+									<div class={cn("text-muted-foreground text-[11px] italic")}>
 										No active tab detected
 									</div>
 								}
 							>
 								<div
-									class={cn("truncate font-mono text-[11px] text-muted-foreground/80")}
+									class={cn("text-muted-foreground/80 truncate font-mono text-[11px]")}
 									title={currentUrl()}
 									data-testid="current-tab-url"
 								>
@@ -127,13 +129,13 @@ export const App: Component = () => {
 						<CardContent class={cn("p-4")}>
 							<h3
 								class={cn(
-									"mb-1.5 font-black text-[10px] text-primary uppercase tracking-widest opacity-80"
+									"text-primary mb-1.5 text-[10px] font-black tracking-widest uppercase opacity-80"
 								)}
 								data-testid="about-presets-heading"
 							>
 								Quick Guide
 							</h3>
-							<p class={cn("font-bold text-[12px] text-foreground/70 leading-relaxed")}>
+							<p class={cn("text-foreground/70 text-[12px] leading-relaxed font-bold")}>
 								Toggle presets to apply URL parameters, cookies, and storage values. Changes are
 								applied immediately to the target tab.
 							</p>

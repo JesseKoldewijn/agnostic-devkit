@@ -1,6 +1,8 @@
 import type { Component, JSX } from "solid-js";
 import { splitProps } from "solid-js";
+
 import { cn } from "@/utils/cn";
+
 import { Label } from "./Label";
 
 interface SelectProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
@@ -24,13 +26,13 @@ export const Select: Component<SelectProps> = (props) => {
 				<select
 					{...others}
 					class={cn(
-						"flex h-11 w-full cursor-pointer appearance-none items-center justify-between rounded-xl border-2 border-border bg-background px-4 font-black text-[13px] text-foreground uppercase tracking-wider transition-all focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50",
+						"border-border bg-background text-foreground focus:border-primary focus:ring-primary/10 flex h-11 w-full cursor-pointer appearance-none items-center justify-between rounded-xl border-2 px-4 text-[13px] font-black tracking-wider uppercase transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
 						local.class
 					)}
 				>
 					{local.children}
 				</select>
-				<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-muted-foreground transition-colors group-hover:text-foreground">
+				<div class="text-muted-foreground group-hover:text-foreground pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 transition-colors">
 					<svg
 						class="size-4"
 						fill="none"

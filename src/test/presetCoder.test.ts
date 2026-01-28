@@ -303,7 +303,7 @@ describe("PresetCoder", () => {
 					key: `param${i}`,
 					type: i % 3 === 0 ? "queryParam" : i % 3 === 1 ? "cookie" : "localStorage",
 					value: `value${i}`,
-				}),
+				})
 			);
 			const preset = createTestPreset({
 				description: "A preset with many parameters for testing compression",
@@ -326,7 +326,7 @@ describe("PresetCoder", () => {
 						createTestParameter({ key: "debug", type: "queryParam", value: "true" }),
 						createTestParameter({ key: "env", type: "queryParam", value: "staging" }),
 					],
-				}),
+				})
 			);
 
 			const jsonLength = JSON.stringify(presets).length;

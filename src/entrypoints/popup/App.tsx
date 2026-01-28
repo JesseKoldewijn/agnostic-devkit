@@ -1,12 +1,14 @@
 import type { Component } from "solid-js";
-import { createSignal, onMount, Show } from "solid-js";
+import { Show, createSignal, onMount } from "solid-js";
+
 import { browser } from "wxt/browser";
+
 import { PresetManager } from "@/components/PresetManager";
 import { PresetToggleList } from "@/components/PresetToggleList";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/utils/cn";
 import type { Theme } from "@/utils/theme";
 import { getTheme } from "@/utils/theme";
@@ -93,7 +95,7 @@ export const App: Component = () => {
 	});
 
 	return (
-		<Layout class={cn("p-4! min-h-[400px] w-[400px]")} data-testid="popup-container">
+		<Layout class={cn("min-h-[400px] w-[400px] p-4!")} data-testid="popup-container">
 			<Show
 				when={!showManager()}
 				fallback={
@@ -119,13 +121,13 @@ export const App: Component = () => {
 							<CardContent class={cn("p-4")}>
 								<div
 									class={cn(
-										"mb-1.5 font-black text-[10px] text-muted-foreground uppercase tracking-widest opacity-70"
+										"text-muted-foreground mb-1.5 text-[10px] font-black tracking-widest uppercase opacity-70"
 									)}
 								>
 									Active Tab
 								</div>
 								<div
-									class={cn("truncate font-mono text-[12px] text-foreground")}
+									class={cn("text-foreground truncate font-mono text-[12px]")}
 									title={currentUrl()}
 									data-testid="current-tab-url"
 								>

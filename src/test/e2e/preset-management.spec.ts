@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+
 import { expect, test } from "./core/fixtures";
 import { createTestPage, getTabId, openPopupPage } from "./core/helpers";
 
@@ -103,7 +104,9 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
 		// Verify changes - name should be visible
-		const editedPreset = popupPage.locator('[data-testid="preset-item"]', { hasText: "Edited Name" });
+		const editedPreset = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "Edited Name",
+		});
 		await expect(editedPreset).toBeVisible();
 
 		// Expand the preset to see parameters
@@ -350,9 +353,7 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(popupPage.locator("text=2 total")).toBeVisible();
 
 		// No checkboxes should be checked
-		const checkedBoxes = popupPage.locator(
-			'[data-testid="export-preset-checkbox"] svg'
-		);
+		const checkedBoxes = popupPage.locator('[data-testid="export-preset-checkbox"] svg');
 		await expect(checkedBoxes).toHaveCount(0);
 	});
 
@@ -380,9 +381,7 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(popupPage.locator("text=2 total")).toBeVisible();
 
 		// No checkboxes should be checked
-		const checkedBoxes = popupPage.locator(
-			'[data-testid="export-preset-checkbox"] svg'
-		);
+		const checkedBoxes = popupPage.locator('[data-testid="export-preset-checkbox"] svg');
 		await expect(checkedBoxes).toHaveCount(0);
 	});
 
@@ -426,7 +425,9 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="parameter-key-input"]').fill("boolKey");
 
 		// Select boolean primitive type
-		await popupPage.locator('[data-testid="parameter-primitive-type-select"]').selectOption("boolean");
+		await popupPage
+			.locator('[data-testid="parameter-primitive-type-select"]')
+			.selectOption("boolean");
 
 		// Value input should be replaced with a toggle
 		await expect(popupPage.locator('[data-testid="parameter-value-toggle"]')).toBeVisible();
@@ -441,7 +442,9 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="parameter-key-input"]').fill("toggleKey");
 
 		// Select boolean primitive type
-		await popupPage.locator('[data-testid="parameter-primitive-type-select"]').selectOption("boolean");
+		await popupPage
+			.locator('[data-testid="parameter-primitive-type-select"]')
+			.selectOption("boolean");
 
 		// Toggle should default to true (enabled state)
 		const toggle = popupPage.locator('[data-testid="parameter-value-toggle"]');
@@ -463,18 +466,24 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Saved Boolean");
 		await popupPage.locator('[data-testid="add-parameter-button"]').click();
 		await popupPage.locator('[data-testid="parameter-key-input"]').fill("savedBool");
-		await popupPage.locator('[data-testid="parameter-primitive-type-select"]').selectOption("boolean");
+		await popupPage
+			.locator('[data-testid="parameter-primitive-type-select"]')
+			.selectOption("boolean");
 		await popupPage.locator('[data-testid="save-preset-button"]').click();
 
 		// Wait for save
 		await popupPage.waitForSelector('[data-testid="preset-item"]');
 
 		// Edit the preset to verify it loads correctly
-		const presetItem = popupPage.locator('[data-testid="preset-item"]', { hasText: "Saved Boolean" });
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "Saved Boolean",
+		});
 		await presetItem.locator('[data-testid="edit-preset-button"]').click();
 
 		// Verify primitive type is still boolean
-		const primitiveTypeSelect = popupPage.locator('[data-testid="parameter-primitive-type-select"]').first();
+		const primitiveTypeSelect = popupPage
+			.locator('[data-testid="parameter-primitive-type-select"]')
+			.first();
 		await expect(primitiveTypeSelect).toHaveValue("boolean");
 
 		// Verify toggle is shown instead of text input
@@ -497,11 +506,15 @@ test.describe("Preset Management E2E Tests", () => {
 		await popupPage.waitForSelector('[data-testid="preset-item"]');
 
 		// Edit the preset
-		const presetItem = popupPage.locator('[data-testid="preset-item"]', { hasText: "String True Test" });
+		const presetItem = popupPage.locator('[data-testid="preset-item"]', {
+			hasText: "String True Test",
+		});
 		await presetItem.locator('[data-testid="edit-preset-button"]').click();
 
 		// Should remain string type (migration doesn't apply to new presets with explicit primitiveType)
-		const primitiveTypeSelect = popupPage.locator('[data-testid="parameter-primitive-type-select"]').first();
+		const primitiveTypeSelect = popupPage
+			.locator('[data-testid="parameter-primitive-type-select"]')
+			.first();
 		await expect(primitiveTypeSelect).toHaveValue("string");
 
 		// Value input should be visible (not toggle)

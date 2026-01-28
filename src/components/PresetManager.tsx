@@ -1,6 +1,7 @@
 import type { Component } from "solid-js";
-import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
-import type { Parameter, ParameterType, PrimitiveType, Preset } from "@/logic/parameters";
+import { For, Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+
+import type { Parameter, ParameterType, Preset, PrimitiveType } from "@/logic/parameters";
 import {
 	createEmptyParameter,
 	createPreset,
@@ -16,8 +17,10 @@ import {
 	parseShareUrl,
 	updatePresetData,
 } from "@/logic/parameters";
-import type { DecompressResult } from "@/utils/presetCoder";
 import { cn } from "@/utils/cn";
+import type { DecompressResult } from "@/utils/presetCoder";
+
+import { PlusIcon } from "./icons/Plus";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
@@ -26,7 +29,6 @@ import { Label } from "./ui/Label";
 import { Select } from "./ui/Select";
 import { Separator } from "./ui/Separator";
 import { Textarea } from "./ui/Textarea";
-import { PlusIcon } from "./icons/Plus";
 
 interface PresetManagerProps {
 	/** Callback when user wants to close the manager */
@@ -79,7 +81,11 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 	// Get primitive type for a parameter
 	const getParamPrimitiveType = (paramId: string): PrimitiveType => {
-		return paramPrimitiveTypes().get(paramId) ?? initialParameterData().get(paramId)?.primitiveType ?? "string";
+		return (
+			paramPrimitiveTypes().get(paramId) ??
+			initialParameterData().get(paramId)?.primitiveType ??
+			"string"
+		);
 	};
 
 	// Set primitive type for a parameter
@@ -246,7 +252,9 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			} // Skip empty parameters
 
 			const type = formData.get(`param-${paramId}-type`) as string as ParameterType;
-			const primitiveType = (formData.get(`param-${paramId}-primitiveType`) as string) as PrimitiveType;
+			const primitiveType = formData.get(
+				`param-${paramId}-primitiveType`
+			) as string as PrimitiveType;
 			// For boolean type, get value from the hidden input (controlled by toggle state)
 			const value = (formData.get(`param-${paramId}-value`) as string) || "";
 			const paramDescription =
@@ -523,7 +531,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 				<div class={cn("flex items-center justify-between")}>
 					<h2
 						class={cn(
-							"font-black text-[10px] text-foreground uppercase tracking-[0.2em] opacity-70"
+							"text-foreground text-[10px] font-black tracking-[0.2em] uppercase opacity-70"
 						)}
 						data-testid="manage-presets-heading"
 					>
@@ -558,7 +566,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 				<div
 					class={cn(
-						"flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3"
+						"border-border/50 bg-muted/30 flex items-center justify-between gap-3 rounded-xl border p-3"
 					)}
 				>
 					<div class={cn("flex gap-2")}>
@@ -598,9 +606,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								variant="secondary"
 								size="sm"
 								onClick={() =>
-									(
-										document.querySelector("#import-presets-input") as HTMLInputElement
-									)?.click()
+									(document.querySelector("#import-presets-input") as HTMLInputElement)?.click()
 								}
 								title="Import presets from JSON"
 								data-testid="import-presets-button"
@@ -627,8 +633,8 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						<PlusIcon /> New
 					</Button>
 				</div>
-			{/* Share URL Input */}
-			<div class={cn("flex w-full gap-2")}>
+				{/* Share URL Input */}
+				<div class={cn("flex w-full gap-2")}>
 					<Input
 						type="text"
 						value={shareUrlInput()}
@@ -673,7 +679,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 				<div class={cn("flex flex-col items-center justify-center space-y-2 py-12")}>
 					<div
 						class={cn(
-							"size-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+							"border-primary/30 border-t-primary size-5 animate-spin rounded-full border-2"
 						)}
 					/>
 				</div>
@@ -682,13 +688,13 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			<Show when={!loading() && presets().length === 0}>
 				<Card
 					class={cn(
-						"flex flex-col items-center justify-center border-border/40 border-dashed bg-muted/10 px-6 py-12 text-center"
+						"border-border/40 bg-muted/10 flex flex-col items-center justify-center border-dashed px-6 py-12 text-center"
 					)}
 					data-testid="no-presets-message"
 				>
 					<p
 						class={cn(
-							"mb-4 font-black text-[10px] text-muted-foreground uppercase tracking-widest"
+							"text-muted-foreground mb-4 text-[10px] font-black tracking-widest uppercase"
 						)}
 					>
 						No presets found
@@ -704,9 +710,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					<For each={presets()}>
 						{(preset) => (
 							<Card
-								class={cn(
-									"border-border/60 p-4 shadow-sm transition-all hover:border-primary/30"
-								)}
+								class={cn("border-border/60 hover:border-primary/30 p-4 shadow-sm transition-all")}
 								data-testid="preset-item"
 								data-preset-id={preset.id}
 							>
@@ -720,7 +724,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 										>
 											<div
 												class={cn(
-													"truncate font-black text-[14px] text-foreground uppercase tracking-tight transition-colors group-hover:text-primary"
+													"text-foreground group-hover:text-primary truncate text-[14px] font-black tracking-tight uppercase transition-colors"
 												)}
 												data-testid="preset-name"
 											>
@@ -729,7 +733,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											<Show when={preset.description}>
 												<div
 													class={cn(
-														"mt-1 truncate font-bold text-[11px] text-muted-foreground leading-tight"
+														"text-muted-foreground mt-1 truncate text-[11px] leading-tight font-bold"
 													)}
 													data-testid="preset-description"
 												>
@@ -737,12 +741,12 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												</div>
 											</Show>
 											<div class={cn("mt-2.5 flex items-center gap-2")}>
-												<Badge variant="secondary" class={cn("text-[8px]! h-4 px-2 font-black")}>
+												<Badge variant="secondary" class={cn("h-4 px-2 text-[8px]! font-black")}>
 													{preset.parameters.length} VARS
 												</Badge>
 												<span
 													class={cn(
-														"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
+														"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
 													)}
 												>
 													{expandedPresetId() === preset.id ? "Hide" : "View"}
@@ -876,7 +880,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												{(param) => (
 													<div
 														class={cn(
-															"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-3 py-2 text-[11px] shadow-sm"
+															"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-3 py-2 text-[11px] shadow-sm"
 														)}
 														data-testid="preset-expanded-param"
 													>
@@ -886,7 +890,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 															</span>
 															<span
 																class={cn(
-																	"truncate font-black text-foreground uppercase tracking-tighter"
+																	"text-foreground truncate font-black tracking-tighter uppercase"
 																)}
 															>
 																{param.key}
@@ -894,7 +898,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														</div>
 														<span
 															class={cn(
-																"ml-2 max-w-[55%] truncate rounded-sm border border-border/20 bg-background/60 px-2 py-1 font-mono text-muted-foreground/90"
+																"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-2 py-1 font-mono"
 															)}
 														>
 															{param.value}
@@ -930,7 +934,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					<div class={cn("flex items-center justify-between")}>
 						<h2
 							class={cn(
-								"font-black text-[10px] text-foreground uppercase tracking-[0.2em] opacity-50"
+								"text-foreground text-[10px] font-black tracking-[0.2em] uppercase opacity-50"
 							)}
 							data-testid="preset-form-heading"
 						>
@@ -964,20 +968,15 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 					<div
 						class={cn(
-							"flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 p-2.5"
+							"border-border/50 bg-muted/30 flex items-center justify-between rounded-xl border p-2.5"
 						)}
 					>
 						<p
-							class={cn("ml-2 font-black text-[10px] text-foreground/40 uppercase tracking-widest")}
+							class={cn("text-foreground/40 ml-2 text-[10px] font-black tracking-widest uppercase")}
 						>
 							Preset Configuration
 						</p>
-						<Button
-							type="submit"
-							size="sm"
-							disabled={saving()}
-							data-testid="save-preset-button"
-						>
+						<Button type="submit" size="sm" disabled={saving()} data-testid="save-preset-button">
 							<Show
 								when={saving()}
 								fallback={viewMode() === "create" ? "Save Preset" : "Update Preset"}
@@ -1024,7 +1023,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					<div class={cn("space-y-4")}>
 						<div class={cn("flex items-center justify-between px-1")}>
 							<Label
-								class={cn("text-[10px]! mb-0 font-black uppercase tracking-[0.2em] opacity-50")}
+								class={cn("mb-0 text-[10px]! font-black tracking-[0.2em] uppercase opacity-50")}
 							>
 								Parameters ({parameterIds().length})
 							</Label>
@@ -1042,7 +1041,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						<Show when={parameterIds().length === 0}>
 							<Card
 								class={cn(
-									"flex flex-col items-center justify-center border-border/30 border-dashed bg-muted/10 px-4 py-10"
+									"border-border/30 bg-muted/10 flex flex-col items-center justify-center border-dashed px-4 py-10"
 								)}
 								data-testid="no-parameters-message"
 							>
@@ -1064,7 +1063,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 									const getParam = () => getParameterData(paramId);
 									return (
 										<Card
-											class={cn("group relative border-border/40 p-4 shadow-sm")}
+											class={cn("group border-border/40 relative p-4 shadow-sm")}
 											data-testid={`parameter-item-${index()}`}
 										>
 											{/* Header with badge and delete button */}
@@ -1072,7 +1071,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												<Badge
 													variant="default"
 													class={cn(
-														"p-0! text-[9px]! flex size-5 items-center justify-center rounded-sm"
+														"flex size-5 items-center justify-center rounded-sm p-0! text-[9px]!"
 													)}
 												>
 													{index() + 1}
@@ -1106,20 +1105,24 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											<div class={cn("grid grid-cols-2 gap-3")}>
 												{/* Row 1: Storage Type and Value Type */}
 												<div class={cn("flex flex-col gap-1.5")}>
-													<Label class={cn("text-[10px]! font-black uppercase tracking-widest opacity-70")}>
+													<Label
+														class={cn(
+															"text-[10px]! font-black tracking-widest uppercase opacity-70"
+														)}
+													>
 														Storage Type
 													</Label>
-												<Select
-													name={`param-${paramId}-type`}
-													ref={(el) => {
-														if (el) {
-															const paramType = getParam().type;
-															queueMicrotask(() => {
-																el.value = paramType;
-															});
-														}
-													}}
-														class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg uppercase")}
+													<Select
+														name={`param-${paramId}-type`}
+														ref={(el) => {
+															if (el) {
+																const paramType = getParam().type;
+																queueMicrotask(() => {
+																	el.value = paramType;
+																});
+															}
+														}}
+														class={cn("h-9 rounded-lg px-3! py-1.5! text-[12px]! uppercase")}
 														data-testid="parameter-type-select"
 													>
 														<option value="queryParam">URL Query</option>
@@ -1129,26 +1132,30 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												</div>
 
 												<div class={cn("flex flex-col gap-1.5")}>
-													<Label class={cn("text-[10px]! font-black uppercase tracking-widest opacity-70")}>
+													<Label
+														class={cn(
+															"text-[10px]! font-black tracking-widest uppercase opacity-70"
+														)}
+													>
 														Value Type
 													</Label>
-												<Select
-													name={`param-${paramId}-primitiveType`}
-													ref={(el) => {
-														if (el) {
-															const primitiveType = getParam().primitiveType ?? "string";
-															queueMicrotask(() => {
-																el.value = primitiveType;
-															});
-														}
-													}}
+													<Select
+														name={`param-${paramId}-primitiveType`}
+														ref={(el) => {
+															if (el) {
+																const primitiveType = getParam().primitiveType ?? "string";
+																queueMicrotask(() => {
+																	el.value = primitiveType;
+																});
+															}
+														}}
 														onChange={(e) => {
 															setParamPrimitiveType(
 																paramId,
 																e.currentTarget.value as PrimitiveType
 															);
 														}}
-														class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg uppercase")}
+														class={cn("h-9 rounded-lg px-3! py-1.5! text-[12px]! uppercase")}
 														data-testid="parameter-primitive-type-select"
 													>
 														<option value="string">String</option>
@@ -1166,23 +1173,23 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 															el.value = getParam().key;
 														}
 													}}
-													class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg font-mono")}
+													class={cn("h-9 rounded-lg px-3! py-1.5! font-mono text-[12px]!")}
 													data-testid="parameter-key-input"
 												/>
 
 												<Show
 													when={getParamPrimitiveType(paramId) === "boolean"}
 													fallback={
-													<Input
-														label="Value"
-														name={`param-${paramId}-value`}
-														placeholder="value"
-														ref={(el) => {
-															if (el) {
-																el.value = getParam().value;
-															}
-														}}
-															class={cn("px-3! py-1.5! text-[12px]! h-9 rounded-lg font-mono")}
+														<Input
+															label="Value"
+															name={`param-${paramId}-value`}
+															placeholder="value"
+															ref={(el) => {
+																if (el) {
+																	el.value = getParam().value;
+																}
+															}}
+															class={cn("h-9 rounded-lg px-3! py-1.5! font-mono text-[12px]!")}
 															data-testid="parameter-value-input"
 														/>
 													}
@@ -1198,12 +1205,14 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 														<button
 															type="button"
 															class={cn(
-																"flex h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 font-bold text-[13px] transition-colors",
+																"flex h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 text-[13px] font-bold transition-colors",
 																getParamBoolValue(paramId)
 																	? "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
 																	: "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
 															)}
-															onClick={() => setParamBoolValue(paramId, !getParamBoolValue(paramId))}
+															onClick={() =>
+																setParamBoolValue(paramId, !getParamBoolValue(paramId))
+															}
 															data-testid="parameter-value-toggle"
 														>
 															<Show when={getParamBoolValue(paramId)}>
@@ -1228,7 +1237,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 													}}
 													containerClass={cn("col-span-2")}
 													class={cn(
-														"px-3! py-1.5! text-[10px]! h-8 rounded-lg border-border/30 bg-muted/10 font-bold"
+														"border-border/30 bg-muted/10 h-8 rounded-lg px-3! py-1.5! text-[10px]! font-bold"
 													)}
 													data-testid="parameter-description-input"
 												/>
@@ -1251,7 +1260,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 				<div class={cn("flex items-center justify-between")}>
 					<h2
 						class={cn(
-							"font-black text-[10px] text-foreground uppercase tracking-[0.2em] opacity-70"
+							"text-foreground text-[10px] font-black tracking-[0.2em] uppercase opacity-70"
 						)}
 					>
 						Export Presets
@@ -1282,11 +1291,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 				</div>
 
 				{/* Selection controls */}
-				<div
-					class={cn(
-						"flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/30 p-3"
-					)}
-				>
+				<div class={cn("border-border/50 bg-muted/30 flex flex-col gap-3 rounded-xl border p-3")}>
 					<div class={cn("flex items-center justify-between gap-2")}>
 						<div class={cn("flex gap-2")}>
 							<Button
@@ -1307,7 +1312,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								Deselect All
 							</Button>
 						</div>
-						<span class={cn("text-xs text-muted-foreground")}>
+						<span class={cn("text-muted-foreground text-xs")}>
 							{selectedPresets().size > 0
 								? `${selectedPresets().size} selected`
 								: `${presets().length} total`}
@@ -1398,7 +1403,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 							"flex flex-col items-center justify-center gap-4 border-dashed py-12 text-center"
 						)}
 					>
-						<p class={cn("font-black text-[10px] text-muted-foreground uppercase tracking-widest")}>
+						<p class={cn("text-muted-foreground text-[10px] font-black tracking-widest uppercase")}>
 							No presets to export
 						</p>
 						<Button variant="outline" size="sm" onClick={cancelExport}>
@@ -1407,7 +1412,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					</Card>
 				}
 			>
-				<div class={cn("-mr-1 flex-1 space-y-2 overflow-y-auto pr-1")} data-testid="export-presets-list">
+				<div
+					class={cn("-mr-1 flex-1 space-y-2 overflow-y-auto pr-1")}
+					data-testid="export-presets-list"
+				>
 					<For each={presets()}>
 						{(preset) => (
 							<button
@@ -1454,24 +1462,20 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 								<div class={cn("min-w-0 flex-1")}>
 									<div
 										class={cn(
-											"truncate font-black text-[13px] text-foreground uppercase tracking-tight"
+											"text-foreground truncate text-[13px] font-black tracking-tight uppercase"
 										)}
 									>
 										{preset.name}
 									</div>
 									<Show when={preset.description}>
-										<div
-											class={cn(
-												"mt-0.5 truncate text-[10px] text-muted-foreground"
-											)}
-										>
+										<div class={cn("text-muted-foreground mt-0.5 truncate text-[10px]")}>
 											{preset.description}
 										</div>
 									</Show>
 								</div>
 
 								{/* Parameter count badge */}
-								<Badge variant="secondary" class={cn("text-[8px]! h-4 shrink-0 px-2 font-black")}>
+								<Badge variant="secondary" class={cn("h-4 shrink-0 px-2 text-[8px]! font-black")}>
 									{preset.parameters.length} VARS
 								</Badge>
 							</button>
@@ -1486,27 +1490,18 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	const renderShareImportView = () => (
 		<div
 			class={cn(
-				"absolute inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm"
+				"bg-background/95 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
 			)}
 			data-testid="share-import-modal"
 		>
-			<Card class={cn("m-4 flex max-h-[400px] max-w-md flex-col size-full")}>
+			<Card class={cn("m-4 flex size-full max-h-[400px] max-w-md flex-col")}>
 				<div class={cn("flex h-full flex-col gap-4 p-5")}>
 					{/* Header */}
 					<div class={cn("flex items-center justify-between")}>
-						<h2
-							class={cn(
-								"font-black text-[13px] text-foreground uppercase tracking-[0.15em]"
-							)}
-						>
+						<h2 class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}>
 							Import Shared Presets
 						</h2>
-						<Button
-							variant="ghost"
-							size="xs"
-							onClick={handleShareImportCancel}
-							aria-label="Close"
-						>
+						<Button variant="ghost" size="xs" onClick={handleShareImportCancel} aria-label="Close">
 							<svg
 								class={cn("size-5")}
 								fill="none"
@@ -1529,7 +1524,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 						fallback={
 							<div
 								class={cn(
-									"rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive"
+									"border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-4 text-[13px]"
 								)}
 								data-testid="share-import-error"
 							>
@@ -1539,11 +1534,8 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 					>
 						{/* Content */}
 						<div class={cn("flex flex-1 flex-col space-y-4 overflow-hidden")}>
-							<p class={cn("text-[13px] text-muted-foreground")}>
-								<span
-									class={cn("font-bold text-foreground")}
-									data-testid="share-import-count"
-								>
+							<p class={cn("text-muted-foreground text-[13px]")}>
+								<span class={cn("text-foreground font-bold")} data-testid="share-import-count">
 									{shareImportData()?.count}
 								</span>{" "}
 								preset{shareImportData()?.isMultiplePresets ? "s" : ""} to import:
@@ -1551,14 +1543,14 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 							<div
 								class={cn(
-									"flex-1 space-y-2 overflow-y-auto rounded-xl border border-border/50 bg-muted/30 p-3"
+									"border-border/50 bg-muted/30 flex-1 space-y-2 overflow-y-auto rounded-xl border p-3"
 								)}
 							>
 								<For each={shareImportData()?.result ?? []}>
 									{(preset) => (
 										<Card
 											class={cn(
-												"border-border/60 p-3 shadow-sm transition-all hover:border-primary/30"
+												"border-border/60 hover:border-primary/30 p-3 shadow-sm transition-all"
 											)}
 											data-testid="share-import-preset-item"
 										>
@@ -1570,7 +1562,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 											>
 												<div
 													class={cn(
-														"truncate font-black text-[13px] text-foreground uppercase tracking-tight transition-colors group-hover:text-primary"
+														"text-foreground group-hover:text-primary truncate text-[13px] font-black tracking-tight uppercase transition-colors"
 													)}
 												>
 													{preset.name}
@@ -1578,22 +1570,19 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 												<Show when={preset.description}>
 													<div
 														class={cn(
-															"mt-1 truncate font-bold text-[10px] text-muted-foreground leading-tight"
+															"text-muted-foreground mt-1 truncate text-[10px] leading-tight font-bold"
 														)}
 													>
 														{preset.description}
 													</div>
 												</Show>
 												<div class={cn("mt-2 flex items-center gap-2")}>
-													<Badge
-														variant="secondary"
-														class={cn("text-[8px]! h-4 px-2 font-black")}
-													>
+													<Badge variant="secondary" class={cn("h-4 px-2 text-[8px]! font-black")}>
 														{preset.parameters.length} VARS
 													</Badge>
 													<span
 														class={cn(
-															"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
+															"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
 														)}
 													>
 														{shareImportExpandedId() === preset.id ? "Hide" : "View"}
@@ -1610,7 +1599,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 															{(param) => (
 																<div
 																	class={cn(
-																		"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-2.5 py-1.5 text-[10px] shadow-sm"
+																		"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-[10px] shadow-sm"
 																	)}
 																	data-testid="share-import-preset-param"
 																>
@@ -1620,7 +1609,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 																		</span>
 																		<span
 																			class={cn(
-																				"truncate font-black text-foreground uppercase tracking-tighter"
+																				"text-foreground truncate font-black tracking-tighter uppercase"
 																			)}
 																		>
 																			{param.key}
@@ -1628,7 +1617,7 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 																	</div>
 																	<span
 																		class={cn(
-																			"ml-2 max-w-[55%] truncate rounded-sm border border-border/20 bg-background/60 px-1.5 py-0.5 font-mono text-muted-foreground/90"
+																			"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-1.5 py-0.5 font-mono"
 																		)}
 																	>
 																		{param.value}
