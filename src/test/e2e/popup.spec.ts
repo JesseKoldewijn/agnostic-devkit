@@ -27,7 +27,7 @@ test.describe("Popup Interface E2E Tests", () => {
 	test("should load popup correctly", async () => {
 		const heading = popupPage.locator('[data-testid="popup-heading"]');
 		await expect(heading).toBeVisible();
-		await expect(heading).toContainText("Devkit");
+		await expect(heading).toContainText("Agnostic Devkit");
 	});
 
 	test("should display current theme indicator", async () => {

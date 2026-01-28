@@ -26,5 +26,6 @@ declare module '#imports' {
   export { cn } from '../src/utils/cn';
   export { getDisplayMode, setDisplayMode, applyDisplayMode, initDisplayMode, DisplayMode } from '../src/utils/displayMode';
   export { createIsolatedElement } from '../src/utils/dom';
+  export { PresetCoder, PresetCoder, DecompressResult } from '../src/utils/presetCoder';
   export { getTheme, setTheme, getEffectiveTheme, applyTheme, initTheme, Theme } from '../src/utils/theme';
 }
