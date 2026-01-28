@@ -1,3 +1,16 @@
+# [1.4.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.1...v1.4.0-canary.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* firefox manifest def - should fix issue [#22](https://github.com/JesseKoldewijn/agnostic-devkit/issues/22) ([b45d16c](https://github.com/JesseKoldewijn/agnostic-devkit/commit/b45d16c1a54d4113849655e50fc3be7efce2a410))
+* UI and logic fixes of shareable uri ([bd976fa](https://github.com/JesseKoldewijn/agnostic-devkit/commit/bd976fa19e9212992877522ce7b2a8cd1dc0675e))
+
+
+### Features
+
+* preset compression logic and chore of updating runtime deps ([6a490bd](https://github.com/JesseKoldewijn/agnostic-devkit/commit/6a490bdd9b910fdf38d301036c79d99d843d51b3))
+
 ## [1.3.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.0...v1.3.1) (2026-01-27)
 
 
