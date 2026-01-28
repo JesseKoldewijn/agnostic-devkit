@@ -1,3 +1,10 @@
+## [1.4.2-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.1...v1.4.2-canary.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* added recommended permissions for clipboard write operation of shareLink logic ([af6379f](https://github.com/JesseKoldewijn/agnostic-devkit/commit/af6379faaa1df819b41a8935f4eee67a7bbfa9c3))
+
 ## [1.4.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.0...v1.4.1) (2026-01-28)
 
 ### Bug Fixes

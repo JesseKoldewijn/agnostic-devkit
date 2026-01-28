@@ -1,6 +1,6 @@
 {
 	"name": "agnostic-devkit",
-	"version": "1.4.1",
+	"version": "1.4.2-canary.1",
 	"description": "A browser extension built with Vite, TypeScript, SolidJS, and Tailwind CSS v4",
 	"type": "module",
 	"scripts": {
