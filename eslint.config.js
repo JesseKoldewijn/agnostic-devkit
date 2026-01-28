@@ -25,6 +25,7 @@ export default defineConfig(
 			"dist/**",
 			"playwright-report/**",
 			"test-results/**",
+			"CHANGELOG.md",
 		],
 	},
 

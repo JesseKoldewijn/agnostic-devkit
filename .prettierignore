@@ -46,3 +46,4 @@ Thumbs.db
 
 # Public assets that shouldn't be formatted
 public/assets
+CHANGELOG.md

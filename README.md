@@ -2,6 +2,7 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/ahpllpcmljhdaeijgfjljopamoaeinpp.svg)
+![Mozilla Add-on Version](https://img.shields.io/amo/v/agnostic-devkit)
 
 A platform-agnostic developer toolkit for web development, built as a modern Browser extension. Designed to streamline common development tasks with a clean, intuitive interface.
 
