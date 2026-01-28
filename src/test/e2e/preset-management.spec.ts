@@ -294,8 +294,8 @@ test.describe("Preset Management E2E Tests", () => {
 		});
 		await item1.click();
 
-		// Export button should show count
-		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("1");
+		// Selection count should show 1
+		await expect(popupPage.locator("text=1 selected")).toBeVisible();
 
 		// Select second preset
 		const item2 = popupPage.locator('[data-testid="export-preset-item"]', {
@@ -303,14 +303,14 @@ test.describe("Preset Management E2E Tests", () => {
 		});
 		await item2.click();
 
-		// Export button should show updated count
-		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("2");
+		// Selection count should show 2
+		await expect(popupPage.locator("text=2 selected")).toBeVisible();
 
 		// Deselect first preset
 		await item1.click();
 
 		// Count should be back to 1
-		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("1");
+		await expect(popupPage.locator("text=1 selected")).toBeVisible();
 	});
 
 	test("should select all presets using Select All button in export view", async () => {
@@ -329,8 +329,93 @@ test.describe("Preset Management E2E Tests", () => {
 		// Click Select All
 		await popupPage.locator('[data-testid="export-select-all-button"]').click();
 
-		// Export button should show count of all presets
-		await expect(popupPage.locator('[data-testid="export-confirm-button"]')).toContainText("2");
+		// Selection count should show count of all presets
+		await expect(popupPage.locator("text=2 selected")).toBeVisible();
+	});
+
+	test("should default to nothing selected when entering export view", async () => {
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Default Test 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Default Test 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
+
+		// Should show total count, not selected count (nothing selected by default)
+		await expect(popupPage.locator("text=2 total")).toBeVisible();
+
+		// No checkboxes should be checked
+		const checkedBoxes = popupPage.locator(
+			'[data-testid="export-preset-checkbox"] svg'
+		);
+		await expect(checkedBoxes).toHaveCount(0);
+	});
+
+	test("should deselect all presets using Deselect All button", async () => {
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Deselect Test 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Deselect Test 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
+
+		// Select all first
+		await popupPage.locator('[data-testid="export-select-all-button"]').click();
+		await expect(popupPage.locator("text=2 selected")).toBeVisible();
+
+		// Click Deselect All
+		await popupPage.locator('[data-testid="export-deselect-all-button"]').click();
+
+		// Should show total count (nothing selected)
+		await expect(popupPage.locator("text=2 total")).toBeVisible();
+
+		// No checkboxes should be checked
+		const checkedBoxes = popupPage.locator(
+			'[data-testid="export-preset-checkbox"] svg'
+		);
+		await expect(checkedBoxes).toHaveCount(0);
+	});
+
+	test("should disable export buttons when nothing is selected", async () => {
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Disable Test 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Disable Test 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
+
+		// Both buttons should be disabled initially (nothing selected)
+		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeDisabled();
+		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeDisabled();
+
+		// Select a preset
+		await popupPage.locator('[data-testid="export-preset-item"]').first().click();
+
+		// Buttons should now be enabled
+		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeEnabled();
+		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeEnabled();
+
+		// Deselect all
+		await popupPage.locator('[data-testid="export-deselect-all-button"]').click();
+
+		// Buttons should be disabled again
+		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeDisabled();
+		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeDisabled();
 	});
 
 	test("should show boolean toggle when boolean primitive type is selected", async () => {

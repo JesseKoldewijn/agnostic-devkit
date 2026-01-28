@@ -26,7 +26,7 @@ test.describe("Sidebar/SidePanel E2E Tests", () => {
 	test("should load sidebar correctly", async () => {
 		const heading = sidebarPage.locator('[data-testid="sidebar-heading"]');
 		await expect(heading).toBeVisible();
-		await expect(heading).toContainText("Side Panel");
+		await expect(heading).toContainText("Agnostic Devkit");
 	});
 
 	test("should display sidebar specific container attribute", async () => {

@@ -22,6 +22,13 @@ export const App: Component = () => {
 
 		// Check for test override via URL param (used in e2e tests)
 		const urlParams = new URLSearchParams(window.location.search);
+
+		// Check for share parameter and auto-show the manager if present
+		const shareParam = urlParams.get("share");
+		if (shareParam) {
+			setShowManager(true);
+		}
+
 		const overrideTabId = urlParams.get("targetTabId");
 
 		if (overrideTabId) {
@@ -97,8 +104,8 @@ export const App: Component = () => {
 			>
 				<div class={cn("flex flex-col space-y-5")}>
 					<PageHeader
-						title="Devkit"
-						subtitle="Active Presets"
+						title="Agnostic Devkit"
+						subtitle="Active Control Panel"
 						theme={currentTheme()}
 						titleTestId="popup-heading"
 					/>
