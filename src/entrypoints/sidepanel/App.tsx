@@ -69,8 +69,8 @@ export const App: Component = () => {
 			>
 				<div class={cn("flex flex-col space-y-5")}>
 					<PageHeader
-						title="Side Panel"
-						subtitle="Active Control"
+						title="Agnostic Devkit"
+						subtitle="Active Control Panel"
 						theme={currentTheme()}
 						titleTestId="sidebar-heading"
 					/>

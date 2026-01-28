@@ -1,17 +1,22 @@
 import type { Component } from "solid-js";
-import { createResource, createSignal, onMount, Show } from "solid-js";
+import { createResource, createSignal, For, onMount, Show } from "solid-js";
 import { browser } from "wxt/browser";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
+import { Separator } from "@/components/ui/Separator";
 import { Switch } from "@/components/ui/Switch";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { createPreset, getParameterTypeIcon, parseShareUrl } from "@/logic/parameters";
 import { getUpdateInfo } from "@/logic/releaseService";
 import { getBrowserName, isSidebarSupported } from "@/utils/browser";
 import { cn } from "@/utils/cn";
 import type { DisplayMode } from "@/utils/displayMode";
 import { applyDisplayMode, getDisplayMode, setDisplayMode } from "@/utils/displayMode";
+import type { DecompressResult } from "@/utils/presetCoder";
 import type { Theme } from "@/utils/theme";
 import { applyTheme, getTheme, setTheme } from "@/utils/theme";
 
@@ -27,6 +32,17 @@ export const Settings: Component = () => {
 	const [sidebarSupported, setSidebarSupported] = createSignal(true);
 	const [browserName, setBrowserName] = createSignal("");
 
+	// Share import state
+	const [shareImportData, setShareImportData] = createSignal<DecompressResult | null>(null);
+	const [shareImportError, setShareImportError] = createSignal<string | null>(null);
+	const [importSuccess, setImportSuccess] = createSignal(false);
+	const [shareImportExpandedId, setShareImportExpandedId] = createSignal<string | null>(null);
+
+	// Toggle expanded state for a preset in share import view
+	const toggleShareImportExpanded = (presetId: string) => {
+		setShareImportExpandedId((current) => (current === presetId ? null : presetId));
+	};
+
 	// Resource for fetching update info
 	const [updateInfo] = createResource(() => getUpdateInfo(version, extensionEnv));
 
@@ -41,6 +57,17 @@ export const Settings: Component = () => {
 
 		setSidebarSupported(isSidebarSupported());
 		setBrowserName(getBrowserName());
+
+		// Check for share parameter in URL
+		try {
+			const shareData = parseShareUrl(window.location.href);
+			if (shareData) {
+				setShareImportData(shareData);
+			}
+		} catch (error) {
+			console.error("[Settings] Failed to parse share URL:", error);
+			setShareImportError("Invalid share link. The data may be corrupted or expired.");
+		}
 	});
 
 	const triggerSaved = () => {
@@ -81,6 +108,49 @@ export const Settings: Component = () => {
 				console.error("[Settings] Failed to save notifications:", error);
 			}
 		}
+	};
+
+	// Clean up share parameter from URL
+	const cleanupShareUrl = () => {
+		const url = new URL(window.location.href);
+		if (url.searchParams.has("share")) {
+			url.searchParams.delete("share");
+			window.history.replaceState({}, "", url.toString());
+		}
+	};
+
+	// Handle share import confirmation
+	const handleShareImportConfirm = async () => {
+		const data = shareImportData();
+		if (!data) return;
+
+		try {
+			// Add imported presets to storage
+			for (const preset of data.result) {
+				await createPreset({
+					name: preset.name,
+					parameters: preset.parameters,
+					description: preset.description,
+				});
+			}
+			// Show success and clear state
+			setShareImportData(null);
+			setShareImportError(null);
+			setImportSuccess(true);
+			cleanupShareUrl();
+			setTimeout(() => setImportSuccess(false), 3000);
+		} catch (error) {
+			console.error("[Settings] Failed to import shared presets:", error);
+			setShareImportError("Failed to import presets. Please try again.");
+		}
+	};
+
+	// Handle share import cancel
+	const handleShareImportCancel = () => {
+		setShareImportData(null);
+		setShareImportError(null);
+		setShareImportExpandedId(null);
+		cleanupShareUrl();
 	};
 
 	return (
@@ -308,6 +378,240 @@ export const Settings: Component = () => {
 					Agnostic Devkit | {new Date().getFullYear()}
 				</p>
 			</div>
+
+			{/* Share Import Modal */}
+			<Show when={shareImportData() || shareImportError()}>
+				<div
+					class={cn(
+						"fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+					)}
+					data-testid="share-import-modal"
+				>
+				<Card class={cn("m-4 flex h-full max-h-[400px] w-full max-w-md flex-col")}>
+					<div class={cn("flex h-full flex-col gap-4 overflow-hidden p-6")}>
+							{/* Header */}
+							<div class={cn("flex items-center justify-between")}>
+								<h2
+									class={cn(
+										"font-black text-[13px] text-foreground uppercase tracking-[0.15em]"
+									)}
+								>
+									Import Shared Presets
+								</h2>
+								<Button
+									variant="ghost"
+									size="xs"
+									onClick={handleShareImportCancel}
+									aria-label="Close"
+								>
+									<svg
+										class={cn("size-5")}
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+										aria-hidden="true"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M6 18L18 6M6 6l12 12"
+										/>
+									</svg>
+								</Button>
+							</div>
+
+							<Show
+								when={!shareImportError()}
+								fallback={
+									<div
+										class={cn(
+											"rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive"
+										)}
+										data-testid="share-import-error"
+									>
+										{shareImportError()}
+									</div>
+								}
+							>
+								{/* Content */}
+								<div class={cn("flex-1 space-y-4")}>
+									<p class={cn("text-[13px] text-muted-foreground")}>
+										<span
+											class={cn("font-bold text-foreground")}
+											data-testid="share-import-count"
+										>
+											{shareImportData()?.count}
+										</span>{" "}
+										preset{shareImportData()?.isMultiplePresets ? "s" : ""} to import:
+									</p>
+
+								<div
+									class={cn(
+										"flex-1 space-y-2 overflow-y-auto rounded-xl border border-border/50 bg-muted/30 p-3"
+									)}
+								>
+									<For each={shareImportData()?.result ?? []}>
+										{(preset) => (
+											<Card
+												class={cn(
+													"border-border/60 p-3 shadow-sm transition-all hover:border-primary/30"
+												)}
+												data-testid="share-import-preset-item"
+											>
+												<button
+													type="button"
+													class={cn("group w-full text-left")}
+													onClick={() => toggleShareImportExpanded(preset.id)}
+													data-testid="share-import-preset-expand"
+												>
+													<div
+														class={cn(
+															"truncate font-black text-[13px] text-foreground uppercase tracking-tight transition-colors group-hover:text-primary"
+														)}
+													>
+														{preset.name}
+													</div>
+													<Show when={preset.description}>
+														<div
+															class={cn(
+																"mt-1 truncate font-bold text-[10px] text-muted-foreground leading-tight"
+															)}
+														>
+															{preset.description}
+														</div>
+													</Show>
+													<div class={cn("mt-2 flex items-center gap-2")}>
+														<Badge
+															variant="secondary"
+															class={cn("text-[8px]! h-4 px-2 font-black")}
+														>
+															{preset.parameters.length} VARS
+														</Badge>
+														<span
+															class={cn(
+																"font-black text-[9px] text-muted-foreground/50 uppercase tracking-widest"
+															)}
+														>
+															{shareImportExpandedId() === preset.id ? "Hide" : "View"}
+														</span>
+													</div>
+												</button>
+
+												{/* Expanded parameter list */}
+												<Show when={shareImportExpandedId() === preset.id}>
+													<div class={cn("mt-3")} data-testid="share-import-preset-params">
+														<Separator class={cn("mb-3 opacity-50")} />
+														<div class={cn("space-y-1.5")}>
+															<For each={preset.parameters}>
+																{(param) => (
+																	<div
+																		class={cn(
+																			"flex items-center justify-between rounded-lg border border-border/40 bg-muted/40 px-2.5 py-1.5 text-[10px] shadow-sm"
+																		)}
+																		data-testid="share-import-preset-param"
+																	>
+																		<div class={cn("flex min-w-0 flex-1 items-center")}>
+																			<span class={cn("mr-1.5 scale-90 opacity-60")}>
+																				{getParameterTypeIcon(param.type)}
+																			</span>
+																			<span
+																				class={cn(
+																					"truncate font-black text-foreground uppercase tracking-tighter"
+																				)}
+																			>
+																				{param.key}
+																			</span>
+																		</div>
+																		<span
+																			class={cn(
+																				"ml-2 max-w-[55%] truncate rounded-sm border border-border/20 bg-background/60 px-1.5 py-0.5 font-mono text-muted-foreground/90"
+																			)}
+																		>
+																			{param.value}
+																		</span>
+																	</div>
+																)}
+															</For>
+														</div>
+													</div>
+												</Show>
+											</Card>
+										)}
+									</For>
+								</div>
+								</div>
+							</Show>
+
+							{/* Actions */}
+							<div class={cn("flex justify-end gap-3 pt-2")}>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleShareImportCancel}
+									data-testid="share-import-cancel"
+								>
+									Cancel
+								</Button>
+								<Show when={!shareImportError()}>
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={handleShareImportConfirm}
+										data-testid="share-import-confirm"
+									>
+										<svg
+											class={cn("size-4 opacity-70")}
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+											/>
+										</svg>
+										Import
+									</Button>
+								</Show>
+							</div>
+						</div>
+					</Card>
+				</div>
+			</Show>
+
+			{/* Import Success Indicator */}
+			<Show when={importSuccess()}>
+				<div
+					data-testid="import-success-indicator"
+					class={cn(
+						"fade-in slide-in-from-bottom-4 fixed bottom-8 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-2 rounded-full bg-foreground px-4 py-2 text-background shadow-2xl duration-300"
+					)}
+				>
+					<svg
+						class={cn("size-4")}
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+						role="img"
+					>
+						<title>Check</title>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="3"
+							d="M5 13l4 4L19 7"
+						/>
+					</svg>
+					<span class={cn("font-black text-[11px] uppercase tracking-widest")}>
+						Presets Imported
+					</span>
+				</div>
+			</Show>
 		</Layout>
 	);
 };

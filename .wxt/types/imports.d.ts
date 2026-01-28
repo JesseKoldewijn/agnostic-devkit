@@ -10,6 +10,7 @@ declare global {
   const Match: typeof import('solid-js').Match
   const MatchPattern: typeof import('wxt/utils/match-patterns').MatchPattern
   const Portal: typeof import('solid-js/web').Portal
+  const PresetCoder: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/presetCoder').PresetCoder
   const PresetManager: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/PresetManager').PresetManager
   const PresetToggleList: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/PresetToggleList').PresetToggleList
   const Show: typeof import('solid-js').Show
@@ -114,6 +115,9 @@ declare global {
   // @ts-ignore
   export type { DisplayMode } from '/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/displayMode'
   import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/displayMode')
+  // @ts-ignore
+  export type { PresetCoder, DecompressResult } from '/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/presetCoder'
+  import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/presetCoder')
   // @ts-ignore
   export type { Theme } from '/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/theme'
   import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/theme')

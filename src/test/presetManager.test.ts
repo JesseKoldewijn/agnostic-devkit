@@ -884,4 +884,186 @@ describe("presetManager", () => {
 			await expect(migratePresetsIfNeeded()).resolves.not.toThrow();
 		});
 	});
+
+	describe("generateShareUrl", () => {
+		it("should generate a URL with compressed presets", async () => {
+			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+
+			const presets = [
+				{
+					createdAt: 1700000000000,
+					id: "test-1",
+					name: "Test Preset",
+					parameters: [{ id: "p1", key: "debug", type: "queryParam" as const, value: "true" }],
+					updatedAt: 1700000000000,
+				},
+			];
+
+			const url = generateShareUrl(presets);
+
+			expect(url).toContain("settings.html");
+			expect(url).toContain("share=");
+			// Share parameter should be non-empty
+			const shareParam = new URL(url).searchParams.get("share");
+			expect(shareParam).toBeTruthy();
+			expect(shareParam!.length).toBeGreaterThan(0);
+		});
+
+		it("should generate URL-safe share parameter", async () => {
+			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+
+			const presets = [
+				{
+					createdAt: 1700000000000,
+					id: "test-1",
+					name: "Special chars: &?=#",
+					parameters: [
+						{ id: "p1", key: "foo&bar", type: "queryParam" as const, value: "baz=qux" },
+					],
+					updatedAt: 1700000000000,
+				},
+			];
+
+			const url = generateShareUrl(presets);
+			const shareParam = new URL(url).searchParams.get("share");
+
+			// Share param itself should not contain URL-unsafe chars (they're encoded)
+			expect(shareParam).not.toMatch(/[&?=#/]/);
+		});
+
+		it("should handle multiple presets", async () => {
+			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+
+			const presets = [
+				{
+					createdAt: 1700000000000,
+					id: "test-1",
+					name: "Preset 1",
+					parameters: [],
+					updatedAt: 1700000000000,
+				},
+				{
+					createdAt: 1700000000000,
+					id: "test-2",
+					name: "Preset 2",
+					parameters: [],
+					updatedAt: 1700000000000,
+				},
+			];
+
+			const url = generateShareUrl(presets);
+			expect(url).toContain("share=");
+		});
+
+		it("should handle empty presets array", async () => {
+			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+
+			const url = generateShareUrl([]);
+			expect(url).toContain("share=");
+		});
+	});
+
+	describe("parseShareUrl", () => {
+		it("should parse share URL and return presets", async () => {
+			const { generateShareUrl, parseShareUrl } = await import(
+				"../logic/parameters/presetManager"
+			);
+
+			const originalPresets = [
+				{
+					createdAt: 1700000000000,
+					id: "test-1",
+					name: "Test Preset",
+					parameters: [{ id: "p1", key: "debug", type: "queryParam" as const, value: "true" }],
+					updatedAt: 1700000000000,
+				},
+			];
+
+			const url = generateShareUrl(originalPresets);
+			const result = parseShareUrl(url);
+
+			expect(result).not.toBeNull();
+			expect(result!.count).toBe(1);
+			expect(result!.isMultiplePresets).toBe(false);
+			expect(result!.result[0].name).toBe("Test Preset");
+			expect(result!.result[0].parameters[0].key).toBe("debug");
+		});
+
+		it("should return null for URL without share parameter", async () => {
+			const { parseShareUrl } = await import("../logic/parameters/presetManager");
+
+			const result = parseShareUrl("chrome-extension://abc123/popup.html");
+			expect(result).toBeNull();
+		});
+
+		it("should throw for invalid share parameter", async () => {
+			const { parseShareUrl } = await import("../logic/parameters/presetManager");
+
+			expect(() =>
+				parseShareUrl("chrome-extension://abc123/popup.html?share=invalid-data")
+			).toThrow();
+		});
+
+		it("should handle multiple presets in share URL", async () => {
+			const { generateShareUrl, parseShareUrl } = await import(
+				"../logic/parameters/presetManager"
+			);
+
+			const originalPresets = [
+				{
+					createdAt: 1700000000000,
+					id: "test-1",
+					name: "Preset 1",
+					parameters: [],
+					updatedAt: 1700000000000,
+				},
+				{
+					createdAt: 1700000000000,
+					id: "test-2",
+					name: "Preset 2",
+					parameters: [],
+					updatedAt: 1700000000000,
+				},
+				{
+					createdAt: 1700000000000,
+					id: "test-3",
+					name: "Preset 3",
+					parameters: [],
+					updatedAt: 1700000000000,
+				},
+			];
+
+			const url = generateShareUrl(originalPresets);
+			const result = parseShareUrl(url);
+
+			expect(result).not.toBeNull();
+			expect(result!.count).toBe(3);
+			expect(result!.isMultiplePresets).toBe(true);
+			expect(result!.result.map((p) => p.name)).toEqual(["Preset 1", "Preset 2", "Preset 3"]);
+		});
+
+		it("should regenerate IDs when parsing", async () => {
+			const { generateShareUrl, parseShareUrl } = await import(
+				"../logic/parameters/presetManager"
+			);
+
+			const originalPresets = [
+				{
+					createdAt: 1700000000000,
+					id: "original-id",
+					name: "Test",
+					parameters: [
+						{ id: "original-param-id", key: "k", type: "queryParam" as const, value: "v" },
+					],
+					updatedAt: 1700000000000,
+				},
+			];
+
+			const url = generateShareUrl(originalPresets);
+			const result = parseShareUrl(url);
+
+			expect(result!.result[0].id).not.toBe("original-id");
+			expect(result!.result[0].parameters[0].id).not.toBe("original-param-id");
+		});
+	});
 });

@@ -3,6 +3,8 @@
  * Combines storage and applicator functionality for toggling presets
  */
 
+import { browser } from "wxt/browser";
+
 import {
 	applyPreset as applyPresetToTab,
 	removePreset as removePresetFromTab,
@@ -24,6 +26,7 @@ import {
 } from "./storage";
 import type { Parameter, Preset } from "./types";
 import { createEmptyPreset, generateId } from "./types";
+import { type DecompressResult, PresetCoder } from "../../utils/presetCoder";
 
 /**
  * Toggle a preset on/off for a specific tab
@@ -342,4 +345,31 @@ export async function migratePresetsIfNeeded(): Promise<void> {
 	if (needsUpdate) {
 		await savePresetsToStorage(migratedPresets);
 	}
+}
+
+/**
+ * Generate a shareable URL containing compressed preset data
+ * Uses the extension's settings URL with a share query parameter
+ */
+export function generateShareUrl(presets: Preset[]): string {
+	const compressed = PresetCoder.compress(presets);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- WXT's browser.runtime type is missing getURL
+	const baseUrl = (browser.runtime as any).getURL("/settings.html");
+	return `${baseUrl}?share=${compressed}`;
+}
+
+/**
+ * Parse a share URL and extract the compressed presets
+ * Returns null if no share parameter is present
+ * Throws if the share parameter is invalid
+ */
+export function parseShareUrl(url: string): DecompressResult | null {
+	const urlObj = new URL(url);
+	const shareParam = urlObj.searchParams.get("share");
+
+	if (!shareParam) {
+		return null;
+	}
+
+	return PresetCoder.decompress(shareParam);
 }
