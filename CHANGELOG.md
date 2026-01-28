@@ -1,3 +1,17 @@
+# [1.4.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.3.1...v1.4.0) (2026-01-28)
+
+
+### Bug Fixes
+
+* firefox manifest def - should fix issue [#22](https://github.com/JesseKoldewijn/agnostic-devkit/issues/22) ([48c74af](https://github.com/JesseKoldewijn/agnostic-devkit/commit/48c74afe26be08ca3edfd2d75788cd19153a792f))
+* removed omit of firefox trademark in extension name ([3b8b5ef](https://github.com/JesseKoldewijn/agnostic-devkit/commit/3b8b5ef80d5b71f5be655ca55552687829f83839))
+* UI and logic fixes of shareable uri ([d9f29e6](https://github.com/JesseKoldewijn/agnostic-devkit/commit/d9f29e6ba3684d5736f8fd17850f2a3b45f41f25))
+
+
+### Features
+
+* preset compression logic and chore of updating runtime deps ([b1ef2a0](https://github.com/JesseKoldewijn/agnostic-devkit/commit/b1ef2a047dc82cc748f95a2740280dad39c1e5e3))
+
 # [1.4.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.0-canary.1...v1.4.0-canary.2) (2026-01-28)
 
 
