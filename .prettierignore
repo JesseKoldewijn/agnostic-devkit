@@ -1,1 +1,48 @@
-**
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+dist-ssr
+build-output
+*.local
+
+# Yarn
+.yarn
+.pnp.*
+
+# Coverage & test artifacts
+coverage
+.nyc_output
+playwright-report
+test-results
+*.lcov
+
+# Extension artifacts
+*.crx
+*.pem
+
+# Generated files
+*.min.js
+*.min.css
+
+# Lock files
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Editor & IDE
+.vscode
+.idea
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Public assets that shouldn't be formatted
+public/assets
+CHANGELOG.md
