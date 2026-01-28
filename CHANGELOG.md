@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.0...v1.4.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* memo fix on a set of different UI sections ([f4caa44](https://github.com/JesseKoldewijn/agnostic-devkit/commit/f4caa441cc7caa1fe2803b1fb698d5793296799a))
+
 ## [1.4.1-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.0...v1.4.1-canary.1) (2026-01-28)
 
 
