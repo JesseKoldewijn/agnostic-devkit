@@ -90,8 +90,9 @@ test.describe("Preset Lifecycle", () => {
 		await popupPage.locator('[data-testid="export-back-button"]').click();
 		await expect(popupPage.locator('[data-testid="preset-manager-list"]')).toBeVisible();
 
-		// Verify import input is available in list view
-		const importInput = popupPage.locator('[data-testid="import-presets-input"]');
+		// Go to import view and verify import input is available
+		await popupPage.locator('[data-testid="import-presets-button"]').click();
+		const importInput = popupPage.locator('[data-testid="import-file-input"]');
 		await expect(importInput).toBeAttached();
 	});
 });
