@@ -9,7 +9,7 @@ import {
 	logBrowserInfo,
 	showNotification,
 	showNotificationWithButtons,
-} from "../utils/browser";
+} from "@/utils/browser";
 
 describe("browser utilities", () => {
 	let consoleLogSpy: ReturnType<typeof vi.spyOn>;

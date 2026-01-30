@@ -16,8 +16,8 @@ import {
 	togglePreset,
 	updateParameterInPreset,
 	updatePreset,
-} from "../logic/parameters/presetManager";
-import type { Preset } from "../logic/parameters/types";
+} from "@/logic/parameters/presetManager";
+import type { Preset } from "@/logic/parameters/types";
 
 describe("presetManager", () => {
 	let mockTabUrl: string;
@@ -746,7 +746,7 @@ describe("presetManager", () => {
 
 	describe("migrateParameter", () => {
 		it("should set primitiveType to boolean when value is 'true'", async () => {
-			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const { migrateParameter } = await import("@/logic/parameters/presetManager");
 			const param = {
 				id: "test-id",
 				key: "testKey",
@@ -759,7 +759,7 @@ describe("presetManager", () => {
 		});
 
 		it("should set primitiveType to boolean when value is 'false'", async () => {
-			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const { migrateParameter } = await import("@/logic/parameters/presetManager");
 			const param = {
 				id: "test-id",
 				key: "testKey",
@@ -772,7 +772,7 @@ describe("presetManager", () => {
 		});
 
 		it("should set primitiveType to string when value is not a boolean string", async () => {
-			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const { migrateParameter } = await import("@/logic/parameters/presetManager");
 			const param = {
 				id: "test-id",
 				key: "testKey",
@@ -785,7 +785,7 @@ describe("presetManager", () => {
 		});
 
 		it("should return unchanged parameter when primitiveType already exists", async () => {
-			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const { migrateParameter } = await import("@/logic/parameters/presetManager");
 			const param = {
 				id: "test-id",
 				key: "testKey",
@@ -800,7 +800,7 @@ describe("presetManager", () => {
 		});
 
 		it("should set primitiveType to string for empty value", async () => {
-			const { migrateParameter } = await import("../logic/parameters/presetManager");
+			const { migrateParameter } = await import("@/logic/parameters/presetManager");
 			const param = {
 				id: "test-id",
 				key: "testKey",
@@ -815,7 +815,7 @@ describe("presetManager", () => {
 
 	describe("migratePresetsIfNeeded", () => {
 		it("should migrate presets and save when migration is needed", async () => {
-			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+			const { migratePresetsIfNeeded } = await import("@/logic/parameters/presetManager");
 
 			// Set up legacy presets without primitiveType
 			await fakeBrowser.storage.sync.set({
@@ -840,7 +840,7 @@ describe("presetManager", () => {
 		});
 
 		it("should not save when no migration is needed", async () => {
-			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+			const { migratePresetsIfNeeded } = await import("@/logic/parameters/presetManager");
 
 			// Set up presets that are already migrated
 			await fakeBrowser.storage.sync.set({
@@ -865,7 +865,7 @@ describe("presetManager", () => {
 		});
 
 		it("should handle empty presets array", async () => {
-			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+			const { migratePresetsIfNeeded } = await import("@/logic/parameters/presetManager");
 
 			await fakeBrowser.storage.sync.set({ presets: [] });
 
@@ -874,7 +874,7 @@ describe("presetManager", () => {
 		});
 
 		it("should handle presets with no parameters", async () => {
-			const { migratePresetsIfNeeded } = await import("../logic/parameters/presetManager");
+			const { migratePresetsIfNeeded } = await import("@/logic/parameters/presetManager");
 
 			await fakeBrowser.storage.sync.set({
 				presets: [{ id: "preset-1", name: "Empty Preset", parameters: [] }],
@@ -887,7 +887,7 @@ describe("presetManager", () => {
 
 	describe("generateShareUrl", () => {
 		it("should generate a URL with compressed presets", async () => {
-			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const presets = [
 				{
@@ -910,7 +910,7 @@ describe("presetManager", () => {
 		});
 
 		it("should generate URL-safe share parameter", async () => {
-			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const presets = [
 				{
@@ -930,7 +930,7 @@ describe("presetManager", () => {
 		});
 
 		it("should handle multiple presets", async () => {
-			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const presets = [
 				{
@@ -954,7 +954,7 @@ describe("presetManager", () => {
 		});
 
 		it("should handle empty presets array", async () => {
-			const { generateShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const url = generateShareUrl([]);
 			expect(url).toContain("share=");
@@ -963,7 +963,7 @@ describe("presetManager", () => {
 
 	describe("parseShareUrl", () => {
 		it("should parse share URL and return presets", async () => {
-			const { generateShareUrl, parseShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl, parseShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const originalPresets = [
 				{
@@ -986,14 +986,14 @@ describe("presetManager", () => {
 		});
 
 		it("should return null for URL without share parameter", async () => {
-			const { parseShareUrl } = await import("../logic/parameters/presetManager");
+			const { parseShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const result = parseShareUrl("chrome-extension://abc123/popup.html");
 			expect(result).toBeNull();
 		});
 
 		it("should throw for invalid share parameter", async () => {
-			const { parseShareUrl } = await import("../logic/parameters/presetManager");
+			const { parseShareUrl } = await import("@/logic/parameters/presetManager");
 
 			expect(() =>
 				parseShareUrl("chrome-extension://abc123/popup.html?share=invalid-data")
@@ -1001,7 +1001,7 @@ describe("presetManager", () => {
 		});
 
 		it("should handle multiple presets in share URL", async () => {
-			const { generateShareUrl, parseShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl, parseShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const originalPresets = [
 				{
@@ -1037,7 +1037,7 @@ describe("presetManager", () => {
 		});
 
 		it("should regenerate IDs when parsing", async () => {
-			const { generateShareUrl, parseShareUrl } = await import("../logic/parameters/presetManager");
+			const { generateShareUrl, parseShareUrl } = await import("@/logic/parameters/presetManager");
 
 			const originalPresets = [
 				{

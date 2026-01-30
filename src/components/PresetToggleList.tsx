@@ -158,12 +158,10 @@ export const PresetToggleList: Component<PresetToggleListProps> = (props) => {
 	// Note: loadPresets reads currentTabId() which is a signal, but we intentionally
 	// want the callback to only run on storage changes, not on currentTabId changes.
 	onMount(() => {
-		// eslint-disable-next-line solid/reactivity
 		const unsubPresets = onPresetsChanged(() => {
 			loadPresets();
 		});
 
-		// eslint-disable-next-line solid/reactivity
 		const unsubTabStates = onTabPresetStatesChanged(() => {
 			loadPresets();
 		});

@@ -18,7 +18,7 @@ import {
 	removeRepositorySource,
 	updateProviderInstance,
 	updateRepositorySource,
-} from "../logic/repository";
+} from "@/logic/repository";
 
 // ============================================================================
 // Storage Integration Tests
@@ -297,7 +297,7 @@ describe("Provider Fetch Integration", () => {
 	beforeEach(async () => {
 		fakeBrowser.reset();
 		// Clear the API cache to prevent cached responses from previous tests
-		const { apiCache } = await import("../logic/repository");
+		const { apiCache } = await import("@/logic/repository");
 		apiCache.clear();
 	});
 
@@ -307,7 +307,7 @@ describe("Provider Fetch Integration", () => {
 
 	describe("GitHub Provider with mocked API", () => {
 		it("should fetch and validate presets from a gist", async () => {
-			const { GitHubProvider, createRepositorySource } = await import("../logic/repository");
+			const { GitHubProvider, createRepositorySource } = await import("@/logic/repository");
 
 			const validPresets = [
 				{
@@ -351,7 +351,7 @@ describe("Provider Fetch Integration", () => {
 		});
 
 		it("should return invalid file when preset doesn't match schema", async () => {
-			const { GitHubProvider, createRepositorySource } = await import("../logic/repository");
+			const { GitHubProvider, createRepositorySource } = await import("@/logic/repository");
 
 			const invalidPresets = [
 				{
@@ -394,7 +394,7 @@ describe("Provider Fetch Integration", () => {
 
 		it("should use PAT token in Authorization header", async () => {
 			const { GitHubProvider, createRepositorySource, createProviderInstance } =
-				await import("../logic/repository");
+				await import("@/logic/repository");
 
 			let capturedHeaders: HeadersInit | undefined;
 
@@ -424,7 +424,7 @@ describe("Provider Fetch Integration", () => {
 
 	describe("URL Provider with mocked fetch", () => {
 		it("should fetch and validate presets from a direct URL", async () => {
-			const { UrlProvider, createRepositorySource } = await import("../logic/repository");
+			const { UrlProvider, createRepositorySource } = await import("@/logic/repository");
 
 			const validPresets = [
 				{
@@ -452,7 +452,7 @@ describe("Provider Fetch Integration", () => {
 		});
 
 		it("should handle HTTP errors gracefully", async () => {
-			const { UrlProvider, createRepositorySource } = await import("../logic/repository");
+			const { UrlProvider, createRepositorySource } = await import("@/logic/repository");
 
 			globalThis.fetch = vi.fn().mockResolvedValue({
 				json: () =>
@@ -476,7 +476,7 @@ describe("Provider Fetch Integration", () => {
 		});
 
 		it("should reject invalid URLs", async () => {
-			const { UrlProvider, createRepositorySource } = await import("../logic/repository");
+			const { UrlProvider, createRepositorySource } = await import("@/logic/repository");
 
 			const source = createRepositorySource("Invalid", "not-a-url");
 

@@ -134,7 +134,7 @@ export const RepositoryImportPresetList: Component<RepositoryImportPresetListPro
 											{(param) => (
 												<div
 													class={cn(
-														"border-border/40 bg-muted/40 flex items-center justify-between rounded px-2 py-1 text-[9px]"
+														"border-border/40 bg-muted/40 flex items-center justify-between rounded-sm px-2 py-1 text-[9px]"
 													)}
 													data-testid="preset-param"
 												>

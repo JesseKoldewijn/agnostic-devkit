@@ -26,7 +26,7 @@ const isHeadless = !process.env.NO_HEADLESS;
 const headless = isCI ? true : isHeadless;
 
 export default defineConfig({
-	testDir: "./src/test/e2e",
+	testDir: "./test/e2e",
 	fullyParallel: true,
 	reporter: "html",
 	ignoreSnapshots: true,
