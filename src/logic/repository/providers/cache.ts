@@ -259,7 +259,8 @@ function extractFriendlyMessage(message: string): string {
 
 	// Remove parenthetical explanations that are too technical
 	// Keep the main message, remove "But here's the good news..." parentheticals
-	const simplified = withoutIp.replace(/\s*\(But here's the good news:.*?\)/gi, "");
+	// eslint-disable-next-line sonarjs/slow-regex -- Safe: only runs on short API error messages
+	const simplified = withoutIp.replace(/\s*\(But here's the good news:[^)]*\)/gi, "");
 
 	// Clean up any double spaces
 	return simplified.replace(/\s+/g, " ").trim();

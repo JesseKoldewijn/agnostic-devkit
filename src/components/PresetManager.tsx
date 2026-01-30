@@ -145,14 +145,14 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 
 		// Check for share parameter in URL
 		try {
-			const shareData = parseShareUrl(window.location.href);
+			const shareData = parseShareUrl(globalThis.window.location.href);
 			if (shareData) {
 				setShareImportData(shareData);
 				setViewMode("share-import");
 				// Clean up URL by removing the share parameter
-				const url = new URL(window.location.href);
+				const url = new URL(globalThis.window.location.href);
 				url.searchParams.delete("share");
-				window.history.replaceState({}, "", url.toString());
+				globalThis.window.history.replaceState({}, "", url.toString());
 			}
 		} catch (error) {
 			console.error("[PresetManager] Failed to parse share URL:", error);

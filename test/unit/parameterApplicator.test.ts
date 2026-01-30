@@ -11,8 +11,8 @@ import {
 	syncParameter,
 	verifyParameter,
 	verifyPreset,
-} from "../logic/parameters/parameterApplicator";
-import type { Parameter, Preset } from "../logic/parameters/types";
+} from "@/logic/parameters/parameterApplicator";
+import type { Parameter, Preset } from "@/logic/parameters/types";
 
 describe("parameterApplicator", () => {
 	let mockTabUrl: string;
@@ -518,7 +518,7 @@ describe("parameterApplicator", () => {
 
 	describe("getQueryParamValue", () => {
 		it("should return the value of an existing query parameter", async () => {
-			const { getQueryParamValue } = await import("../logic/parameters/parameterApplicator");
+			const { getQueryParamValue } = await import("@/logic/parameters/parameterApplicator");
 			mockTabUrl = "https://example.com/page?testKey=testValue";
 
 			const value = await getQueryParamValue(123, "testKey");
@@ -526,7 +526,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return null for non-existent query parameter", async () => {
-			const { getQueryParamValue } = await import("../logic/parameters/parameterApplicator");
+			const { getQueryParamValue } = await import("@/logic/parameters/parameterApplicator");
 			mockTabUrl = "https://example.com/page";
 
 			const value = await getQueryParamValue(123, "testKey");
@@ -534,7 +534,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return empty string for query parameter with no value", async () => {
-			const { getQueryParamValue } = await import("../logic/parameters/parameterApplicator");
+			const { getQueryParamValue } = await import("@/logic/parameters/parameterApplicator");
 			mockTabUrl = "https://example.com/page?testKey=";
 
 			const value = await getQueryParamValue(123, "testKey");
@@ -544,7 +544,7 @@ describe("parameterApplicator", () => {
 
 	describe("getCookieValue", () => {
 		it("should return the value of an existing cookie", async () => {
-			const { getCookieValue } = await import("../logic/parameters/parameterApplicator");
+			const { getCookieValue } = await import("@/logic/parameters/parameterApplicator");
 			(fakeBrowser.cookies.get as any).mockResolvedValue({
 				name: "testCookie",
 				value: "cookieValue",
@@ -555,7 +555,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return null for non-existent cookie", async () => {
-			const { getCookieValue } = await import("../logic/parameters/parameterApplicator");
+			const { getCookieValue } = await import("@/logic/parameters/parameterApplicator");
 			(fakeBrowser.cookies.get as any).mockResolvedValue(null);
 
 			const value = await getCookieValue(123, "nonexistent");
@@ -565,7 +565,7 @@ describe("parameterApplicator", () => {
 
 	describe("getLocalStorageValue", () => {
 		it("should return the value of an existing localStorage item", async () => {
-			const { getLocalStorageValue } = await import("../logic/parameters/parameterApplicator");
+			const { getLocalStorageValue } = await import("@/logic/parameters/parameterApplicator");
 			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
 				success: true,
 				value: "storedValue",
@@ -576,7 +576,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should return null for non-existent localStorage item", async () => {
-			const { getLocalStorageValue } = await import("../logic/parameters/parameterApplicator");
+			const { getLocalStorageValue } = await import("@/logic/parameters/parameterApplicator");
 			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({ success: true, value: null });
 
 			const value = await getLocalStorageValue(123, "nonexistent");
@@ -586,7 +586,7 @@ describe("parameterApplicator", () => {
 
 	describe("getParameterCurrentValue", () => {
 		it("should dispatch to getQueryParamValue for queryParam type", async () => {
-			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
+			const { getParameterCurrentValue } = await import("@/logic/parameters/parameterApplicator");
 			mockTabUrl = "https://example.com/page?myKey=myValue";
 
 			const param: Parameter = {
@@ -601,7 +601,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should dispatch to getCookieValue for cookie type", async () => {
-			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
+			const { getParameterCurrentValue } = await import("@/logic/parameters/parameterApplicator");
 			(fakeBrowser.cookies.get as any).mockResolvedValue({ name: "myCookie", value: "cookieVal" });
 
 			const param: Parameter = {
@@ -616,7 +616,7 @@ describe("parameterApplicator", () => {
 		});
 
 		it("should dispatch to getLocalStorageValue for localStorage type", async () => {
-			const { getParameterCurrentValue } = await import("../logic/parameters/parameterApplicator");
+			const { getParameterCurrentValue } = await import("@/logic/parameters/parameterApplicator");
 			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
 				success: true,
 				value: "lsValue",

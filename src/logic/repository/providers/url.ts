@@ -99,11 +99,7 @@ export const UrlProvider: RepositoryProvider = {
 		try {
 			const urlObj = new URL(url);
 			// Must be http or https
-			if (urlObj.protocol !== "http:" && urlObj.protocol !== "https:") {
-				return false;
-			}
-			// Should look like a JSON URL or at least be fetchable
-			return true;
+			return urlObj.protocol === "http:" || urlObj.protocol === "https:";
 		} catch {
 			return false;
 		}

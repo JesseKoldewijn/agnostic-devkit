@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { applyTheme, getEffectiveTheme, getTheme, initTheme, setTheme } from "../utils/theme";
+import { applyTheme, getEffectiveTheme, getTheme, initTheme, setTheme } from "@/utils/theme";
 
 describe("theme utilities", () => {
 	let mockMatchMedia: ReturnType<typeof vi.fn>;

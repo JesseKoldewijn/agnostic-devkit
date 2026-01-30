@@ -435,7 +435,8 @@ async function fetchFromGist(
 					isValid: false,
 					rawUrl: file.raw_url,
 				} as ValidatedFile;
-			} catch (_error) {
+			} catch (error) {
+				console.debug("[GitHubProvider] JSON validation error:", error);
 				return {
 					error: "Invalid JSON",
 					filename: file.filename,

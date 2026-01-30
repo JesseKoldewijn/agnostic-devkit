@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { getLatestRelease, getUpdateInfo } from "../logic/releaseService";
+import { getLatestRelease, getUpdateInfo } from "@/logic/releaseService";
 
 describe("releaseService", () => {
 	beforeAll(() => {

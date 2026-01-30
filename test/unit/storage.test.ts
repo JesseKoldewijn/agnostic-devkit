@@ -19,8 +19,8 @@ import {
 	updateParameter,
 	updatePreset,
 	updateTabPresetState,
-} from "../logic/parameters/storage";
-import type { Parameter, Preset } from "../logic/parameters/types";
+} from "@/logic/parameters/storage";
+import type { Parameter, Preset } from "@/logic/parameters/types";
 
 describe("storage", () => {
 	beforeEach(() => {

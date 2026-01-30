@@ -177,8 +177,12 @@ export async function getTabId(context: BrowserContext, page: Page): Promise<num
 	const pageUrl = page.url();
 	const tabId = await serviceWorker.evaluate(async (url: string) => {
 		// In the service worker context, chrome or browser global is available
-
-		const browserObj = (globalThis as any).chrome || (globalThis as any).browser;
+		interface BrowserGlobal {
+			chrome?: { tabs?: { query: (opts: { url: string }) => Promise<{ id?: number }[]> } };
+			browser?: { tabs?: { query: (opts: { url: string }) => Promise<{ id?: number }[]> } };
+		}
+		const global = globalThis as BrowserGlobal;
+		const browserObj = global.chrome ?? global.browser;
 		if (!browserObj?.tabs) {
 			return null;
 		}

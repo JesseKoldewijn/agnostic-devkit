@@ -3,6 +3,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
 import betterTailwindcss from "eslint-plugin-better-tailwindcss";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import solid from "eslint-plugin-solid/configs/recommended";
+import sonarjs from "eslint-plugin-sonarjs";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -34,6 +35,25 @@ export default defineConfig(
 
 	// TypeScript rules
 	tseslint.configs.recommended,
+
+	// SonarJS rules for clean code
+	sonarjs.configs.recommended,
+	{
+		rules: {
+			// Disable security rules that are false positives in browser extension context
+			"sonarjs/pseudo-random": "off", // Math.random() is fine for non-crypto uses
+			"sonarjs/no-os-command-from-path": "off", // Build scripts legitimately use PATH
+			"sonarjs/os-command": "off", // Build scripts legitimately execute commands
+			"sonarjs/publicly-writable-directories": "off", // Test fixtures use /tmp safely
+			"sonarjs/no-hardcoded-ip": "off", // Test fixtures use mock IPs
+			// Relax complexity rules for better DX (can refactor later)
+			"sonarjs/cognitive-complexity": ["warn", 25], // Warn instead of error, raise limit
+			// Allow nested ternaries in moderation (Prettier formats them well)
+			"sonarjs/no-nested-conditional": "off",
+			// Allow nested template literals (useful for code generation)
+			"sonarjs/no-nested-template-literals": "off",
+		},
+	},
 
 	// Accessibility rules for JSX
 	jsxA11y.flatConfigs.recommended,
@@ -87,13 +107,19 @@ export default defineConfig(
 				...globals.webextensions,
 			},
 		},
+		rules: {
+			// SolidJS components often have deeply nested callbacks (ref + queueMicrotask)
+			"sonarjs/no-nested-functions": "off",
+		},
 	},
 
 	// Test files - relax some rules
 	{
-		files: ["**/*.test.ts", "**/*.spec.ts", "src/test/**/*"],
+		files: ["**/*.test.ts", "**/*.spec.ts", "test/**/*"],
 		rules: {
 			"@typescript-eslint/no-explicit-any": "off",
+			"sonarjs/slow-regex": "off", // Test assertions use simple patterns
+			"sonarjs/cognitive-complexity": "off", // Test fixtures can be complex
 		},
 	},
 

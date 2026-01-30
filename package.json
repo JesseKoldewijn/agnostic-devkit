@@ -69,6 +69,7 @@
 		"eslint-plugin-better-tailwindcss": "^4.0.2",
 		"eslint-plugin-jsx-a11y": "^6.10.2",
 		"eslint-plugin-solid": "^0.14.5",
+		"eslint-plugin-sonarjs": "^3.0.6",
 		"globals": "^17.1.0",
 		"happy-dom": "^20.0.10",
 		"jsdom": "^27.2.0",
@@ -84,6 +85,7 @@
 		"vite": "^7.3.0",
 		"vite-plugin-istanbul": "^7.2.1",
 		"vite-plugin-scope-tailwind": "^2.0.2",
+		"vite-tsconfig-paths": "^6.0.5",
 		"vitest": "^4.0.16",
 		"wxt": "^0.20.13"
 	},
