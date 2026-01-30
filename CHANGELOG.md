@@ -1,3 +1,11 @@
+## [1.4.3-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.3-canary.1...v1.4.3-canary.2) (2026-01-30)
+
+
+### Bug Fixes
+
+* code standard improvements + test-suite refactor ([e0a8d83](https://github.com/JesseKoldewijn/agnostic-devkit/commit/e0a8d83c02ff0a0af67a9ed063d5f24a92a8a13c))
+* code standard improvements + test-suite refactor - phase 2 ([fe1b71e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/fe1b71ec41d14e81b80253637ad6112450c27b9a))
+
 ## [1.4.3-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.2...v1.4.3-canary.1) (2026-01-30)
 
 
