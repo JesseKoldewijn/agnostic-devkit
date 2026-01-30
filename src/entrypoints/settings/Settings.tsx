@@ -3,7 +3,7 @@ import { For, Show, createResource, createSignal, onMount } from "solid-js";
 
 import { browser } from "wxt/browser";
 
-import { RepositoryConfiguration } from "@/components/RepositoryConfiguration";
+import { RepositoryConfiguration } from "@/components/repository";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
 import { Badge } from "@/components/ui/Badge";

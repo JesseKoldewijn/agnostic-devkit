@@ -13,11 +13,11 @@ import {
 } from "@/logic/parameters";
 import { cn } from "@/utils/cn";
 
-import { Badge } from "./ui/Badge";
-import { Button } from "./ui/Button";
-import { Card } from "./ui/Card";
-import { Separator } from "./ui/Separator";
-import { Switch } from "./ui/Switch";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
+import { Card } from "../ui/Card";
+import { Separator } from "../ui/Separator";
+import { Switch } from "../ui/Switch";
 
 interface PresetToggleListProps {
 	/** Whether to show expanded details (parameter list) */

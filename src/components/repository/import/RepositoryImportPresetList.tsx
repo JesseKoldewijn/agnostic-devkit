@@ -6,8 +6,8 @@ import { For, Show } from "solid-js";
 
 import { cn } from "@/utils/cn";
 
-import { Badge } from "../ui/Badge";
-import { Separator } from "../ui/Separator";
+import { Badge } from "../../ui/Badge";
+import { Separator } from "../../ui/Separator";
 import type { PresetWithMeta } from "./types";
 
 // Helper to get parameter type icon

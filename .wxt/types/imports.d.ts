@@ -11,10 +11,6 @@ declare global {
   const MatchPattern: typeof import('wxt/utils/match-patterns').MatchPattern
   const Portal: typeof import('solid-js/web').Portal
   const PresetCoder: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/presetCoder').PresetCoder
-  const PresetManager: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/PresetManager').PresetManager
-  const PresetToggleList: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/PresetToggleList').PresetToggleList
-  const RepositoryConfiguration: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/RepositoryConfiguration').RepositoryConfiguration
-  const RepositoryImportView: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/components/RepositoryImportView').RepositoryImportView
   const Show: typeof import('solid-js').Show
   const Suspense: typeof import('solid-js').Suspense
   const SuspenseList: typeof import('solid-js').SuspenseList

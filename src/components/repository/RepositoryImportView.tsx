@@ -27,8 +27,8 @@ import {
 	RepositoryImportHeader,
 	RepositoryImportPresetList,
 	RepositoryImportSourceSelector,
-} from "./repository-import";
-import type { PresetWithMeta, SourceWithProvider } from "./repository-import/types";
+} from "./import";
+import type { PresetWithMeta, SourceWithProvider } from "./import/types";
 
 interface RepositoryImportViewProps {
 	onCancel: () => void;
