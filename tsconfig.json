@@ -23,10 +23,11 @@
 		/* Paths */
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@test/*": ["./test/*"]
 		},
 		"jsx": "preserve",
 		"jsxImportSource": "solid-js"
 	},
-	"include": ["src", ".wxt", "scripts"]
+	"include": ["src", ".wxt", "scripts", "test"]
 }

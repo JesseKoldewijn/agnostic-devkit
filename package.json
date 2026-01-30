@@ -1,6 +1,6 @@
 {
 	"name": "agnostic-devkit",
-	"version": "1.4.2",
+	"version": "1.4.3-canary.2",
 	"description": "A browser extension built with Vite, TypeScript, SolidJS, and Tailwind CSS v4",
 	"type": "module",
 	"scripts": {
@@ -45,7 +45,8 @@
 		"clsx": "^2.1.1",
 		"lz-string": "^1.5.0",
 		"solid-js": "^1.9.10",
-		"tailwind-merge": "^3.4.0"
+		"tailwind-merge": "^3.4.0",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.57.0",
@@ -68,6 +69,7 @@
 		"eslint-plugin-better-tailwindcss": "^4.0.2",
 		"eslint-plugin-jsx-a11y": "^6.10.2",
 		"eslint-plugin-solid": "^0.14.5",
+		"eslint-plugin-sonarjs": "^3.0.6",
 		"globals": "^17.1.0",
 		"happy-dom": "^20.0.10",
 		"jsdom": "^27.2.0",
@@ -83,6 +85,7 @@
 		"vite": "^7.3.0",
 		"vite-plugin-istanbul": "^7.2.1",
 		"vite-plugin-scope-tailwind": "^2.0.2",
+		"vite-tsconfig-paths": "^6.0.5",
 		"vitest": "^4.0.16",
 		"wxt": "^0.20.13"
 	},

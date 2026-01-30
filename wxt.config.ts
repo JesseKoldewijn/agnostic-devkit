@@ -3,6 +3,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import istanbul from "vite-plugin-istanbul";
+import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "wxt";
 
 // Read version from package.json
@@ -17,7 +18,7 @@ let repoUrl = "https://github.com/JesseKoldewijn/agnostic-devkit";
 try {
 	const remoteUrl = execSync("git remote get-url origin").toString().trim();
 	if (remoteUrl.includes("github.com")) {
-		const match = remoteUrl.match(/github\.com[:/]([^/]+\/[^/.]+)(\.git)?$/);
+		const match = new RegExp(/github\.com[:/]([^/]+\/[^/.]+)(\.git)?$/).exec(remoteUrl);
 		if (match?.[1]) {
 			repoUrl = `https://github.com/${match[1]}`;
 		}
@@ -133,7 +134,7 @@ export default defineConfig({
 	},
 	vite: () => ({
 		server: {
-			port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3001,
+			port: process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3001,
 			strictPort: true,
 		},
 		define: {
@@ -146,12 +147,13 @@ export default defineConfig({
 			sourcemap: isCoverage ? "inline" : false,
 		},
 		plugins: [
+			tsconfigPaths(),
 			tailwindcss(),
 			// Add Istanbul instrumentation for E2E coverage
 			...(isCoverage
 				? [
 						istanbul({
-							exclude: ["node_modules", "src/test/**/*"],
+							exclude: ["node_modules", "test/**/*"],
 							extension: [".ts", ".tsx"],
 							forceBuildInstrument: true,
 							include: "src/**/*",
@@ -160,10 +162,5 @@ export default defineConfig({
 					]
 				: []),
 		],
-		resolve: {
-			alias: {
-				"@": resolve(__dirname, "./src"),
-			},
-		},
 	}),
 });

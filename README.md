@@ -3,12 +3,9 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/ahpllpcmljhdaeijgfjljopamoaeinpp.svg)
 ![Mozilla Add-on Version](https://img.shields.io/amo/v/agnostic-devkit)
-
-A platform-agnostic developer toolkit for web development, built as a modern Browser extension. Designed to streamline common development tasks with a clean, intuitive interface.
-
-## Status
-
 [![CI](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/JesseKoldewijn/agnostic-devkit/actions/workflows/ci.yml)
+
+A platform-agnostic developer toolkit for web development, built as a modern browser extension. Designed to streamline common development tasks with a clean, intuitive interface.
 
 ## Features
 
@@ -21,6 +18,21 @@ Create and manage reusable presets of parameters that can be instantly applied t
 - **Local Storage** — Inject localStorage values
 
 Perfect for testing different feature flags, user segments, or debug modes across environments.
+
+### 📤 Import & Export
+
+Share and backup your presets with flexible import/export options:
+
+**Export:**
+
+- **JSON Download** — Export selected presets as a JSON file
+- **Shareable URL** — Generate a compressed URL to share presets instantly
+
+**Import:**
+
+- **File Import** — Load presets from a JSON file
+- **GitHub Repository** — Import presets directly from a GitHub repo or Gist
+- **Share URL** — Paste a shareable URL to import presets
 
 ### 🖥️ Flexible Display Modes
 
@@ -41,23 +53,99 @@ Works across all Chromium-based browsers with automatic fallbacks for unsupporte
 - ✅ Brave
 - ✅ Edge
 - ✅ Opera
+- ⚠️ Firefox (limited sidebar support)
 - ⚠️ Other Chromium browsers (with potential feature limitations)
 
-## Tech Stack
+## Preset File Format
+
+Preset files are JSON arrays containing preset objects. This format is used for file import/export and GitHub repository imports.
+
+**Required fields:**
+
+- `name` (string) — Display name of the preset
+- `parameters` (array) — List of parameters, each with:
+  - `type` — One of: `"queryParam"`, `"cookie"`, or `"localStorage"`
+  - `key` (string) — Parameter name
+  - `value` (string) — Value to set
+
+**Optional fields:**
+
+- Preset `id` (string) — Internal ID of the preset (auto-generated on import)
+- Preset `description` (string) — Description of the preset
+- Preset `createdAt`, `updatedAt` — Metadata (auto-generated on import)
+- Parameter `description` (string) — Description of the parameter
+- Parameter `primitiveType` (`"string"` or `"boolean"`, not required but does get autmatically assigned on import if value is a string of `"true"` or `"false"` and can be overridden if you want)
+
+**Example:**
+
+```json
+[
+	{
+		"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", // Optional internal ID which defaults to a new UUID on import
+		"name": "Debug Mode",
+		"description": "Enable debug features", // Optional description
+		"parameters": [
+			{
+				// Minimal required fields for a query parameter
+				"type": "queryParam",
+				"key": "debug",
+				"value": "true"
+			},
+			{
+				// Minimal reqyuired fields for a localStorage parameter
+				"type": "localStorage",
+				"key": "devTools",
+				"value": "enabled"
+			},
+			{
+				// Minimal required fields for a cookie parameter
+				"type": "cookie",
+				"key": "sessionId",
+				"value": "abc123"
+			},
+			{
+				"type": "queryParam",
+				"key": "debug",
+				"value": "true", // Gets parsed as boolean on import
+				"primitiveType": "boolean" // Optional primitive type
+			},
+			{
+				"type": "localStorage",
+				"key": "devTools with description",
+				"description": "Enables debug mode", // Optional description
+				"value": "enabled"
+			},
+			{
+				"id": "session-cookie-id", // Optional internal ID which defaults to a new UUID on import
+				"type": "cookie",
+				"key": "sessionId with id",
+				"value": "abc123"
+			}
+		],
+		"createdAt": "2024-01-01T12:00:00.000Z", // Optional metadata
+		"updatedAt": "2024-01-02T12:00:00.000Z" // Optional metadata
+	}
+	... optionally more presets ...
+]
+```
+
+---
+
+## Development
+
+### Tech Stack
 
 | Category             | Technology                                                     |
 | -------------------- | -------------------------------------------------------------- |
-| Build                | [WXT](https://wxt.dev) 0.20.x & [Vite](https://vite.dev) 7.x   |
-| Language             | [TypeScript](https://www.typescriptlang.org) 5.9               |
-| UI Framework         | [SolidJS](https://www.solidjs.com) 1.9                         |
-| Styling              | [Tailwind CSS](https://tailwindcss.com) 4.x (CSS-based config) |
-| Unit Testing         | [Vitest](https://vitest.dev) 4.x                               |
-| E2E Testing          | [Playwright](https://playwright.dev) 1.57                      |
+| Build                | [WXT](https://wxt.dev) & [Vite](https://vite.dev)              |
+| Language             | [TypeScript](https://www.typescriptlang.org)                   |
+| UI Framework         | [SolidJS](https://www.solidjs.com)                             |
+| Styling              | [Tailwind CSS](https://tailwindcss.com) (CSS-based config)     |
+| Unit Testing         | [Vitest](https://vitest.dev)                                   |
+| E2E Testing          | [Playwright](https://playwright.dev)                           |
 | Linting & Formatting | [ESLint](https://eslint.org) & [Prettier](https://prettier.io) |
-| Package Manager      | [Yarn](https://yarnpkg.com) 4.x (via Corepack)                 |
+| Package Manager      | [Yarn](https://yarnpkg.com) (via Corepack)                     |
 | Releases             | [semantic-release](https://semantic-release.gitbook.io)        |
-
-## Getting Started
 
 ### Prerequisites
 
@@ -76,7 +164,7 @@ corepack enable
 yarn install
 ```
 
-### Development
+### Running Locally
 
 Build the extension with watch mode:
 
@@ -84,14 +172,24 @@ Build the extension with watch mode:
 yarn dev
 ```
 
-This creates a `build-output` folder that rebuilds automatically on changes. Load it as an unpacked extension:
+This creates a `build-output` folder that rebuilds automatically on changes. The folder contains separate builds for Chrome (Manifest V3) and Firefox (Manifest V2), and will be automatically opened in the selected browser if available.
+
+> **Note:** If the browser does not open automatically, like when running in a headless environment (CI/CD, remote server, WSL, etc.)
+
+#### Chrome / Chromium
 
 1. Navigate to `chrome://extensions/`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the `build-output/chrome-mv3` (or `firefox-mv2`) folder
+4. Select the `build-output/chrome-mv3` folder
 
-> **Note:** After changes, manually reload the extension in Chrome (click the reload icon on the extension card).
+#### Firefox
+
+1. Navigate to `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on**
+3. Select any file in the `build-output/firefox-mv2` folder
+
+> **Note:** After code changes, manually reload the extension (Chrome: click the reload icon; Firefox: click **Reload**) but in most cases the HMR should handle this for you.
 
 ### Production Build
 
@@ -107,9 +205,9 @@ Create a distributable `.zip` file:
 yarn package
 ```
 
-## Testing
+### Testing
 
-### Unit Tests
+#### Unit Tests
 
 ```bash
 yarn test              # Run once
@@ -118,14 +216,14 @@ yarn test:ui           # Interactive UI
 yarn test:coverage     # Generate coverage report
 ```
 
-### E2E Tests
+#### E2E Tests
 
 ```bash
 yarn test:e2e          # Run E2E tests
 yarn test:e2e:ui       # Interactive Playwright UI
 ```
 
-### Coverage Reports
+#### Coverage Reports
 
 ```bash
 # Run all tests with coverage
@@ -152,9 +250,17 @@ Coverage reports are generated separately:
 - **Vitest coverage**: `coverage/vitest/index.html` - Unit test coverage
 - **Playwright coverage**: `coverage/playwright/index.html` - E2E test coverage
 
-Coverage scores are displayed automatically when running coverage commands and can also be viewed separately using the `coverage:score:*` commands.
+### Linting & Formatting
 
-## Project Structure
+```bash
+yarn lint          # Run ESLint
+yarn lint:fix      # Run ESLint with auto-fix
+yarn format        # Run Prettier format
+yarn format:check  # Check Prettier formatting
+yarn type-check    # Run TypeScript type check
+```
+
+### Project Structure
 
 ```
 src/
@@ -165,41 +271,25 @@ src/
 │   ├── sidepanel/      # Extension sidebar/sidepanel UI
 │   └── settings/       # Options/settings page
 ├── components/         # Shared UI components
-│   ├── ui/             # Primitive UI components (shadcn-style)
-│   ├── PresetManager.tsx     # Full CRUD interface for presets
-│   └── PresetToggleList.tsx  # Quick preset toggles
-├── logic/              # Business logic
-│   └── parameters/           # Preset & parameter management
-├── utils/              # Utility functions
-│   ├── browser.ts            # Cross-browser compatibility
-│   ├── displayMode.ts        # Display mode management
-│   ├── dom.ts                # DOM utilities
-│   └── theme.ts              # Theme management
+├── logic/              # Business logic (presets, parameters, repository)
+├── utils/              # Utility functions (browser compat, themes, etc.)
 ├── styles/             # Global styles & Tailwind config
-├── public/             # Static assets & icons
 └── test/               # Test files & helpers
 ```
 
-## Linting & Formatting
+### CI/CD
 
-```bash
-yarn lint          # Run ESLint
-yarn lint:fix      # Run ESLint with auto-fix
-yarn format        # Run Prettier format
-yarn format:check  # Check Prettier formatting
-yarn type-check    # Run TypeScript type check
-```
+The project uses GitHub Actions for continuous integration. The CI workflow runs on all branches and pull requests, performing:
 
-## CI/CD
+- ESLint & Prettier checks
+- TypeScript type checking
+- Unit tests (Vitest)
+- E2E tests (Playwright)
+- Semantic versioning and packaging (on `main` and `develop` branches)
 
-The project uses GitHub Actions for continuous integration and deployment:
+Coverage reports are available as downloadable artifacts on each CI run.
 
-- **CI Workflow** — Runs on all branches: ESLint, Prettier check, type checking, unit tests, E2E tests
-- **Release Workflow** — Triggered on `main` and `develop`: semantic versioning and packaging
-
-Coverage reports are available as downloadable artifacts on each CI run and linked in PR comments.
-
-## Tailwind CSS v4 Configuration
+### Tailwind CSS v4 Configuration
 
 This project uses Tailwind CSS v4's CSS-based configuration with shadcn-style design tokens. Customize the theme in `src/styles/main.css`:
 
@@ -213,4 +303,4 @@ This project uses Tailwind CSS v4's CSS-based configuration with shadcn-style de
 
 ## License
 
-[MIT License](LICENSE) © 2025 Jesse Koldewijn
+[MIT License](LICENSE) © 2025-2026 Jesse Koldewijn

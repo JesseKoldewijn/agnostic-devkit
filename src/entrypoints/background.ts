@@ -28,6 +28,8 @@ export default defineBackground(() => {
 		console.log("[Background] Current popup after init:", popup);
 	});
 
+	// Chrome extension message listeners must return true to indicate async response handling
+	// eslint-disable-next-line sonarjs/no-invariant-returns
 	browser.runtime?.onMessage.addListener((msg, _sender, sendResponse) => {
 		console.log(`[Background] Received message:`, JSON.stringify(msg));
 
