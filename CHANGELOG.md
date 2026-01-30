@@ -1,3 +1,10 @@
+## [1.4.3-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.2...v1.4.3-canary.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* remote preset repository logic + UI fixes ([932c05e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/932c05ec2e5dfada1f0533e94e2a7859c6110d8e))
+
 ## [1.4.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.1...v1.4.2) (2026-01-28)
 
 
