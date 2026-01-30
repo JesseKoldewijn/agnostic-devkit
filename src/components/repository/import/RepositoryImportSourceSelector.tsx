@@ -6,8 +6,8 @@ import { For, Show } from "solid-js";
 
 import { cn } from "@/utils/cn";
 
-import { Button } from "../ui/Button";
-import { Select } from "../ui/Select";
+import { Button } from "../../ui/Button";
+import { Select } from "../../ui/Select";
 import type { SourceWithProvider } from "./types";
 
 interface RepositoryImportSourceSelectorProps {

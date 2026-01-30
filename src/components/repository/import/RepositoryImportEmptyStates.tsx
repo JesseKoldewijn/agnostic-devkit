@@ -8,9 +8,9 @@ import type { FetchResult } from "@/logic/repository/types";
 import { PRESET_SCHEMA_DESCRIPTION, PRESET_SCHEMA_EXAMPLE } from "@/logic/repository/types";
 import { cn } from "@/utils/cn";
 
-import { Button } from "../ui/Button";
-import { Card } from "../ui/Card";
-import { Separator } from "../ui/Separator";
+import { Button } from "../../ui/Button";
+import { Card } from "../../ui/Card";
+import { Separator } from "../../ui/Separator";
 
 interface NoSourcesStateProps {
 	onCancel: () => void;

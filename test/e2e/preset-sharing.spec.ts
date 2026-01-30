@@ -250,6 +250,10 @@ test.describe("Preset URL Sharing", () => {
 			popupPage.locator(`[data-testid="preset-name"]:text-is("${presetName}")`)
 		).not.toBeVisible();
 
+		// Go to import view to use the share URL input
+		await popupPage.locator('[data-testid="import-presets-button"]').click();
+		await expect(popupPage.locator('[data-testid="file-import-view"]')).toBeVisible();
+
 		// Use the share URL input to import
 		await popupPage.locator('[data-testid="share-url-input"]').fill(shareUrl);
 		await popupPage.locator('[data-testid="share-url-load-button"]').click();
