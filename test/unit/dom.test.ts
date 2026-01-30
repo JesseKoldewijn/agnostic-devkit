@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createIsolatedElement } from "../utils/dom";
+import { createIsolatedElement } from "@/utils/dom";
 
 describe("dom utilities", () => {
 	let mockShadowRoot: {

@@ -88,7 +88,8 @@ export async function removeProviderInstance(id: string): Promise<boolean> {
 	const sources = await getRepositorySources();
 	const updatedSources = sources.map((source) => {
 		if (source.providerInstanceId === id) {
-			const { providerInstanceId: _, ...rest } = source;
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { providerInstanceId, ...rest } = source;
 			return rest as RepositorySource;
 		}
 		return source;

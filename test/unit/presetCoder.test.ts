@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { Parameter, Preset } from "../logic/parameters/types";
-import { PresetCoder } from "../utils/presetCoder";
+import type { Parameter, Preset } from "@/logic/parameters/types";
+import { PresetCoder } from "@/utils/presetCoder";
 
 describe("PresetCoder", () => {
 	// Helper to create a test preset

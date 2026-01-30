@@ -5,51 +5,64 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+/** Istanbul coverage data format for a single file */
+interface IstanbulFileCoverage {
+	s: Record<string, number>; // statement counts
+	f: Record<string, number>; // function counts
+	b: Record<string, number[]>; // branch counts
+	statementMap?: Record<string, unknown>;
+	fnMap?: Record<string, unknown>;
+	branchMap?: Record<string, unknown>;
+}
+
+/** Full Istanbul coverage object (file path -> coverage data) */
+type IstanbulCoverage = Record<string, IstanbulFileCoverage>;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const extensionPath = resolve(__dirname, "../../../../build-output/chrome-mv3");
+const extensionPath = resolve(__dirname, "../../../build-output/chrome-mv3");
 
 const isCoverage = process.env.CI_COVERAGE === "true";
-const projectRoot = resolve(__dirname, "../../../../");
+const projectRoot = resolve(__dirname, "../../../");
 const rawCoverageDir = resolve(projectRoot, "coverage/raw-playwright");
 
 /**
  * simple coverage collector
  */
 class CoverageCollector {
-	private accumulatedCoverage: Record<string, unknown> = {};
+	private accumulatedCoverage: IstanbulCoverage = {};
 
-	merge(newCoverage: Record<string, unknown>): void {
+	merge(newCoverage: IstanbulCoverage): void {
 		if (!newCoverage) {
 			return;
 		}
 		for (const [key, value] of Object.entries(newCoverage)) {
 			if (!this.accumulatedCoverage[key]) {
-				this.accumulatedCoverage[key] = JSON.parse(JSON.stringify(value));
+				this.accumulatedCoverage[key] = JSON.parse(JSON.stringify(value)) as IstanbulFileCoverage;
 			} else {
-				const existing = this.accumulatedCoverage[key] as any;
+				const existing = this.accumulatedCoverage[key];
+				const val = value;
 
-				const val = value as any;
 				// Merge statement coverage
 				if (val.s && existing.s) {
 					for (const [sKey, sValue] of Object.entries(val.s)) {
-						existing.s[sKey] = (existing.s[sKey] || 0) + (sValue as number);
+						existing.s[sKey] = (existing.s[sKey] || 0) + sValue;
 					}
 				}
 				// Merge function coverage
 				if (val.f && existing.f) {
 					for (const [fKey, fValue] of Object.entries(val.f)) {
-						existing.f[fKey] = (existing.f[fKey] || 0) + (fValue as number);
+						existing.f[fKey] = (existing.f[fKey] || 0) + fValue;
 					}
 				}
 				// Merge branch coverage
 				if (val.b && existing.b) {
 					for (const [bKey, bValue] of Object.entries(val.b)) {
 						if (!existing.b[bKey]) {
-							existing.b[bKey] = [...(bValue as number[])];
+							existing.b[bKey] = [...bValue];
 						} else {
-							for (let i = 0; i < (bValue as number[]).length; i++) {
-								existing.b[bKey][i] = (existing.b[bKey][i] || 0) + (bValue as number[])[i];
+							for (let i = 0; i < bValue.length; i++) {
+								existing.b[bKey][i] = (existing.b[bKey][i] || 0) + bValue[i];
 							}
 						}
 					}
@@ -89,17 +102,14 @@ export const test = base.extend<{
 
 		// Mock notifications API to prevent CI hangs/flakiness
 		await context.addInitScript(() => {
-			// oxlint-disable-next-line no-typeof-undefined
-
-			const globalAny = globalThis as any;
-			if (globalAny.chrome !== undefined) {
-				globalAny.chrome.notifications = {
-					...globalAny.chrome.notifications,
+			const globalObj = globalThis as any;
+			if (globalObj.chrome !== undefined) {
+				globalObj.chrome.notifications = {
+					...globalObj.chrome.notifications,
 
 					create: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.create called", args);
-						// oxlint-disable-next-line prefer-at
-						const callback = args[args.length - 1];
+						const callback = args.at(-1);
 						if (typeof callback === "function") {
 							callback("mock-notification-id");
 						}
@@ -108,8 +118,7 @@ export const test = base.extend<{
 
 					clear: (...args: any[]) => {
 						console.log("[Mock] chrome.notifications.clear called", args);
-						// oxlint-disable-next-line prefer-at
-						const callback = args[args.length - 1];
+						const callback = args.at(-1);
 						if (typeof callback === "function") {
 							callback(true);
 						}
@@ -117,8 +126,7 @@ export const test = base.extend<{
 					},
 
 					getAll: (...args: any[]) => {
-						// oxlint-disable-next-line prefer-at
-						const callback = args[args.length - 1];
+						const callback = args.at(-1);
 						if (typeof callback === "function") {
 							callback({});
 						}

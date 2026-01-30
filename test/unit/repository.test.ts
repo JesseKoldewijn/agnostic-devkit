@@ -11,7 +11,7 @@ import {
 	generateRepositoryId,
 	parseGitHubUrl,
 	validatePresets,
-} from "../logic/repository";
+} from "@/logic/repository";
 
 // ============================================================================
 // Zod Schema Validation Tests
