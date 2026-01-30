@@ -20,6 +20,7 @@ import {
 import { cn } from "@/utils/cn";
 import type { DecompressResult } from "@/utils/presetCoder";
 
+import { RepositoryImportView } from "./RepositoryImportView";
 import { PlusIcon } from "./icons/Plus";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
@@ -37,7 +38,14 @@ interface PresetManagerProps {
 	class?: string;
 }
 
-type ViewMode = "list" | "create" | "edit" | "export" | "share-import";
+type ViewMode =
+	| "list"
+	| "create"
+	| "edit"
+	| "export"
+	| "share-import"
+	| "repository-import"
+	| "file-import";
 
 /**
  * Full CRUD interface for managing presets and their parameters
@@ -188,6 +196,9 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		});
 		setInitialParameterData(paramMap);
 		setParameterIds(preset.parameters.map((p) => p.id));
+		// Clear cached UI state so values are read fresh from initialParameterData
+		setParamPrimitiveTypes(new Map());
+		setParamBoolValues(new Map());
 		setViewMode("edit");
 	};
 
@@ -455,6 +466,35 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		setViewMode("list");
 	};
 
+	// Handle repository import - opens the modal
+	const startRepositoryImport = () => {
+		setViewMode("repository-import");
+	};
+
+	// Handle repository import confirm
+	const handleRepositoryImportConfirm = async (presets: Preset[]) => {
+		try {
+			// Add imported presets to storage
+			for (const preset of presets) {
+				await createPreset({
+					name: preset.name,
+					parameters: preset.parameters,
+					description: preset.description,
+				});
+			}
+			setViewMode("list");
+			await loadPresets();
+		} catch (error) {
+			console.error("[PresetManager] Failed to import repository presets:", error);
+			// Could show error toast here
+		}
+	};
+
+	// Handle repository import cancel
+	const handleRepositoryImportCancel = () => {
+		setViewMode("list");
+	};
+
 	// Toggle expanded state for a preset in share import view
 	const toggleShareImportExpanded = (presetId: string) => {
 		setShareImportExpandedId((current) => (current === presetId ? null : presetId));
@@ -593,41 +633,29 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 							</svg>
 							Export
 						</Button>
-						<div class={cn("relative")}>
-							<input
-								type="file"
-								id="import-presets-input"
-								accept=".json"
-								onChange={handleImport}
-								class={cn("hidden")}
-								data-testid="import-presets-input"
-							/>
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() =>
-									(document.querySelector("#import-presets-input") as HTMLInputElement)?.click()
-								}
-								title="Import presets from JSON"
-								data-testid="import-presets-button"
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={() => setViewMode("file-import")}
+							title="Import presets"
+							data-testid="import-presets-button"
+						>
+							<svg
+								class={cn("size-3.5 opacity-70")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
 							>
-								<svg
-									class={cn("size-3.5 opacity-70")}
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-									/>
-								</svg>
-								Import
-							</Button>
-						</div>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+								/>
+							</svg>
+							Import
+						</Button>
 					</div>
 					<Button size="sm" onClick={startCreate} data-testid="create-preset-button">
 						<PlusIcon /> New
@@ -1486,6 +1514,180 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 		</div>
 	);
 
+	// Render the file import view
+	const renderFileImportView = () => (
+		<div class={cn("flex h-full flex-col")} data-testid="preset-import-view">
+			<div class={cn("mb-4 flex flex-col space-y-4")}>
+				<div class={cn("flex items-center justify-between")}>
+					<h2
+						class={cn(
+							"text-foreground text-[10px] font-black tracking-[0.2em] uppercase opacity-70"
+						)}
+					>
+						Import Presets
+					</h2>
+					<Button
+						variant="ghost"
+						size="xs"
+						onClick={() => setViewMode("list")}
+						data-testid="import-back-button"
+						aria-label="Back to preset list"
+					>
+						<svg
+							class={cn("size-3.5")}
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M10 19l-7-7m0 0l7-7m-7 7h18"
+							/>
+						</svg>
+						<span>Back</span>
+					</Button>
+				</div>
+
+				{/* Import options */}
+				<div class={cn("border-border/50 bg-muted/30 flex flex-col gap-4 rounded-xl border p-4")}>
+					{/* From File */}
+					<div class={cn("flex flex-col gap-2")}>
+						<h3 class={cn("text-foreground text-[11px] font-bold tracking-wide uppercase")}>
+							From JSON File
+						</h3>
+						<p class={cn("text-muted-foreground text-[10px]")}>
+							Import presets from a JSON file exported from this extension or manually created.
+						</p>
+						<div class={cn("relative")}>
+							<input
+								type="file"
+								id="import-file-input"
+								accept=".json"
+								onChange={handleImport}
+								class={cn("hidden")}
+								data-testid="import-file-input"
+							/>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() =>
+									(document.querySelector("#import-file-input") as HTMLInputElement)?.click()
+								}
+								data-testid="import-file-button"
+								class="w-full"
+							>
+								<svg
+									class={cn("size-3.5 opacity-70")}
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+									/>
+								</svg>
+								Choose JSON File
+							</Button>
+						</div>
+					</div>
+
+					<Separator class={cn("opacity-50")} />
+
+					{/* From Repository */}
+					<div class={cn("flex flex-col gap-2")}>
+						<h3 class={cn("text-foreground text-[11px] font-bold tracking-wide uppercase")}>
+							From Repository
+						</h3>
+						<p class={cn("text-muted-foreground text-[10px]")}>
+							Import presets from GitHub repositories or direct URLs configured in Settings.
+						</p>
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={startRepositoryImport}
+							data-testid="import-from-repo-button"
+							class="w-full"
+						>
+							<svg
+								class={cn("size-3.5 opacity-70")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+								/>
+							</svg>
+							Browse Repositories
+						</Button>
+					</div>
+
+					<Separator class={cn("opacity-50")} />
+
+					{/* From Share URL */}
+					<div class={cn("flex flex-col gap-2")}>
+						<h3 class={cn("text-foreground text-[11px] font-bold tracking-wide uppercase")}>
+							From Share URL
+						</h3>
+						<p class={cn("text-muted-foreground text-[10px]")}>
+							Paste a share URL to import presets shared by others.
+						</p>
+						<div class={cn("flex gap-2")}>
+							<Input
+								type="text"
+								value={shareUrlInput()}
+								onInput={(e) => setShareUrlInput(e.currentTarget.value)}
+								placeholder="Paste share URL here..."
+								class={cn("h-8 flex-1 text-[11px]")}
+								containerClass={cn("flex-1")}
+								data-testid="import-share-url-input"
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										handleLoadShareUrl();
+									}
+								}}
+							/>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={handleLoadShareUrl}
+								disabled={!shareUrlInput().trim()}
+								data-testid="import-share-url-button"
+							>
+								<svg
+									class={cn("size-3.5 opacity-70")}
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+									/>
+								</svg>
+								Load
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+
 	// Render the share import modal/view
 	const renderShareImportView = () => (
 		<div
@@ -1680,7 +1882,14 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 			<Show when={viewMode() === "list"}>{renderListView()}</Show>
 			<Show when={viewMode() === "create" || viewMode() === "edit"}>{renderFormView()}</Show>
 			<Show when={viewMode() === "export"}>{renderExportView()}</Show>
+			<Show when={viewMode() === "file-import"}>{renderFileImportView()}</Show>
 			<Show when={viewMode() === "share-import"}>{renderShareImportView()}</Show>
+			<Show when={viewMode() === "repository-import"}>
+				<RepositoryImportView
+					onCancel={handleRepositoryImportCancel}
+					onImport={handleRepositoryImportConfirm}
+				/>
+			</Show>
 		</div>
 	);
 };

@@ -215,7 +215,10 @@ test.describe("Preset Management E2E Tests", () => {
 		// Actually, let's test the UI interaction for Import.
 		// We can't easily 'click' a hidden file input, but we can set files.
 
-		const importInput = popupPage.locator('[data-testid="import-presets-input"]');
+		// Go to import view first
+		await popupPage.locator('[data-testid="import-presets-button"]').click();
+
+		const importInput = popupPage.locator('[data-testid="import-file-input"]');
 
 		// Create a temporary file
 		const path = "/tmp/test-presets.json";
@@ -226,6 +229,12 @@ test.describe("Preset Management E2E Tests", () => {
 
 		// Handle the alert if it appears
 		popupPage.once("dialog", (alert) => alert.accept());
+
+		// Wait for the alert and give time for import to complete
+		await popupPage.waitForTimeout(1000);
+
+		// Go back to list view to verify the import
+		await popupPage.locator('[data-testid="import-back-button"]').click();
 
 		// Verify imported
 		await expect(
