@@ -325,7 +325,10 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(popupPage.locator("text=1 selected")).toBeVisible();
 	});
 
-	test("should select all presets using Select All button in export view", async () => {
+	test("should select all presets using Select All button in export view (small screen)", async () => {
+		// Set small viewport
+		await popupPage.setViewportSize({ width: 320, height: 600 });
+
 		// Create presets
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 1");
@@ -338,8 +341,31 @@ test.describe("Preset Management E2E Tests", () => {
 		// Enter export view
 		await popupPage.locator('[data-testid="export-presets-button"]').click();
 
-		// Click Select All
-		await popupPage.locator('[data-testid="export-select-all-button"]').click();
+		// Click Select All (small screen variant)
+		await popupPage.locator('[data-testid="export-select-all-button-sm"]').click();
+
+		// Selection count should show count of all presets
+		await expect(popupPage.locator("text=2 selected")).toBeVisible();
+	});
+
+	test("should select all presets using Select All button in export view (large screen)", async () => {
+		// Set large viewport
+		await popupPage.setViewportSize({ width: 800, height: 600 });
+
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("All 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
+
+		// Click Select All (large screen variant)
+		await popupPage.locator('[data-testid="export-select-all-button-lg"]').click();
 
 		// Selection count should show count of all presets
 		await expect(popupPage.locator("text=2 selected")).toBeVisible();
@@ -366,7 +392,10 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(checkedBoxes).toHaveCount(0);
 	});
 
-	test("should deselect all presets using Deselect All button", async () => {
+	test("should deselect all presets using Deselect All button (small screen)", async () => {
+		// Set small viewport
+		await popupPage.setViewportSize({ width: 320, height: 600 });
+
 		// Create presets
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Deselect Test 1");
@@ -379,12 +408,12 @@ test.describe("Preset Management E2E Tests", () => {
 		// Enter export view
 		await popupPage.locator('[data-testid="export-presets-button"]').click();
 
-		// Select all first
-		await popupPage.locator('[data-testid="export-select-all-button"]').click();
+		// Select all first (small screen variant)
+		await popupPage.locator('[data-testid="export-select-all-button-sm"]').click();
 		await expect(popupPage.locator("text=2 selected")).toBeVisible();
 
-		// Click Deselect All
-		await popupPage.locator('[data-testid="export-deselect-all-button"]').click();
+		// Click Deselect All (small screen variant)
+		await popupPage.locator('[data-testid="export-deselect-all-button-sm"]').click();
 
 		// Should show total count (nothing selected)
 		await expect(popupPage.locator("text=2 total")).toBeVisible();
@@ -394,7 +423,41 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(checkedBoxes).toHaveCount(0);
 	});
 
-	test("should disable export buttons when nothing is selected", async () => {
+	test("should deselect all presets using Deselect All button (large screen)", async () => {
+		// Set large viewport
+		await popupPage.setViewportSize({ width: 800, height: 600 });
+
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Deselect Test 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Deselect Test 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
+
+		// Select all first (large screen variant)
+		await popupPage.locator('[data-testid="export-select-all-button-lg"]').click();
+		await expect(popupPage.locator("text=2 selected")).toBeVisible();
+
+		// Click Deselect All (large screen variant)
+		await popupPage.locator('[data-testid="export-deselect-all-button-lg"]').click();
+
+		// Should show total count (nothing selected)
+		await expect(popupPage.locator("text=2 total")).toBeVisible();
+
+		// No checkboxes should be checked
+		const checkedBoxes = popupPage.locator('[data-testid="export-preset-checkbox"] svg');
+		await expect(checkedBoxes).toHaveCount(0);
+	});
+
+	test("should disable export buttons when nothing is selected (small screen)", async () => {
+		// Set small viewport
+		await popupPage.setViewportSize({ width: 320, height: 600 });
+
 		// Create presets
 		await popupPage.locator('[data-testid="create-preset-button"]').click();
 		await popupPage.locator('[data-testid="preset-name-input"]').fill("Disable Test 1");
@@ -418,8 +481,43 @@ test.describe("Preset Management E2E Tests", () => {
 		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeEnabled();
 		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeEnabled();
 
-		// Deselect all
-		await popupPage.locator('[data-testid="export-deselect-all-button"]').click();
+		// Deselect all (small screen variant)
+		await popupPage.locator('[data-testid="export-deselect-all-button-sm"]').click();
+
+		// Buttons should be disabled again
+		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeDisabled();
+		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeDisabled();
+	});
+
+	test("should disable export buttons when nothing is selected (large screen)", async () => {
+		// Set large viewport
+		await popupPage.setViewportSize({ width: 800, height: 600 });
+
+		// Create presets
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Disable Test 1");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		await popupPage.locator('[data-testid="create-preset-button"]').click();
+		await popupPage.locator('[data-testid="preset-name-input"]').fill("Disable Test 2");
+		await popupPage.locator('[data-testid="save-preset-button"]').click();
+
+		// Enter export view
+		await popupPage.locator('[data-testid="export-presets-button"]').click();
+
+		// Both buttons should be disabled initially (nothing selected)
+		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeDisabled();
+		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeDisabled();
+
+		// Select a preset
+		await popupPage.locator('[data-testid="export-preset-item"]').first().click();
+
+		// Buttons should now be enabled
+		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeEnabled();
+		await expect(popupPage.locator('[data-testid="export-url-button"]')).toBeEnabled();
+
+		// Deselect all (large screen variant)
+		await popupPage.locator('[data-testid="export-deselect-all-button-lg"]').click();
 
 		// Buttons should be disabled again
 		await expect(popupPage.locator('[data-testid="export-download-button"]')).toBeDisabled();

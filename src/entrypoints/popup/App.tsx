@@ -3,8 +3,7 @@ import { Show, createSignal, onMount } from "solid-js";
 
 import { browser } from "wxt/browser";
 
-import { PresetManager } from "@/components/PresetManager";
-import { PresetToggleList } from "@/components/PresetToggleList";
+import { PresetManager, PresetToggleList } from "@/components/presets";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
 import { Button } from "@/components/ui/Button";

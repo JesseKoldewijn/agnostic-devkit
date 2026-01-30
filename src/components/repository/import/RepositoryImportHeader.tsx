@@ -5,7 +5,7 @@ import type { Component } from "solid-js";
 
 import { cn } from "@/utils/cn";
 
-import { Button } from "../ui/Button";
+import { Button } from "../../ui/Button";
 
 interface RepositoryImportHeaderProps {
 	onCancel: () => void;

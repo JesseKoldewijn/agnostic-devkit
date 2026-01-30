@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
-import type { PresetWithMeta, SourceWithProvider } from "@/components/repository-import/types";
+import type { PresetWithMeta, SourceWithProvider } from "@/components/repository/import/types";
 import type { Preset } from "@/logic/parameters";
 import type { FetchResult, RepositorySource } from "@/logic/repository/types";
 import { PRESET_SCHEMA_DESCRIPTION, PRESET_SCHEMA_EXAMPLE } from "@/logic/repository/types";
