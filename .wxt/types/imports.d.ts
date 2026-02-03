@@ -9,6 +9,8 @@ declare global {
   const InvalidMatchPattern: typeof import('wxt/utils/match-patterns').InvalidMatchPattern
   const Match: typeof import('solid-js').Match
   const MatchPattern: typeof import('wxt/utils/match-patterns').MatchPattern
+  const MyComponent: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect').MyComponent
+  const MyComponentUI: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect').MyComponentUI
   const Portal: typeof import('solid-js/web').Portal
   const PresetCoder: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/presetCoder').PresetCoder
   const Show: typeof import('solid-js').Show
@@ -21,6 +23,8 @@ declare global {
   const browser: typeof import('wxt/browser').browser
   const children: typeof import('solid-js').children
   const cn: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/cn').cn
+  const connect: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect').connect
+  const connectWithProps: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect').connectWithProps
   const createContext: typeof import('solid-js').createContext
   const createDeferred: typeof import('solid-js').createDeferred
   const createEffect: typeof import('solid-js').createEffect
@@ -29,6 +33,7 @@ declare global {
   const createIsolatedElement: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/dom').createIsolatedElement
   const createMemo: typeof import('solid-js').createMemo
   const createMutable: typeof import('solid-js/store').createMutable
+  const createMyComponentLogic: typeof import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect').createMyComponentLogic
   const createRenderEffect: typeof import('solid-js').createRenderEffect
   const createResource: typeof import('solid-js').createResource
   const createRoot: typeof import('solid-js').createRoot
@@ -110,6 +115,9 @@ declare global {
   // @ts-ignore
   export type { ScriptPublicPath, InjectScriptOptions } from 'wxt/utils/inject-script'
   import('wxt/utils/inject-script')
+  // @ts-ignore
+  export type { ConnectOptions, MyComponentLogic, ErrorFallbackProps } from '/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect'
+  import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/connect')
   // @ts-ignore
   export type { DisplayMode } from '/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/displayMode'
   import('/home/jesse/wsl-projects/personal/typescript/agnostic-devkit/src/utils/displayMode')

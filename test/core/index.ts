@@ -24,3 +24,13 @@ export {
 	uniqueId,
 	waitFor,
 } from "./helpers/testUtils";
+
+// Render utilities for component testing
+export {
+	checkA11y,
+	render,
+	renderComponent,
+	renderComponentWithA11y,
+	renderWithA11y,
+} from "./helpers/renderUtils";
+export type { RenderResult } from "./helpers/renderUtils";
