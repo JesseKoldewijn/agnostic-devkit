@@ -29,6 +29,8 @@ import type { ViewMode } from "../manager/types";
 // Types
 // ============================================================================
 
+export type ToastType = "success" | "error" | "warning" | "info";
+
 export interface PresetManagerProps {
 	class?: string;
 	onClose?: () => void;
@@ -54,6 +56,12 @@ export interface PresetManagerLogic {
 	shareImportData: Accessor<DecompressResult | null>;
 	shareImportError: Accessor<string | null>;
 	shareImportExpandedId: Accessor<string | null>;
+
+	// Toast state
+	toastMessage: Accessor<string>;
+	toastType: Accessor<ToastType>;
+	toastVisible: Accessor<boolean>;
+	onDismissToast: () => void;
 
 	// Form state
 	parameterIds: Accessor<string[]>;
@@ -164,6 +172,24 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 	const [shareImportData, setShareImportData] = createSignal<DecompressResult | null>(null);
 	const [shareImportError, setShareImportError] = createSignal<string | null>(null);
 	const [shareImportExpandedId, setShareImportExpandedId] = createSignal<string | null>(null);
+
+	// Toast state
+	const [toastMessage, setToastMessage] = createSignal("");
+	const [toastType, setToastType] = createSignal<"success" | "error" | "warning" | "info">("info");
+	const [toastVisible, setToastVisible] = createSignal(false);
+
+	const showToast = (
+		message: string,
+		type: "success" | "error" | "warning" | "info" = "info"
+	): void => {
+		setToastMessage(message);
+		setToastType(type);
+		setToastVisible(true);
+	};
+
+	const dismissToast = (): void => {
+		setToastVisible(false);
+	};
 
 	// Form state
 	const [parameterIds, setParameterIds] = createSignal<string[]>([]);
@@ -357,7 +383,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 		const name = (formData.get("preset-name") as string)?.trim();
 
 		if (!name) {
-			alert("Please enter a preset name");
+			showToast("Please enter a preset name", "warning");
 			return;
 		}
 
@@ -401,7 +427,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			await loadPresets();
 		} catch (error) {
 			console.error("[PresetManager] Failed to save preset:", error);
-			alert("Failed to save preset. Please try again.");
+			showToast("Failed to save preset. Please try again.", "error");
 		} finally {
 			setSaving(false);
 		}
@@ -418,7 +444,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			await loadPresets();
 		} catch (error) {
 			console.error("[PresetManager] Failed to delete preset:", error);
-			alert("Failed to delete preset. Please try again.");
+			showToast("Failed to delete preset. Please try again.", "error");
 		}
 	};
 
@@ -428,7 +454,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			await loadPresets();
 		} catch (error) {
 			console.error("[PresetManager] Failed to duplicate preset:", error);
-			alert("Failed to duplicate preset. Please try again.");
+			showToast("Failed to duplicate preset. Please try again.", "error");
 		}
 	};
 
@@ -475,7 +501,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			handleCancelExport();
 		} catch (error) {
 			console.error("[PresetManager] Failed to export presets:", error);
-			alert("Failed to export presets.");
+			showToast("Failed to export presets.", "error");
 		}
 	};
 
@@ -491,7 +517,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			}
 
 			if (presetsToShare.length === 0) {
-				alert("No presets to share.");
+				showToast("No presets to share.", "warning");
 				return;
 			}
 
@@ -502,7 +528,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			setTimeout(() => setCopySuccess(false), 2000);
 		} catch (error) {
 			console.error("[PresetManager] Failed to copy share URL:", error);
-			alert("Failed to copy share URL.");
+			showToast("Failed to copy share URL.", "error");
 		}
 	};
 
@@ -514,7 +540,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			downloadJson(json, `preset-${safeName}-${date}.json`);
 		} catch (error) {
 			console.error("[PresetManager] Failed to export preset:", error);
-			alert("Failed to export preset.");
+			showToast("Failed to export preset.", "error");
 		}
 	};
 
@@ -533,14 +559,17 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 				const json = event.target?.result as string;
 				const { imported, errors } = await importPresets(json);
 				if (errors.length > 0) {
-					alert(`Imported ${imported} presets with some errors: ${errors.join(", ")}`);
+					showToast(
+						`Imported ${imported} presets with some errors: ${errors.join(", ")}`,
+						"warning"
+					);
 				} else {
-					alert(`Successfully imported ${imported} presets!`);
+					showToast(`Successfully imported ${imported} presets!`, "success");
 				}
 				await loadPresets();
 			} catch (error) {
 				console.error("[PresetManager] Failed to import presets:", error);
-				alert("Failed to import presets. Invalid file format.");
+				showToast("Failed to import presets. Invalid file format.", "error");
 			} finally {
 				input.value = "";
 			}
@@ -644,6 +673,12 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 		shareImportData,
 		shareImportError,
 		shareImportExpandedId,
+
+		// Toast state
+		toastMessage,
+		toastType,
+		toastVisible,
+		onDismissToast: dismissToast,
 
 		// Form state
 		parameterIds,

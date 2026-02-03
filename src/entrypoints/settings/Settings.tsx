@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
+import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/Separator";
 import { Switch } from "@/components/ui/Switch";
@@ -386,203 +387,165 @@ export const Settings: Component = () => {
 			</div>
 
 			{/* Share Import Modal */}
-			<Show when={shareImportData() || shareImportError()}>
-				<div
-					class={cn(
-						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-					)}
-					data-testid="share-import-modal"
+			<Modal
+				open={!!(shareImportData() || shareImportError())}
+				onClose={handleShareImportCancel}
+				title="Import Shared Presets"
+				class={cn("flex size-full max-h-[400px] flex-col")}
+				data-testid="share-import-modal"
+			>
+				<Show
+					when={!shareImportError()}
+					fallback={
+						<div
+							class={cn(
+								"border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-4 text-[13px]"
+							)}
+							data-testid="share-import-error"
+						>
+							{shareImportError()}
+						</div>
+					}
 				>
-					<Card class={cn("m-4 flex size-full max-h-[400px] max-w-md flex-col")}>
-						<div class={cn("flex h-full flex-col gap-4 overflow-hidden p-6")}>
-							{/* Header */}
-							<div class={cn("flex items-center justify-between")}>
-								<h2
-									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
-								>
-									Import Shared Presets
-								</h2>
-								<Button
-									variant="ghost"
-									size="xs"
-									onClick={handleShareImportCancel}
-									aria-label="Close"
-								>
-									<svg
-										class={cn("size-5")}
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M6 18L18 6M6 6l12 12"
-										/>
-									</svg>
-								</Button>
-							</div>
+					{/* Content */}
+					<div class={cn("flex-1 space-y-4")}>
+						<p class={cn("text-muted-foreground text-[13px]")}>
+							<span class={cn("text-foreground font-bold")} data-testid="share-import-count">
+								{shareImportData()?.count}
+							</span>{" "}
+							preset{shareImportData()?.isMultiplePresets ? "s" : ""} to import:
+						</p>
 
-							<Show
-								when={!shareImportError()}
-								fallback={
-									<div
+						<div
+							class={cn(
+								"border-border/50 bg-muted/30 flex-1 space-y-2 overflow-y-auto rounded-xl border p-3"
+							)}
+						>
+							<For each={shareImportData()?.result ?? []}>
+								{(preset) => (
+									<Card
 										class={cn(
-											"border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-4 text-[13px]"
+											"border-border/60 hover:border-primary/30 p-3 shadow-sm transition-all"
 										)}
-										data-testid="share-import-error"
+										data-testid="share-import-preset-item"
 									>
-										{shareImportError()}
-									</div>
-								}
-							>
-								{/* Content */}
-								<div class={cn("flex-1 space-y-4")}>
-									<p class={cn("text-muted-foreground text-[13px]")}>
-										<span class={cn("text-foreground font-bold")} data-testid="share-import-count">
-											{shareImportData()?.count}
-										</span>{" "}
-										preset{shareImportData()?.isMultiplePresets ? "s" : ""} to import:
-									</p>
-
-									<div
-										class={cn(
-											"border-border/50 bg-muted/30 flex-1 space-y-2 overflow-y-auto rounded-xl border p-3"
-										)}
-									>
-										<For each={shareImportData()?.result ?? []}>
-											{(preset) => (
-												<Card
+										<button
+											type="button"
+											class={cn("group w-full text-left")}
+											onClick={() => toggleShareImportExpanded(preset.id)}
+											data-testid="share-import-preset-expand"
+										>
+											<div
+												class={cn(
+													"text-foreground group-hover:text-primary truncate text-[13px] font-black tracking-tight uppercase transition-colors"
+												)}
+											>
+												{preset.name}
+											</div>
+											<Show when={preset.description}>
+												<div
 													class={cn(
-														"border-border/60 hover:border-primary/30 p-3 shadow-sm transition-all"
+														"text-muted-foreground mt-1 truncate text-[10px] leading-tight font-bold"
 													)}
-													data-testid="share-import-preset-item"
 												>
-													<button
-														type="button"
-														class={cn("group w-full text-left")}
-														onClick={() => toggleShareImportExpanded(preset.id)}
-														data-testid="share-import-preset-expand"
-													>
-														<div
-															class={cn(
-																"text-foreground group-hover:text-primary truncate text-[13px] font-black tracking-tight uppercase transition-colors"
-															)}
-														>
-															{preset.name}
-														</div>
-														<Show when={preset.description}>
+													{preset.description}
+												</div>
+											</Show>
+											<div class={cn("mt-2 flex items-center gap-2")}>
+												<Badge variant="secondary" class={cn("h-4 px-2 text-[8px]! font-black")}>
+													{preset.parameters.length} VARS
+												</Badge>
+												<span
+													class={cn(
+														"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
+													)}
+												>
+													{shareImportExpandedId() === preset.id ? "Hide" : "View"}
+												</span>
+											</div>
+										</button>
+
+										{/* Expanded parameter list */}
+										<Show when={shareImportExpandedId() === preset.id}>
+											<div class={cn("mt-3")} data-testid="share-import-preset-params">
+												<Separator class={cn("mb-3 opacity-50")} />
+												<div class={cn("space-y-1.5")}>
+													<For each={preset.parameters}>
+														{(param) => (
 															<div
 																class={cn(
-																	"text-muted-foreground mt-1 truncate text-[10px] leading-tight font-bold"
+																	"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-[10px] shadow-sm"
 																)}
+																data-testid="share-import-preset-param"
 															>
-																{preset.description}
-															</div>
-														</Show>
-														<div class={cn("mt-2 flex items-center gap-2")}>
-															<Badge
-																variant="secondary"
-																class={cn("h-4 px-2 text-[8px]! font-black")}
-															>
-																{preset.parameters.length} VARS
-															</Badge>
-															<span
-																class={cn(
-																	"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
-																)}
-															>
-																{shareImportExpandedId() === preset.id ? "Hide" : "View"}
-															</span>
-														</div>
-													</button>
-
-													{/* Expanded parameter list */}
-													<Show when={shareImportExpandedId() === preset.id}>
-														<div class={cn("mt-3")} data-testid="share-import-preset-params">
-															<Separator class={cn("mb-3 opacity-50")} />
-															<div class={cn("space-y-1.5")}>
-																<For each={preset.parameters}>
-																	{(param) => (
-																		<div
-																			class={cn(
-																				"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-[10px] shadow-sm"
-																			)}
-																			data-testid="share-import-preset-param"
-																		>
-																			<div class={cn("flex min-w-0 flex-1 items-center")}>
-																				<span class={cn("mr-1.5 scale-90 opacity-60")}>
-																					{getParameterTypeIcon(param.type)}
-																				</span>
-																				<span
-																					class={cn(
-																						"text-foreground truncate font-black tracking-tighter uppercase"
-																					)}
-																				>
-																					{param.key}
-																				</span>
-																			</div>
-																			<span
-																				class={cn(
-																					"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-1.5 py-0.5 font-mono"
-																				)}
-																			>
-																				{param.value}
-																			</span>
-																		</div>
+																<div class={cn("flex min-w-0 flex-1 items-center")}>
+																	<span class={cn("mr-1.5 scale-90 opacity-60")}>
+																		{getParameterTypeIcon(param.type)}
+																	</span>
+																	<span
+																		class={cn(
+																			"text-foreground truncate font-black tracking-tighter uppercase"
+																		)}
+																	>
+																		{param.key}
+																	</span>
+																</div>
+																<span
+																	class={cn(
+																		"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-1.5 py-0.5 font-mono"
 																	)}
-																</For>
+																>
+																	{param.value}
+																</span>
 															</div>
-														</div>
-													</Show>
-												</Card>
-											)}
-										</For>
-									</div>
-								</div>
-							</Show>
-
-							{/* Actions */}
-							<div class={cn("flex justify-end gap-3 pt-2")}>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={handleShareImportCancel}
-									data-testid="share-import-cancel"
-								>
-									Cancel
-								</Button>
-								<Show when={!shareImportError()}>
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={handleShareImportConfirm}
-										data-testid="share-import-confirm"
-									>
-										<svg
-											class={cn("size-4 opacity-70")}
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											aria-hidden="true"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-											/>
-										</svg>
-										Import
-									</Button>
-								</Show>
-							</div>
+														)}
+													</For>
+												</div>
+											</div>
+										</Show>
+									</Card>
+								)}
+							</For>
 						</div>
-					</Card>
+					</div>
+				</Show>
+
+				{/* Actions */}
+				<div class={cn("flex justify-end gap-3 pt-2")}>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={handleShareImportCancel}
+						data-testid="share-import-cancel"
+					>
+						Cancel
+					</Button>
+					<Show when={!shareImportError()}>
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={handleShareImportConfirm}
+							data-testid="share-import-confirm"
+						>
+							<svg
+								class={cn("size-4 opacity-70")}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+								/>
+							</svg>
+							Import
+						</Button>
+					</Show>
 				</div>
-			</Show>
+			</Modal>
 
 			{/* Import Success Indicator */}
 			<Show when={importSuccess()}>

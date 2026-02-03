@@ -39,7 +39,7 @@ export interface ShareImportLogic {
 	// Callbacks
 	onToggleSelection: (presetId: string) => void;
 	onSelectAll: () => void;
-	onDeselectAll: () => void;
+	onClearSelection: () => void;
 	onConfirm: () => void;
 }
 
@@ -86,8 +86,8 @@ export function createShareImportLogic(props: ShareImportProps): ShareImportLogi
 		setImportSelections(new Set(allPresets.map((p) => p.id)));
 	};
 
-	// Deselect all presets
-	const onDeselectAll = (): void => {
+	// Deselect all presets (clear selection)
+	const onClearSelection = (): void => {
 		setImportSelections(new Set<string>());
 	};
 
@@ -111,7 +111,7 @@ export function createShareImportLogic(props: ShareImportProps): ShareImportLogi
 		// Callbacks
 		onToggleSelection,
 		onSelectAll,
-		onDeselectAll,
+		onClearSelection,
 		onConfirm,
 	};
 }
