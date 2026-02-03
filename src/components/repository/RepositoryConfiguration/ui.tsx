@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/Separator";
 import { PRESET_SCHEMA_DESCRIPTION, PRESET_SCHEMA_EXAMPLE } from "@/logic/repository";
@@ -80,17 +81,6 @@ const EyeOffIcon = () => (
 			stroke-linejoin="round"
 			stroke-width="2"
 			d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-		/>
-	</svg>
-);
-
-const CloseIcon = () => (
-	<svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-		<path
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			stroke-width="2"
-			d="M6 18L18 6M6 6l12 12"
 		/>
 	</svg>
 );
@@ -293,269 +283,197 @@ export const RepositoryConfigurationUI: Component<RepositoryConfigurationLogic> 
 			</Card>
 
 			{/* Provider Modal */}
-			<Show when={props.showProviderModal()}>
-				<div
-					class={cn(
-						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-					)}
-					data-testid="provider-modal"
-				>
-					<Card class={cn("m-4 w-full max-w-md")}>
-						<div class={cn("flex flex-col gap-4 p-6")}>
-							<div class={cn("flex items-center justify-between")}>
-								<h2
-									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
-								>
-									{props.editingProvider() ? "Edit" : "Add"} GitHub Instance
-								</h2>
-								<Button
-									variant="ghost"
-									size="xs"
-									onClick={props.onCloseProviderModal}
-									aria-label="Close"
-								>
-									<CloseIcon />
-								</Button>
-							</div>
+			<Modal
+				open={props.showProviderModal()}
+				onClose={props.onCloseProviderModal}
+				title={`${props.editingProvider() ? "Edit" : "Add"} GitHub Instance`}
+				data-testid="provider-modal"
+			>
+				<div class={cn("space-y-4")}>
+					<Input
+						label="Display Name"
+						placeholder="e.g., Company GitHub"
+						value={props.providerName()}
+						onInput={(e) => props.onProviderNameChange(e.currentTarget.value)}
+						data-testid="provider-name-input"
+					/>
 
-							<div class={cn("space-y-4")}>
-								<Input
-									label="Display Name"
-									placeholder="e.g., Company GitHub"
-									value={props.providerName()}
-									onInput={(e) => props.onProviderNameChange(e.currentTarget.value)}
-									data-testid="provider-name-input"
-								/>
+					<Input
+						label="Domain"
+						placeholder="e.g., github.com or git.company.com"
+						value={props.providerBaseUrl()}
+						onInput={(e) => props.onProviderBaseUrlChange(e.currentTarget.value)}
+						data-testid="provider-baseurl-input"
+					/>
 
-								<Input
-									label="Domain"
-									placeholder="e.g., github.com or git.company.com"
-									value={props.providerBaseUrl()}
-									onInput={(e) => props.onProviderBaseUrlChange(e.currentTarget.value)}
-									data-testid="provider-baseurl-input"
-								/>
-
-								<div class={cn("space-y-2")}>
-									<Label>Personal Access Token (optional)</Label>
-									<div class={cn("flex gap-2")}>
-										<Input
-											type={props.showToken() ? "text" : "password"}
-											placeholder="github_pat_xxxxxxxxxxxx"
-											value={props.providerToken()}
-											onInput={(e) => props.onProviderTokenChange(e.currentTarget.value)}
-											containerClass={cn("flex-1")}
-											data-testid="provider-token-input"
-										/>
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={props.onToggleShowToken}
-											title={props.showToken() ? "Hide token" : "Show token"}
-										>
-											<Show when={props.showToken()} fallback={<EyeIcon />}>
-												<EyeOffIcon />
-											</Show>
-										</Button>
-									</div>
-									<Show
-										when={props.providerTokenError()}
-										fallback={
-											<p class={cn("text-muted-foreground/70 text-[10px]")}>
-												Required for private repositories. Use a fine-grained PAT from GitHub →
-												Settings → Developer settings → Personal access tokens → Fine-grained tokens
-											</p>
-										}
-									>
-										<p class={cn("text-destructive text-[10px] font-medium")}>
-											{props.providerTokenError()}
-										</p>
-									</Show>
-								</div>
-							</div>
-
-							<div class={cn("flex justify-end gap-3 pt-2")}>
-								<Button variant="ghost" size="sm" onClick={props.onCloseProviderModal}>
-									Cancel
-								</Button>
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={props.onSaveProvider}
-									disabled={!props.providerName().trim() || !props.providerBaseUrl().trim()}
-									data-testid="save-provider-button"
-								>
-									{props.editingProvider() ? "Save" : "Add"}
-								</Button>
-							</div>
+					<div class={cn("space-y-2")}>
+						<Label>Personal Access Token (optional)</Label>
+						<div class={cn("flex gap-2")}>
+							<Input
+								type={props.showToken() ? "text" : "password"}
+								placeholder="github_pat_xxxxxxxxxxxx"
+								value={props.providerToken()}
+								onInput={(e) => props.onProviderTokenChange(e.currentTarget.value)}
+								containerClass={cn("flex-1")}
+								data-testid="provider-token-input"
+							/>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={props.onToggleShowToken}
+								title={props.showToken() ? "Hide token" : "Show token"}
+							>
+								<Show when={props.showToken()} fallback={<EyeIcon />}>
+									<EyeOffIcon />
+								</Show>
+							</Button>
 						</div>
-					</Card>
+						<Show
+							when={props.providerTokenError()}
+							fallback={
+								<p class={cn("text-muted-foreground/70 text-[10px]")}>
+									Required for private repositories. Use a fine-grained PAT from GitHub → Settings →
+									Developer settings → Personal access tokens → Fine-grained tokens
+								</p>
+							}
+						>
+							<p class={cn("text-destructive text-[10px] font-medium")}>
+								{props.providerTokenError()}
+							</p>
+						</Show>
+					</div>
 				</div>
-			</Show>
+
+				<div class={cn("flex justify-end gap-3 pt-2")}>
+					<Button variant="ghost" size="sm" onClick={props.onCloseProviderModal}>
+						Cancel
+					</Button>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={props.onSaveProvider}
+						disabled={!props.providerName().trim() || !props.providerBaseUrl().trim()}
+						data-testid="save-provider-button"
+					>
+						{props.editingProvider() ? "Save" : "Add"}
+					</Button>
+				</div>
+			</Modal>
 
 			{/* Source Modal */}
-			<Show when={props.showSourceModal()}>
-				<div
-					class={cn(
-						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-					)}
-					data-testid="source-modal"
-				>
-					<Card class={cn("m-4 w-full max-w-md")}>
-						<div class={cn("flex flex-col gap-4 p-6")}>
-							<div class={cn("flex items-center justify-between")}>
-								<h2
-									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
-								>
-									{props.editingSource() ? "Edit" : "Add"} Preset Source
-								</h2>
-								<Button
-									variant="ghost"
-									size="xs"
-									onClick={props.onCloseSourceModal}
-									aria-label="Close"
-								>
-									<CloseIcon />
-								</Button>
-							</div>
+			<Modal
+				open={props.showSourceModal()}
+				onClose={props.onCloseSourceModal}
+				title={`${props.editingSource() ? "Edit" : "Add"} Preset Source`}
+				data-testid="source-modal"
+			>
+				<div class={cn("space-y-4")}>
+					<Input
+						label="Display Name"
+						placeholder="e.g., My Development Presets"
+						value={props.sourceName()}
+						onInput={(e) => props.onSourceNameChange(e.currentTarget.value)}
+						data-testid="source-name-input"
+					/>
 
-							<div class={cn("space-y-4")}>
-								<Input
-									label="Display Name"
-									placeholder="e.g., My Development Presets"
-									value={props.sourceName()}
-									onInput={(e) => props.onSourceNameChange(e.currentTarget.value)}
-									data-testid="source-name-input"
-								/>
+					<Select
+						label="Source Type"
+						value={props.sourceType()}
+						onChange={(e) => props.onSourceTypeChange(e.currentTarget.value as "github" | "url")}
+						data-testid="source-type-select"
+					>
+						<option value="github">GitHub Repository / Gist</option>
+						<option value="url">Direct JSON URL</option>
+					</Select>
 
-								<Select
-									label="Source Type"
-									value={props.sourceType()}
-									onChange={(e) =>
-										props.onSourceTypeChange(e.currentTarget.value as "github" | "url")
-									}
-									data-testid="source-type-select"
-								>
-									<option value="github">GitHub Repository / Gist</option>
-									<option value="url">Direct JSON URL</option>
-								</Select>
+					<Input
+						label="URL"
+						placeholder={
+							props.sourceType() === "github"
+								? "e.g., https://github.com/user/repo or gist URL"
+								: "e.g., https://example.com/presets.json"
+						}
+						value={props.sourceUrl()}
+						onInput={(e) => props.onSourceUrlChange(e.currentTarget.value)}
+						data-testid="source-url-input"
+					/>
 
-								<Input
-									label="URL"
-									placeholder={
-										props.sourceType() === "github"
-											? "e.g., https://github.com/user/repo or gist URL"
-											: "e.g., https://example.com/presets.json"
-									}
-									value={props.sourceUrl()}
-									onInput={(e) => props.onSourceUrlChange(e.currentTarget.value)}
-									data-testid="source-url-input"
-								/>
-
-								<Show when={props.sourceType() === "github"}>
-									<Select
-										label="GitHub Instance (optional)"
-										value={props.sourceProviderId()}
-										onChange={(e) => props.onSourceProviderChange(e.currentTarget.value)}
-										data-testid="source-provider-select"
-									>
-										<option value="">Public (no authentication)</option>
-										<For each={props.providerInstances()}>
-											{(instance) => (
-												<option value={instance.id}>
-													{instance.name} ({instance.baseUrl})
-												</option>
-											)}
-										</For>
-									</Select>
-									<Show when={props.providerInstances().length === 0}>
-										<p class={cn("text-muted-foreground/70 -mt-2 text-[10px]")}>
-											Add a GitHub instance above to access private repositories.
-										</p>
-									</Show>
-								</Show>
-							</div>
-
-							<div class={cn("flex justify-end gap-3 pt-2")}>
-								<Button variant="ghost" size="sm" onClick={props.onCloseSourceModal}>
-									Cancel
-								</Button>
-								<Button
-									variant="secondary"
-									size="sm"
-									onClick={props.onSaveSource}
-									disabled={!props.sourceName().trim() || !props.sourceUrl().trim()}
-									data-testid="save-source-button"
-								>
-									{props.editingSource() ? "Save" : "Add"}
-								</Button>
-							</div>
-						</div>
-					</Card>
+					<Show when={props.sourceType() === "github"}>
+						<Select
+							label="GitHub Instance (optional)"
+							value={props.sourceProviderId()}
+							onChange={(e) => props.onSourceProviderChange(e.currentTarget.value)}
+							data-testid="source-provider-select"
+						>
+							<option value="">Public (no authentication)</option>
+							<For each={props.providerInstances()}>
+								{(instance) => (
+									<option value={instance.id}>
+										{instance.name} ({instance.baseUrl})
+									</option>
+								)}
+							</For>
+						</Select>
+						<Show when={props.providerInstances().length === 0}>
+							<p class={cn("text-muted-foreground/70 -mt-2 text-[10px]")}>
+								Add a GitHub instance above to access private repositories.
+							</p>
+						</Show>
+					</Show>
 				</div>
-			</Show>
+
+				<div class={cn("flex justify-end gap-3 pt-2")}>
+					<Button variant="ghost" size="sm" onClick={props.onCloseSourceModal}>
+						Cancel
+					</Button>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={props.onSaveSource}
+						disabled={!props.sourceName().trim() || !props.sourceUrl().trim()}
+						data-testid="save-source-button"
+					>
+						{props.editingSource() ? "Save" : "Add"}
+					</Button>
+				</div>
+			</Modal>
 
 			{/* Schema Info Modal */}
-			<Show when={props.showSchemaInfo()}>
-				<div
-					class={cn(
-						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-					)}
-					data-testid="schema-info-modal"
-				>
-					<Card class={cn("m-4 flex max-h-[80vh] w-full max-w-lg flex-col")}>
-						<div class={cn("flex flex-col gap-4 overflow-hidden p-6")}>
-							<div class={cn("flex items-center justify-between")}>
-								<h2
-									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
-								>
-									Preset File Format
-								</h2>
-								<Button
-									variant="ghost"
-									size="xs"
-									onClick={props.onCloseSchemaInfo}
-									aria-label="Close"
-								>
-									<CloseIcon />
-								</Button>
-							</div>
+			<Modal
+				open={props.showSchemaInfo()}
+				onClose={props.onCloseSchemaInfo}
+				title="Preset File Format"
+				size="lg"
+				class={cn("flex max-h-[80vh] flex-col")}
+				data-testid="schema-info-modal"
+			>
+				<div class={cn("flex-1 space-y-4 overflow-y-auto")}>
+					<div class={cn("text-foreground/80 text-[12px] leading-relaxed whitespace-pre-wrap")}>
+						{PRESET_SCHEMA_DESCRIPTION}
+					</div>
 
-							<div class={cn("flex-1 space-y-4 overflow-y-auto")}>
-								<div
-									class={cn("text-foreground/80 text-[12px] leading-relaxed whitespace-pre-wrap")}
-								>
-									{PRESET_SCHEMA_DESCRIPTION}
-								</div>
+					<Separator class={cn("opacity-50")} />
 
-								<Separator class={cn("opacity-50")} />
-
-								<div>
-									<p
-										class={cn(
-											"text-foreground mb-2 text-[11px] font-black tracking-widest uppercase"
-										)}
-									>
-										Example
-									</p>
-									<pre
-										class={cn(
-											"bg-muted/50 border-border/50 overflow-x-auto rounded-xl border p-4 text-[11px]"
-										)}
-									>
-										<code>{PRESET_SCHEMA_EXAMPLE}</code>
-									</pre>
-								</div>
-							</div>
-
-							<div class={cn("flex justify-end pt-2")}>
-								<Button variant="secondary" size="sm" onClick={props.onCloseSchemaInfo}>
-									Got it
-								</Button>
-							</div>
-						</div>
-					</Card>
+					<div>
+						<p class={cn("text-foreground mb-2 text-[11px] font-black tracking-widest uppercase")}>
+							Example
+						</p>
+						<pre
+							class={cn(
+								"bg-muted/50 border-border/50 overflow-x-auto rounded-xl border p-4 text-[11px]"
+							)}
+						>
+							<code>{PRESET_SCHEMA_EXAMPLE}</code>
+						</pre>
+					</div>
 				</div>
-			</Show>
+
+				<div class={cn("flex justify-end pt-2")}>
+					<Button variant="secondary" size="sm" onClick={props.onCloseSchemaInfo}>
+						Got it
+					</Button>
+				</div>
+			</Modal>
 		</>
 	);
 };

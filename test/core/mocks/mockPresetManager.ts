@@ -5,6 +5,7 @@ import type { Accessor } from "solid-js";
 
 import { vi } from "vitest";
 
+import type { ToastType } from "@/components/presets/PresetManager/logic";
 import type { ViewMode } from "@/components/presets/manager/types";
 import type { Parameter, Preset, PrimitiveType } from "@/logic/parameters";
 import type { DecompressResult } from "@/utils/presetCoder";
@@ -29,6 +30,12 @@ export interface PresetManagerLogic {
 	shareImportData: Accessor<DecompressResult | null>;
 	shareImportError: Accessor<string | null>;
 	shareImportExpandedId: Accessor<string | null>;
+
+	// Toast state
+	toastMessage: Accessor<string>;
+	toastType: Accessor<ToastType>;
+	toastVisible: Accessor<boolean>;
+	onDismissToast: () => void;
 
 	// Form state
 	parameterIds: Accessor<string[]>;
@@ -114,9 +121,15 @@ export function createMockPresetManagerLogic(
 		expandedPresetId: string | null;
 		selectedPresets: Set<string>;
 		copySuccess: boolean;
+		// Share import state
 		shareImportData: DecompressResult | null;
 		shareImportError: string | null;
 		shareImportExpandedId: string | null;
+		// Toast state
+		toastMessage: string;
+		toastType: ToastType;
+		toastVisible: boolean;
+		onDismissToast: () => void;
 		parameterIds: string[];
 		saving: boolean;
 		onClose: (() => void) | undefined;
@@ -144,6 +157,7 @@ export function createMockPresetManagerLogic(
 		onTogglePresetSelection: (id: string) => void;
 		onSelectAll: () => void;
 		onClearSelection: () => void;
+		// Export/Import callbacks
 		onExportDownload: () => Promise<void>;
 		onExportUrl: () => Promise<void>;
 		onExportSingle: (preset: Preset) => Promise<void>;
@@ -165,9 +179,15 @@ export function createMockPresetManagerLogic(
 		expandedPresetId = null,
 		selectedPresets = new Set<string>(),
 		copySuccess = false,
+		// Share import state
 		shareImportData = null,
 		shareImportError = null,
 		shareImportExpandedId = null,
+		// Toast state
+		toastMessage = "",
+		toastType = "info" as ToastType,
+		toastVisible = false,
+		onDismissToast = vi.fn(),
 		parameterIds = [],
 		saving = false,
 		onClose = undefined,
@@ -195,6 +215,7 @@ export function createMockPresetManagerLogic(
 		onTogglePresetSelection = vi.fn(),
 		onSelectAll = vi.fn(),
 		onClearSelection = vi.fn(),
+		// Export/Import callbacks
 		onExportDownload = vi.fn().mockResolvedValue(undefined),
 		onExportUrl = vi.fn().mockResolvedValue(undefined),
 		onExportSingle = vi.fn().mockResolvedValue(undefined),
@@ -216,9 +237,15 @@ export function createMockPresetManagerLogic(
 		expandedPresetId: () => expandedPresetId,
 		selectedPresets: () => selectedPresets,
 		copySuccess: () => copySuccess,
+		// Share import state
 		shareImportData: () => shareImportData,
 		shareImportError: () => shareImportError,
 		shareImportExpandedId: () => shareImportExpandedId,
+		// Toast state
+		toastMessage: () => toastMessage,
+		toastType: () => toastType,
+		toastVisible: () => toastVisible,
+		onDismissToast,
 		parameterIds: () => parameterIds,
 		saving: () => saving,
 		onClose,
@@ -246,6 +273,7 @@ export function createMockPresetManagerLogic(
 		onTogglePresetSelection,
 		onSelectAll,
 		onClearSelection,
+		// Export/Import callbacks
 		onExportDownload,
 		onExportUrl,
 		onExportSingle,

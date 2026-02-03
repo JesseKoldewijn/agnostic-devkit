@@ -78,6 +78,8 @@ export const List: Component<ListProps> = (props) => {
 									</div>
 								</button>
 							</div>
+
+							{/* Action buttons */}
 							<div class={cn("flex items-center space-x-1")}>
 								{/* Export single preset */}
 								<Button

@@ -103,9 +103,10 @@ export const RepositoryImportSourceSelector: Component<RepositoryImportSourceSel
 							variant="ghost"
 							size="xs"
 							onClick={props.onSelectAll}
+							disabled={props.selectedCount() === props.totalCount()}
 							data-testid="select-all-button"
 						>
-							All
+							Select All
 						</Button>
 						<Button
 							variant="ghost"
@@ -114,7 +115,7 @@ export const RepositoryImportSourceSelector: Component<RepositoryImportSourceSel
 							disabled={props.selectedCount() === 0}
 							data-testid="deselect-all-button"
 						>
-							None
+							Deselect All
 						</Button>
 					</div>
 					<span class={cn("text-muted-foreground shrink-0 text-[10px] whitespace-nowrap")}>
