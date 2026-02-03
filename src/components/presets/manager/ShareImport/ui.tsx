@@ -11,6 +11,7 @@ import { cn } from "@/utils/cn";
 import { Badge } from "../../../ui/Badge";
 import { Button } from "../../../ui/Button";
 import { Card } from "../../../ui/Card";
+import { Checkbox } from "../../../ui/Checkbox";
 import { Separator } from "../../../ui/Separator";
 import type { ShareImportLogic } from "./logic";
 
@@ -71,10 +72,20 @@ export const ShareImportUI: Component<ShareImportLogic> = (props) => {
 							<Button
 								variant="secondary"
 								size="sm"
-								onClick={props.allSelected() ? props.onDeselectAll : props.onSelectAll}
+								onClick={props.onSelectAll}
+								disabled={props.allSelected()}
 								data-testid="share-import-select-all-button"
 							>
-								{props.allSelected() ? "Deselect All" : "Select All"}
+								Select All
+							</Button>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={props.onClearSelection}
+								disabled={props.importSelections().size === 0}
+								data-testid="share-import-deselect-all-button"
+							>
+								Deselect All
 							</Button>
 						</div>
 						<Button
@@ -101,8 +112,7 @@ export const ShareImportUI: Component<ShareImportLogic> = (props) => {
 								data-testid="share-import-preset-item"
 							>
 								<div class={cn("flex items-start gap-3")}>
-									<input
-										type="checkbox"
+									<Checkbox
 										checked={props.importSelections().has(preset.id)}
 										onChange={() => props.onToggleSelection(preset.id)}
 										class={cn("mt-1")}

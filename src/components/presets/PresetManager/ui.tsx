@@ -8,6 +8,7 @@ import { Show } from "solid-js";
 import { cn } from "@/utils/cn";
 
 import { RepositoryImportView } from "../../repository";
+import { Toast } from "../../ui/Toast";
 import { EmptyStates } from "../manager/EmptyStates";
 import { Export } from "../manager/Export";
 import { Form } from "../manager/Form";
@@ -109,6 +110,16 @@ export const PresetManagerUI: Component<PresetManagerLogic> = (props) => {
 					onImport={props.onRepositoryImportConfirm}
 				/>
 			</Show>
+
+			{/* Toast notifications */}
+			<Toast
+				message={props.toastMessage()}
+				type={props.toastType()}
+				visible={props.toastVisible()}
+				onDismiss={props.onDismissToast}
+				dismissible
+				data-testid="preset-manager-toast"
+			/>
 		</div>
 	);
 };

@@ -136,7 +136,7 @@ export interface ShareImportLogic {
 	// Callbacks
 	onToggleSelection: (presetId: string) => void;
 	onSelectAll: () => void;
-	onDeselectAll: () => void;
+	onClearSelection: () => void;
 	onConfirm: () => void;
 }
 
@@ -169,7 +169,7 @@ export function createMockShareImportLogic(
 		// Callbacks
 		onToggleSelection: (presetId: string) => void;
 		onSelectAll: () => void;
-		onDeselectAll: () => void;
+		onClearSelection: () => void;
 		onConfirm: () => void;
 	}> = {}
 ): ShareImportLogic {
@@ -186,7 +186,7 @@ export function createMockShareImportLogic(
 		// Callbacks
 		onToggleSelection = vi.fn(),
 		onSelectAll = vi.fn(),
-		onDeselectAll = vi.fn(),
+		onClearSelection = vi.fn(),
 		onConfirm = vi.fn(),
 	} = overrides;
 
@@ -203,7 +203,7 @@ export function createMockShareImportLogic(
 		// Callbacks
 		onToggleSelection,
 		onSelectAll,
-		onDeselectAll,
+		onClearSelection,
 		onConfirm,
 	};
 }

@@ -138,7 +138,7 @@ describe("ShareImportUI", () => {
 			expect(card?.className).toContain("border-primary");
 		});
 
-		it("should show Select All when not all selected", () => {
+		it("should show Select All button", () => {
 			const presets = [
 				createPreset({ id: "1", name: "Preset One" }),
 				createPreset({ id: "2", name: "Preset Two" }),
@@ -152,15 +152,37 @@ describe("ShareImportUI", () => {
 			expect(selectAllBtn?.textContent).toContain("Select All");
 		});
 
-		it("should show Deselect All when all selected", () => {
+		it("should show Deselect All button", () => {
+			const presets = [createPreset({ id: "1", name: "Preset One" })];
+			const logic = createMockShareImportLogic({ presets, allSelected: true });
+			const { container } = renderComponent(ShareImportUI, { ...logic });
+
+			const deselectAllBtn = container.querySelector(
+				'[data-testid="share-import-deselect-all-button"]'
+			);
+			expect(deselectAllBtn?.textContent).toContain("Deselect All");
+		});
+
+		it("should disable Select All button when all selected", () => {
 			const presets = [createPreset({ id: "1", name: "Preset One" })];
 			const logic = createMockShareImportLogic({ presets, allSelected: true });
 			const { container } = renderComponent(ShareImportUI, { ...logic });
 
 			const selectAllBtn = container.querySelector(
 				'[data-testid="share-import-select-all-button"]'
-			);
-			expect(selectAllBtn?.textContent).toContain("Deselect All");
+			) as HTMLButtonElement;
+			expect(selectAllBtn?.disabled).toBe(true);
+		});
+
+		it("should disable Deselect All button when no selections", () => {
+			const presets = [createPreset({ id: "1", name: "Preset One" })];
+			const logic = createMockShareImportLogic({ presets, importSelections: new Set() });
+			const { container } = renderComponent(ShareImportUI, { ...logic });
+
+			const deselectAllBtn = container.querySelector(
+				'[data-testid="share-import-deselect-all-button"]'
+			) as HTMLButtonElement;
+			expect(deselectAllBtn?.disabled).toBe(true);
 		});
 
 		it("should disable confirm button when no selections", () => {
@@ -190,8 +212,9 @@ describe("ShareImportUI", () => {
 
 			const checkbox = container.querySelector(
 				'[data-testid="share-import-preset-checkbox"]'
-			) as HTMLInputElement;
-			expect(checkbox?.checked).toBe(true);
+			) as HTMLElement;
+			// Custom Checkbox component uses aria-checked attribute
+			expect(checkbox?.getAttribute("aria-checked")).toBe("true");
 		});
 	});
 
@@ -283,18 +306,19 @@ describe("ShareImportUI", () => {
 			expect(onSelectAll).toHaveBeenCalled();
 		});
 
-		it("should call onDeselectAll when Deselect All is clicked", () => {
-			const onDeselectAll = vi.fn();
+		it("should call onClearSelection when Deselect All is clicked", () => {
+			const onClearSelection = vi.fn();
 			const presets = [createPreset({ id: "1", name: "Preset One" })];
-			const logic = createMockShareImportLogic({ presets, onDeselectAll, allSelected: true });
+			const importSelections = new Set(["1"]); // Need selections for button to be enabled
+			const logic = createMockShareImportLogic({ presets, onClearSelection, importSelections });
 			const { container } = renderComponent(ShareImportUI, { ...logic });
 
-			const selectAllBtn = container.querySelector(
-				'[data-testid="share-import-select-all-button"]'
+			const deselectAllBtn = container.querySelector(
+				'[data-testid="share-import-deselect-all-button"]'
 			);
-			(selectAllBtn as HTMLElement).click();
+			(deselectAllBtn as HTMLElement).click();
 
-			expect(onDeselectAll).toHaveBeenCalled();
+			expect(onClearSelection).toHaveBeenCalled();
 		});
 
 		it("should call onConfirm when confirm button is clicked", () => {
