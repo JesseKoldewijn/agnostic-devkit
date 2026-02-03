@@ -21,6 +21,144 @@ import { cachedFetch, getErrorMessage } from "./cache";
 // ============================================================================
 
 /**
+ * Parse a raw.githubusercontent.com URL
+ * Format: raw.githubusercontent.com/user/repo/ref/path/to/file.json
+ */
+function parseRawUrl(pathParts: string[]): ParsedGitHubUrl | null {
+	if (pathParts.length < 4) return null;
+	return {
+		owner: pathParts[0],
+		path: pathParts.slice(3).join("/"),
+		ref: pathParts[2],
+		repo: pathParts[1],
+		type: "raw",
+	};
+}
+
+/**
+ * Parse a gist.github.com URL
+ * Format: gist.github.com/user/gistid[#file-filename-ext]
+ */
+function parseGistUrl(pathParts: string[], hash: string): ParsedGitHubUrl | null {
+	if (pathParts.length < 2) return null;
+
+	// Handle optional filename in hash: #file-presets-json
+	let filename: string | undefined;
+	if (hash) {
+		const hashMatch = new RegExp(/^#file-(.+)$/).exec(hash);
+		if (hashMatch) {
+			// Convert file-presets-json to presets.json
+			filename = hashMatch[1].replace(/-([^-]+)$/, ".$1");
+		}
+	}
+
+	return {
+		filename,
+		gistId: pathParts[1],
+		owner: pathParts[0],
+		type: "gist",
+	};
+}
+
+/**
+ * Parse a raw gist URL (gist.githubusercontent.com)
+ * Format: gist.githubusercontent.com/user/gistid/raw/[revision]/filename
+ */
+function parseRawGistUrl(pathParts: string[]): ParsedGitHubUrl | null {
+	if (pathParts.length < 4) return null;
+	return {
+		filename: pathParts.at(-1),
+		gistId: pathParts[1],
+		owner: pathParts[0],
+		ref: pathParts[3] === "raw" ? undefined : pathParts[3],
+		type: "gist",
+	};
+}
+
+/**
+ * Parse a standard repository URL (github.com/user/repo/...)
+ * Handles: blob, tree, raw, and basic repo URLs
+ */
+function parseRepoUrl(pathParts: string[]): ParsedGitHubUrl | null {
+	if (pathParts.length < 2) return null;
+
+	const owner = pathParts[0];
+	const repo = pathParts[1];
+
+	// Check for blob URL: /user/repo/blob/ref/path
+	if (pathParts.length >= 4 && pathParts[2] === "blob") {
+		return {
+			owner,
+			path: pathParts.slice(4).join("/"),
+			ref: pathParts[3],
+			repo,
+			type: "blob",
+		};
+	}
+
+	// Check for tree URL: /user/repo/tree/ref
+	if (pathParts.length >= 4 && pathParts[2] === "tree") {
+		return {
+			owner,
+			path: pathParts.slice(4).join("/") || undefined,
+			ref: pathParts[3],
+			repo,
+			type: "repo",
+		};
+	}
+
+	// Check for raw URL pattern on enterprise: /user/repo/raw/ref/path
+	if (pathParts.length >= 4 && pathParts[2] === "raw") {
+		return {
+			owner,
+			path: pathParts.slice(4).join("/"),
+			ref: pathParts[3],
+			repo,
+			type: "raw",
+		};
+	}
+
+	// Basic repo URL: /user/repo
+	return {
+		owner,
+		ref: "main", // Default branch
+		repo,
+		type: "repo",
+	};
+}
+
+/**
+ * Determine which URL parser to use based on hostname
+ * Returns the appropriate parser function or null if hostname doesn't match
+ */
+function getUrlParser(
+	hostname: string,
+	normalizedBaseUrl: string
+): ((pathParts: string[], hash: string) => ParsedGitHubUrl | null) | null {
+	// Raw content URLs
+	if (hostname === "raw.githubusercontent.com" || hostname === `raw.${normalizedBaseUrl}`) {
+		return (pathParts) => parseRawUrl(pathParts);
+	}
+
+	// Gist URLs
+	if (hostname === "gist.github.com" || hostname === `gist.${normalizedBaseUrl}`) {
+		return (pathParts, hash) => parseGistUrl(pathParts, hash);
+	}
+
+	// Raw gist URLs
+	if (hostname === "gist.githubusercontent.com" || hostname === `gist.${normalizedBaseUrl}`) {
+		return (pathParts) => parseRawGistUrl(pathParts);
+	}
+
+	// Standard repository URLs (must match base URL)
+	if (hostname === normalizedBaseUrl || hostname === `www.${normalizedBaseUrl}`) {
+		return (pathParts) => parseRepoUrl(pathParts);
+	}
+
+	return null;
+}
+
+/**
  * Parse a GitHub URL into its components
  * Supports multiple URL formats and custom domains for GitHub Enterprise
  */
@@ -32,112 +170,12 @@ export function parseGitHubUrl(
 		const urlObj = new URL(url);
 		const hostname = urlObj.hostname.toLowerCase();
 		const pathParts = urlObj.pathname.split("/").filter(Boolean);
-
-		// Normalize baseUrl for comparison
 		const normalizedBaseUrl = baseUrl.toLowerCase().replace(/^https?:\/\//, "");
 
-		// Check for raw URLs (raw.githubusercontent.com or {enterprise}/raw/)
-		if (hostname === "raw.githubusercontent.com" || hostname === `raw.${normalizedBaseUrl}`) {
-			// Format: raw.githubusercontent.com/user/repo/ref/path/to/file.json
-			if (pathParts.length < 4) return null;
-			return {
-				owner: pathParts[0],
-				path: pathParts.slice(3).join("/"),
-				ref: pathParts[2],
-				repo: pathParts[1],
-				type: "raw",
-			};
-		}
+		const parser = getUrlParser(hostname, normalizedBaseUrl);
+		if (!parser) return null;
 
-		// Check for gist URLs
-		if (hostname === "gist.github.com" || hostname === `gist.${normalizedBaseUrl}`) {
-			// Format: gist.github.com/user/gistid
-			if (pathParts.length < 2) return null;
-
-			// Handle optional filename in hash: #file-presets-json
-			let filename: string | undefined;
-			if (urlObj.hash) {
-				const hashMatch = new RegExp(/^#file-(.+)$/).exec(urlObj.hash);
-				if (hashMatch) {
-					// Convert file-presets-json to presets.json
-					filename = hashMatch[1].replace(/-([^-]+)$/, ".$1");
-				}
-			}
-
-			return {
-				filename,
-				gistId: pathParts[1],
-				owner: pathParts[0],
-				type: "gist",
-			};
-		}
-
-		// Check for raw gist URLs
-		if (hostname === "gist.githubusercontent.com" || hostname === `gist.${normalizedBaseUrl}`) {
-			// Format: gist.githubusercontent.com/user/gistid/raw/[revision]/filename
-			if (pathParts.length < 4) return null;
-			return {
-				filename: pathParts.at(-1),
-				gistId: pathParts[1],
-				owner: pathParts[0],
-				ref: pathParts[3] === "raw" ? undefined : pathParts[3],
-				type: "gist",
-			};
-		}
-
-		// Check if this matches the configured base URL
-		if (hostname !== normalizedBaseUrl && hostname !== `www.${normalizedBaseUrl}`) {
-			return null;
-		}
-
-		// Repository URL patterns
-		if (pathParts.length >= 2) {
-			const owner = pathParts[0];
-			const repo = pathParts[1];
-
-			// Check for blob URL: /user/repo/blob/ref/path
-			if (pathParts.length >= 4 && pathParts[2] === "blob") {
-				return {
-					owner,
-					path: pathParts.slice(4).join("/"),
-					ref: pathParts[3],
-					repo,
-					type: "blob",
-				};
-			}
-
-			// Check for tree URL: /user/repo/tree/ref
-			if (pathParts.length >= 4 && pathParts[2] === "tree") {
-				return {
-					owner,
-					path: pathParts.slice(4).join("/") || undefined,
-					ref: pathParts[3],
-					repo,
-					type: "repo",
-				};
-			}
-
-			// Check for raw URL pattern on enterprise: /user/repo/raw/ref/path
-			if (pathParts.length >= 4 && pathParts[2] === "raw") {
-				return {
-					owner,
-					path: pathParts.slice(4).join("/"),
-					ref: pathParts[3],
-					repo,
-					type: "raw",
-				};
-			}
-
-			// Basic repo URL: /user/repo
-			return {
-				owner,
-				ref: "main", // Default branch
-				repo,
-				type: "repo",
-			};
-		}
-
-		return null;
+		return parser(pathParts, urlObj.hash);
 	} catch {
 		return null;
 	}
