@@ -1,56 +1,20 @@
 /**
- * Export view component for selecting and exporting presets
+ * Export view UI component - Pure presentational component
+ * Receives all data and callbacks via props from logic
  */
 import type { Component } from "solid-js";
-import { For, Show, createMemo, createSignal } from "solid-js";
+import { For, Show } from "solid-js";
 
-import type { Preset } from "@/logic/parameters";
 import { getParameterTypeIcon } from "@/logic/parameters";
 import { cn } from "@/utils/cn";
 
-import { Badge } from "../../ui/Badge";
-import { Button } from "../../ui/Button";
-import { Card } from "../../ui/Card";
-import { Separator } from "../../ui/Separator";
+import { Badge } from "../../../ui/Badge";
+import { Button } from "../../../ui/Button";
+import { Card } from "../../../ui/Card";
+import { Separator } from "../../../ui/Separator";
+import type { ExportLogic } from "./logic";
 
-export interface ExportProps {
-	presets: Preset[];
-	selectedPresets: Set<string>;
-	copySuccess: boolean;
-	onToggleSelection: (presetId: string) => void;
-	onSelectAll: () => void;
-	onClearSelection: () => void;
-	onCancel: () => void;
-	onExportDownload: () => Promise<void>;
-	onExportUrl: () => Promise<void>;
-}
-
-export const Export: Component<ExportProps> = (props) => {
-	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
-	const [isExporting, setIsExporting] = createSignal(false);
-
-	const allSelected = createMemo(
-		() => props.presets.length > 0 && props.selectedPresets.size === props.presets.length
-	);
-
-	const handleExportDownload = async () => {
-		setIsExporting(true);
-		try {
-			await props.onExportDownload();
-		} finally {
-			setIsExporting(false);
-		}
-	};
-
-	const handleExportUrl = async () => {
-		setIsExporting(true);
-		try {
-			await props.onExportUrl();
-		} finally {
-			setIsExporting(false);
-		}
-	};
-
+export const ExportUI: Component<ExportLogic> = (props) => {
 	return (
 		<div class={cn("flex h-full flex-col")} data-testid="preset-export-view">
 			<div class={cn("mb-4 flex flex-col space-y-4")}>
@@ -100,7 +64,7 @@ export const Export: Component<ExportProps> = (props) => {
 								size="sm"
 								onClick={props.onSelectAll}
 								data-testid="export-select-all-button-sm"
-								disabled={allSelected()}
+								disabled={props.allSelected()}
 							>
 								Select All
 							</Button>
@@ -131,7 +95,7 @@ export const Export: Component<ExportProps> = (props) => {
 								size="sm"
 								onClick={props.onSelectAll}
 								data-testid="export-select-all-button-lg"
-								disabled={allSelected()}
+								disabled={props.allSelected()}
 							>
 								Select All
 							</Button>
@@ -149,20 +113,20 @@ export const Export: Component<ExportProps> = (props) => {
 							<Button
 								variant="secondary"
 								size="sm"
-								onClick={handleExportDownload}
-								disabled={props.selectedPresets.size === 0 || isExporting()}
+								onClick={props.handleExportDownload}
+								disabled={props.selectedPresets.size === 0 || props.isExporting()}
 								title="Download as JSON file"
 								data-testid="export-download-button"
 								class="flex-1 sm:flex-initial"
 							>
-								<Show when={isExporting()} fallback="Download">
+								<Show when={props.isExporting()} fallback="Download">
 									Exporting...
 								</Show>
 							</Button>
 							<Button
 								size="sm"
-								onClick={handleExportUrl}
-								disabled={props.selectedPresets.size === 0 || isExporting()}
+								onClick={props.handleExportUrl}
+								disabled={props.selectedPresets.size === 0 || props.isExporting()}
 								title="Copy as shareable URL"
 								data-testid="export-url-button"
 								class="flex-1 sm:flex-initial"
@@ -170,7 +134,7 @@ export const Export: Component<ExportProps> = (props) => {
 								<Show
 									when={props.copySuccess}
 									fallback={
-										<Show when={isExporting()} fallback="Copy URL">
+										<Show when={props.isExporting()} fallback="Copy URL">
 											Exporting...
 										</Show>
 									}
@@ -264,13 +228,11 @@ export const Export: Component<ExportProps> = (props) => {
 													)}
 													onClick={(e) => {
 														e.stopPropagation();
-														setExpandedPresetId(
-															expandedPresetId() === preset.id ? null : preset.id
-														);
+														props.onToggleExpanded(preset.id);
 													}}
-													data-testid="export-preset-expand-button"
+													data-testid="export-preset-toggle-expand"
 												>
-													{expandedPresetId() === preset.id ? "Hide" : "View"}
+													{props.expandedPresetId() === preset.id ? "Hide" : "View"}
 												</button>
 											</div>
 										</div>
@@ -278,7 +240,7 @@ export const Export: Component<ExportProps> = (props) => {
 								</div>
 
 								{/* Expanded parameter list */}
-								<Show when={expandedPresetId() === preset.id}>
+								<Show when={props.expandedPresetId() === preset.id}>
 									<div class={cn("mt-4")} data-testid="export-preset-expanded-params">
 										<Separator class={cn("mb-4 opacity-50")} />
 										<div class={cn("space-y-2")}>

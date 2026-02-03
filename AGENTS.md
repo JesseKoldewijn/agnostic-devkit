@@ -92,11 +92,13 @@ src/components/[feature]/ComponentName/
 
 #### Responsibilities
 
-| File       | Responsibility                                                                                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logic.ts` | Pure TypeScript functions. **No SolidJS primitives.** Handles data fetching, transformations, event handlers, and business rules. Must be fully testable in isolation. |
-| `ui.tsx`   | Presentational component. Receives all data and callbacks via props. Contains minimal logic (only rendering conditionals).                                             |
-| `index.ts` | Uses the `connect` HOC to bind `logic.ts` exports to `ui.tsx` props. Handles SolidJS reactivity bridging.                                                              |
+| File       | Responsibility                                                                                                                                                                                                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logic.ts` | Reactive logic factory. **May use SolidJS primitives** (`createSignal`, `createEffect`, `onMount`, etc.) since it runs within a component context via the `connect` HOC. Handles state management, data fetching, and event handlers. Returns an interface of accessors and callbacks. |
+| `ui.tsx`   | Presentational component. Receives all data and callbacks via props. Contains minimal logic (only rendering conditionals).                                                                                                                                                             |
+| `index.ts` | Uses the `connect` HOC to bind `logic.ts` exports to `ui.tsx` props. The HOC calls the logic factory within a SolidJS component context.                                                                                                                                               |
+
+> **Note:** Component `logic.ts` files differ from domain logic in `src/logic/`. Domain logic must remain framework-agnostic (pure TypeScript), while component logic files may use SolidJS primitives because they execute within a reactive component context.
 
 #### Example
 
@@ -146,20 +148,54 @@ export const ComponentName = connect(ComponentNameUI, createComponentNameLogic);
 
 ## Logic Layer Guidelines
 
-### Keep Logic SolidJS-Agnostic
+### Domain Logic vs Component Logic
 
-The `src/logic/` directory and component `logic.ts` files must:
+There are two types of logic files in this project with different rules:
+
+#### Domain Logic (`src/logic/`)
+
+The `src/logic/` directory contains **framework-agnostic business logic** that must:
 
 - Use **plain TypeScript** (no `createSignal`, `createEffect`, `createStore`).
 - Export **pure functions** and **async handlers**.
 - Use **callbacks** for event-driven behavior (e.g., storage listeners).
 - Return **plain objects/arrays**, not reactive primitives.
 
-This ensures logic is:
+This ensures domain logic is:
 
 1. Testable without SolidJS test utilities.
 2. Portable if the UI framework changes.
 3. Easy to reason about in isolation.
+
+#### Component Logic (`src/components/*/ComponentName/logic.ts`)
+
+Component `logic.ts` files within the Enhanced Component pattern **may use SolidJS primitives** because:
+
+1. The `connect` HOC calls the logic factory within a SolidJS component context.
+2. Reactive state (`createSignal`) and effects (`createEffect`, `onMount`, `onCleanup`) are appropriate here.
+3. The logic factory returns `Accessor<T>` types for reactive getters.
+
+```typescript
+// Example: Component logic.ts WITH SolidJS primitives (allowed)
+import { createSignal, onMount, onCleanup } from "solid-js";
+
+export function createMyComponentLogic(props: MyProps): MyLogic {
+  const [items, setItems] = createSignal<Item[]>([]);
+  const [loading, setLoading] = createSignal(true);
+
+  onMount(async () => {
+    const data = await fetchItems();
+    setItems(data);
+    setLoading(false);
+  });
+
+  return {
+    items,      // Accessor<Item[]>
+    loading,    // Accessor<boolean>
+    onRefresh: () => { ... },
+  };
+}
+```
 
 ### Validation with Zod
 
@@ -431,19 +467,20 @@ BREAKING CHANGE: The `oldMethod()` has been removed. Use `newMethod()` instead.
 
 ### Do
 
-- ✅ Write small, focused functions
-- ✅ Validate all external data with Zod
-- ✅ Use the Enhanced Component pattern for stateful components
-- ✅ Keep logic files SolidJS-agnostic
-- ✅ Use `createMock*` builders for test mocks
-- ✅ Follow conventional commits
-- ✅ Include accessibility tests for all UI components
+- Write small, focused functions
+- Validate all external data with Zod
+- Use the Enhanced Component pattern for stateful components
+- Keep domain logic (`src/logic/`) SolidJS-agnostic
+- Use SolidJS primitives in component `logic.ts` files (within HOC pattern)
+- Use `createMock*` builders for test mocks
+- Follow conventional commits
+- Include accessibility tests for all UI components
 
 ### Don't
 
-- ❌ Ignore ESLint errors (warnings should be minimized too)
-- ❌ Put SolidJS primitives in `logic.ts` files
-- ❌ Create one-off mocks when a reusable builder exists
-- ❌ Skip tests for logic functions
-- ❌ Use relative imports when `@/` alias is available
-- ❌ Create UI components without accessibility tests
+- Ignore ESLint errors (warnings should be minimized too)
+- Put SolidJS primitives in domain logic (`src/logic/`)
+- Create one-off mocks when a reusable builder exists
+- Skip tests for logic functions
+- Use relative imports when `@/` alias is available
+- Create UI components without accessibility tests

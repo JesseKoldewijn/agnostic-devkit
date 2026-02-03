@@ -4,8 +4,37 @@
 
 // Mocks
 export { fakeBrowser, setupBrowserMocks, setupFetchMock } from "./mocks/fakeBrowser";
+export {
+	createMockPresetToggleListLogic,
+	createPresetsWithActiveState,
+	type PresetToggleListLogic,
+	type PresetToggleListProps,
+} from "./mocks/mockPresetToggle";
+export {
+	createMockRepositoryImportViewLogic,
+	type RepositoryImportViewLogic,
+	type RepositoryImportViewProps,
+	type ViewState,
+} from "./mocks/mockRepositoryImport";
+export {
+	createMockRepositoryConfigurationLogic,
+	type RepositoryConfigurationLogic,
+} from "./mocks/mockRepositoryConfig";
+export {
+	createMockPresetManagerLogic,
+	type PresetManagerLogic,
+	type PresetManagerProps,
+} from "./mocks/mockPresetManager";
+export {
+	createMockExportLogic,
+	createMockShareImportLogic,
+	type ExportLogic,
+	type ExportProps,
+	type ShareImportLogic,
+	type ShareImportProps,
+} from "./mocks/mockSubcomponents";
 
-// Fixtures
+// Fixtures - Presets
 export {
 	createParameter,
 	createPreset,
@@ -13,6 +42,20 @@ export {
 	invalidPresets,
 	samplePresets,
 } from "./fixtures/presets";
+
+// Fixtures - Repository Sources
+export {
+	createFetchResult,
+	createProviderInstance,
+	createRepositorySource,
+	createSourceWithProvider,
+	createValidatedFile,
+	sampleFetchResults,
+	sampleProviderInstances,
+	sampleRepositorySources,
+	sampleSourcesWithProviders,
+	sampleValidatedFiles,
+} from "./fixtures/repositorySources";
 
 // Helpers
 export {
