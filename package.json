@@ -49,10 +49,12 @@
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.11.0",
 		"@playwright/test": "^1.57.0",
 		"@semantic-release/changelog": "^6.0.3",
 		"@semantic-release/exec": "^7.1.0",
 		"@semantic-release/git": "^10.0.1",
+		"@solidjs/testing-library": "^0.8.10",
 		"@tailwindcss/vite": "^4.1.17",
 		"@trivago/prettier-plugin-sort-imports": "^6.0.2",
 		"@types/archiver": "^7",
@@ -71,7 +73,6 @@
 		"eslint-plugin-solid": "^0.14.5",
 		"eslint-plugin-sonarjs": "^3.0.6",
 		"globals": "^17.1.0",
-		"happy-dom": "^20.0.10",
 		"jsdom": "^27.2.0",
 		"knip": "^5.70.2",
 		"monocart-coverage-reports": "^2.12.9",
@@ -85,8 +86,10 @@
 		"vite": "^7.3.0",
 		"vite-plugin-istanbul": "^7.2.1",
 		"vite-plugin-scope-tailwind": "^2.0.2",
+		"vite-plugin-solid": "^2.11.10",
 		"vite-tsconfig-paths": "^6.0.5",
 		"vitest": "^4.0.16",
+		"vitest-axe": "^0.1.0",
 		"wxt": "^0.20.13"
 	},
 	"packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",

@@ -22,6 +22,7 @@ declare module '#imports' {
   export { fakeBrowser } from 'wxt/testing';
   export { getBrowserName, isSidebarSupported, isNotificationsSupported, logBrowserInfo, isNotificationDisabled, showNotification, showNotificationWithButtons } from '../src/utils/browser';
   export { cn } from '../src/utils/cn';
+  export { createMyComponentLogic, MyComponentUI, MyComponent, connect, connectWithProps, ConnectOptions, MyComponentLogic, ErrorFallbackProps } from '../src/utils/connect';
   export { getDisplayMode, setDisplayMode, applyDisplayMode, initDisplayMode, DisplayMode } from '../src/utils/displayMode';
   export { createIsolatedElement } from '../src/utils/dom';
   export { PresetCoder, PresetCoder, DecompressResult } from '../src/utils/presetCoder';
