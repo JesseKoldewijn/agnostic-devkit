@@ -1,9 +1,9 @@
 /**
- * Repository Configuration Component
- * Manages provider instances and repository sources in Settings
+ * RepositoryConfiguration UI component
+ * Pure presentational component for managing provider instances and repository sources
  */
 import type { Component } from "solid-js";
-import { For, Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { For, Show } from "solid-js";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -11,26 +11,10 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/Separator";
-import {
-	PRESET_SCHEMA_DESCRIPTION,
-	PRESET_SCHEMA_EXAMPLE,
-	type ProviderInstance,
-	type RepositorySource,
-	type RepositorySourceType,
-	addProviderInstance,
-	addRepositorySource,
-	createProviderInstance,
-	createRepositorySource,
-	getProviderInstances,
-	getRepositorySources,
-	onProviderInstancesChanged,
-	onRepositorySourcesChanged,
-	removeProviderInstance,
-	removeRepositorySource,
-	updateProviderInstance,
-	updateRepositorySource,
-} from "@/logic/repository";
+import { PRESET_SCHEMA_DESCRIPTION, PRESET_SCHEMA_EXAMPLE } from "@/logic/repository";
 import { cn } from "@/utils/cn";
+
+import type { RepositoryConfigurationLogic } from "./logic";
 
 // Icons
 const PlusIcon = () => (
@@ -111,188 +95,7 @@ const CloseIcon = () => (
 	</svg>
 );
 
-export const RepositoryConfiguration: Component = () => {
-	// State
-	const [providerInstances, setProviderInstances] = createSignal<ProviderInstance[]>([]);
-	const [repositorySources, setRepositorySources] = createSignal<RepositorySource[]>([]);
-
-	// Modal states
-	const [showProviderModal, setShowProviderModal] = createSignal(false);
-	const [showSourceModal, setShowSourceModal] = createSignal(false);
-	const [showSchemaInfo, setShowSchemaInfo] = createSignal(false);
-	const [editingProvider, setEditingProvider] = createSignal<ProviderInstance | null>(null);
-	const [editingSource, setEditingSource] = createSignal<RepositorySource | null>(null);
-
-	// Form states
-	const [providerName, setProviderName] = createSignal("");
-	const [providerBaseUrl, setProviderBaseUrl] = createSignal("");
-	const [providerToken, setProviderToken] = createSignal("");
-	const [providerTokenError, setProviderTokenError] = createSignal("");
-	const [showToken, setShowToken] = createSignal(false);
-
-	const [sourceName, setSourceName] = createSignal("");
-	const [sourceUrl, setSourceUrl] = createSignal("");
-	const [sourceProviderId, setSourceProviderId] = createSignal<string>("");
-	const [sourceType, setSourceType] = createSignal<RepositorySourceType>("github");
-
-	// Load data on mount
-	onMount(async () => {
-		const [instances, sources] = await Promise.all([
-			getProviderInstances(),
-			getRepositorySources(),
-		]);
-		setProviderInstances(instances);
-		setRepositorySources(sources);
-	});
-
-	// Subscribe to changes
-	createEffect(() => {
-		const unsubProviders = onProviderInstancesChanged(setProviderInstances);
-		const unsubSources = onRepositorySourcesChanged(setRepositorySources);
-
-		onCleanup(() => {
-			unsubProviders();
-			unsubSources();
-		});
-	});
-
-	// Reset provider form
-	const resetProviderForm = () => {
-		setProviderName("");
-		setProviderBaseUrl("");
-		setProviderToken("");
-		setProviderTokenError("");
-		setShowToken(false);
-		setEditingProvider(null);
-	};
-
-	// Reset source form
-	const resetSourceForm = () => {
-		setSourceName("");
-		setSourceUrl("");
-		setSourceProviderId("");
-		setSourceType("github");
-		setEditingSource(null);
-	};
-
-	// Open add provider modal
-	const openAddProvider = () => {
-		resetProviderForm();
-		setShowProviderModal(true);
-	};
-
-	// Open edit provider modal
-	const openEditProvider = (provider: ProviderInstance) => {
-		setEditingProvider(provider);
-		setProviderName(provider.name);
-		setProviderBaseUrl(provider.baseUrl);
-		setProviderToken(provider.token ?? "");
-		setShowProviderModal(true);
-	};
-
-	// Validate PAT token format
-	const validateToken = (token: string): string | null => {
-		if (!token) return null;
-		// Classic PAT tokens start with ghp_
-		if (token.startsWith("ghp_")) {
-			return "Classic PAT tokens are not supported. Please use a fine-grained personal access token instead (starts with github_pat_).";
-		}
-		// GitHub OAuth tokens start with gho_
-		if (token.startsWith("gho_")) {
-			return "OAuth tokens are not supported. Please use a fine-grained personal access token (starts with github_pat_).";
-		}
-		// GitHub App tokens start with ghu_ or ghs_
-		if (token.startsWith("ghu_") || token.startsWith("ghs_")) {
-			return "GitHub App tokens are not supported. Please use a fine-grained personal access token (starts with github_pat_).";
-		}
-		return null;
-	};
-
-	// Save provider
-	const handleSaveProvider = async () => {
-		const name = providerName().trim();
-		const baseUrl = providerBaseUrl()
-			.trim()
-			.toLowerCase()
-			.replace(/^https?:\/\//, "");
-		const token = providerToken().trim() || undefined;
-
-		if (!name || !baseUrl) return;
-
-		// Validate token format
-		if (token) {
-			const tokenError = validateToken(token);
-			if (tokenError) {
-				setProviderTokenError(tokenError);
-				return;
-			}
-		}
-		setProviderTokenError("");
-
-		const editing = editingProvider();
-		if (editing) {
-			await updateProviderInstance(editing.id, { baseUrl, name, token });
-		} else {
-			const instance = createProviderInstance("github", name, baseUrl, token);
-			await addProviderInstance(instance);
-		}
-
-		setShowProviderModal(false);
-		resetProviderForm();
-	};
-
-	// Delete provider
-	const handleDeleteProvider = async (id: string) => {
-		await removeProviderInstance(id);
-	};
-
-	// Open add source modal
-	const openAddSource = () => {
-		resetSourceForm();
-		setShowSourceModal(true);
-	};
-
-	// Open edit source modal
-	const openEditSource = (source: RepositorySource) => {
-		setEditingSource(source);
-		setSourceName(source.name);
-		setSourceUrl(source.url);
-		setSourceProviderId(source.providerInstanceId ?? "");
-		setSourceType(source.type);
-		setShowSourceModal(true);
-	};
-
-	// Save source
-	const handleSaveSource = async () => {
-		const name = sourceName().trim();
-		const url = sourceUrl().trim();
-		const type = sourceType();
-		const providerId = type === "github" ? sourceProviderId() || undefined : undefined;
-
-		if (!name || !url) return;
-
-		const editing = editingSource();
-		if (editing) {
-			await updateRepositorySource(editing.id, {
-				name,
-				providerInstanceId: providerId,
-				type,
-				url,
-			});
-		} else {
-			const source = createRepositorySource(name, url, type, providerId);
-			await addRepositorySource(source);
-		}
-
-		setShowSourceModal(false);
-		resetSourceForm();
-	};
-
-	// Delete source
-	const handleDeleteSource = async (id: string) => {
-		await removeRepositorySource(id);
-	};
-
+export const RepositoryConfigurationUI: Component<RepositoryConfigurationLogic> = (props) => {
 	return (
 		<>
 			<Card class={cn("md:col-span-2")} data-testid="repository-configuration-section">
@@ -307,7 +110,7 @@ export const RepositoryConfiguration: Component = () => {
 						<Button
 							variant="ghost"
 							size="xs"
-							onClick={() => setShowSchemaInfo(true)}
+							onClick={props.onOpenSchemaInfo}
 							title="View preset file format"
 							data-testid="schema-info-button"
 						>
@@ -325,7 +128,7 @@ export const RepositoryConfiguration: Component = () => {
 							<Button
 								variant="ghost"
 								size="xs"
-								onClick={openAddProvider}
+								onClick={props.onOpenAddProvider}
 								data-testid="add-provider-button"
 							>
 								<PlusIcon />
@@ -334,7 +137,7 @@ export const RepositoryConfiguration: Component = () => {
 						</div>
 
 						<Show
-							when={providerInstances().length > 0}
+							when={props.providerInstances().length > 0}
 							fallback={
 								<div
 									class={cn(
@@ -352,7 +155,7 @@ export const RepositoryConfiguration: Component = () => {
 							}
 						>
 							<div class={cn("space-y-2")}>
-								<For each={providerInstances()}>
+								<For each={props.providerInstances()}>
 									{(instance) => (
 										<div
 											class={cn(
@@ -373,7 +176,8 @@ export const RepositoryConfiguration: Component = () => {
 												<Button
 													variant="ghost"
 													size="xs"
-													onClick={() => openEditProvider(instance)}
+													onClick={() => props.onOpenEditProvider(instance)}
+													aria-label={`Edit ${instance.name}`}
 													data-testid="edit-provider-button"
 												>
 													<EditIcon />
@@ -381,7 +185,8 @@ export const RepositoryConfiguration: Component = () => {
 												<Button
 													variant="ghost"
 													size="xs"
-													onClick={() => handleDeleteProvider(instance.id)}
+													onClick={() => props.onDeleteProvider(instance.id)}
+													aria-label={`Delete ${instance.name}`}
 													data-testid="delete-provider-button"
 												>
 													<TrashIcon />
@@ -405,7 +210,7 @@ export const RepositoryConfiguration: Component = () => {
 							<Button
 								variant="ghost"
 								size="xs"
-								onClick={openAddSource}
+								onClick={props.onOpenAddSource}
 								data-testid="add-source-button"
 							>
 								<PlusIcon />
@@ -414,7 +219,7 @@ export const RepositoryConfiguration: Component = () => {
 						</div>
 
 						<Show
-							when={repositorySources().length > 0}
+							when={props.repositorySources().length > 0}
 							fallback={
 								<div
 									class={cn(
@@ -432,11 +237,11 @@ export const RepositoryConfiguration: Component = () => {
 							}
 						>
 							<div class={cn("space-y-2")}>
-								<For each={repositorySources()}>
+								<For each={props.repositorySources()}>
 									{(source) => {
-										const provider = providerInstances().find(
-											(p) => p.id === source.providerInstanceId
-										);
+										const provider = props
+											.providerInstances()
+											.find((p) => p.id === source.providerInstanceId);
 										return (
 											<div
 												class={cn(
@@ -461,7 +266,8 @@ export const RepositoryConfiguration: Component = () => {
 													<Button
 														variant="ghost"
 														size="xs"
-														onClick={() => openEditSource(source)}
+														onClick={() => props.onOpenEditSource(source)}
+														aria-label={`Edit ${source.name}`}
 														data-testid="edit-source-button"
 													>
 														<EditIcon />
@@ -469,7 +275,8 @@ export const RepositoryConfiguration: Component = () => {
 													<Button
 														variant="ghost"
 														size="xs"
-														onClick={() => handleDeleteSource(source.id)}
+														onClick={() => props.onDeleteSource(source.id)}
+														aria-label={`Delete ${source.name}`}
 														data-testid="delete-source-button"
 													>
 														<TrashIcon />
@@ -486,7 +293,7 @@ export const RepositoryConfiguration: Component = () => {
 			</Card>
 
 			{/* Provider Modal */}
-			<Show when={showProviderModal()}>
+			<Show when={props.showProviderModal()}>
 				<div
 					class={cn(
 						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
@@ -499,15 +306,12 @@ export const RepositoryConfiguration: Component = () => {
 								<h2
 									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
 								>
-									{editingProvider() ? "Edit" : "Add"} GitHub Instance
+									{props.editingProvider() ? "Edit" : "Add"} GitHub Instance
 								</h2>
 								<Button
 									variant="ghost"
 									size="xs"
-									onClick={() => {
-										setShowProviderModal(false);
-										resetProviderForm();
-									}}
+									onClick={props.onCloseProviderModal}
 									aria-label="Close"
 								>
 									<CloseIcon />
@@ -518,30 +322,16 @@ export const RepositoryConfiguration: Component = () => {
 								<Input
 									label="Display Name"
 									placeholder="e.g., Company GitHub"
-									ref={(el) => {
-										if (el) {
-											const name = providerName();
-											queueMicrotask(() => {
-												el.value = name;
-											});
-										}
-									}}
-									onInput={(e) => setProviderName(e.currentTarget.value)}
+									value={props.providerName()}
+									onInput={(e) => props.onProviderNameChange(e.currentTarget.value)}
 									data-testid="provider-name-input"
 								/>
 
 								<Input
 									label="Domain"
 									placeholder="e.g., github.com or git.company.com"
-									ref={(el) => {
-										if (el) {
-											const url = providerBaseUrl();
-											queueMicrotask(() => {
-												el.value = url;
-											});
-										}
-									}}
-									onInput={(e) => setProviderBaseUrl(e.currentTarget.value)}
+									value={props.providerBaseUrl()}
+									onInput={(e) => props.onProviderBaseUrlChange(e.currentTarget.value)}
 									data-testid="provider-baseurl-input"
 								/>
 
@@ -549,36 +339,26 @@ export const RepositoryConfiguration: Component = () => {
 									<Label>Personal Access Token (optional)</Label>
 									<div class={cn("flex gap-2")}>
 										<Input
-											type={showToken() ? "text" : "password"}
+											type={props.showToken() ? "text" : "password"}
 											placeholder="github_pat_xxxxxxxxxxxx"
-											ref={(el) => {
-												if (el) {
-													const token = providerToken();
-													queueMicrotask(() => {
-														el.value = token;
-													});
-												}
-											}}
-											onInput={(e) => {
-												setProviderToken(e.currentTarget.value);
-												setProviderTokenError("");
-											}}
+											value={props.providerToken()}
+											onInput={(e) => props.onProviderTokenChange(e.currentTarget.value)}
 											containerClass={cn("flex-1")}
 											data-testid="provider-token-input"
 										/>
 										<Button
 											variant="ghost"
 											size="sm"
-											onClick={() => setShowToken(!showToken())}
-											title={showToken() ? "Hide token" : "Show token"}
+											onClick={props.onToggleShowToken}
+											title={props.showToken() ? "Hide token" : "Show token"}
 										>
-											<Show when={showToken()} fallback={<EyeIcon />}>
+											<Show when={props.showToken()} fallback={<EyeIcon />}>
 												<EyeOffIcon />
 											</Show>
 										</Button>
 									</div>
 									<Show
-										when={providerTokenError()}
+										when={props.providerTokenError()}
 										fallback={
 											<p class={cn("text-muted-foreground/70 text-[10px]")}>
 												Required for private repositories. Use a fine-grained PAT from GitHub →
@@ -587,31 +367,24 @@ export const RepositoryConfiguration: Component = () => {
 										}
 									>
 										<p class={cn("text-destructive text-[10px] font-medium")}>
-											{providerTokenError()}
+											{props.providerTokenError()}
 										</p>
 									</Show>
 								</div>
 							</div>
 
 							<div class={cn("flex justify-end gap-3 pt-2")}>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										setShowProviderModal(false);
-										resetProviderForm();
-									}}
-								>
+								<Button variant="ghost" size="sm" onClick={props.onCloseProviderModal}>
 									Cancel
 								</Button>
 								<Button
 									variant="secondary"
 									size="sm"
-									onClick={handleSaveProvider}
-									disabled={!providerName().trim() || !providerBaseUrl().trim()}
+									onClick={props.onSaveProvider}
+									disabled={!props.providerName().trim() || !props.providerBaseUrl().trim()}
 									data-testid="save-provider-button"
 								>
-									{editingProvider() ? "Save" : "Add"}
+									{props.editingProvider() ? "Save" : "Add"}
 								</Button>
 							</div>
 						</div>
@@ -620,7 +393,7 @@ export const RepositoryConfiguration: Component = () => {
 			</Show>
 
 			{/* Source Modal */}
-			<Show when={showSourceModal()}>
+			<Show when={props.showSourceModal()}>
 				<div
 					class={cn(
 						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
@@ -633,15 +406,12 @@ export const RepositoryConfiguration: Component = () => {
 								<h2
 									class={cn("text-foreground text-[13px] font-black tracking-[0.15em] uppercase")}
 								>
-									{editingSource() ? "Edit" : "Add"} Preset Source
+									{props.editingSource() ? "Edit" : "Add"} Preset Source
 								</h2>
 								<Button
 									variant="ghost"
 									size="xs"
-									onClick={() => {
-										setShowSourceModal(false);
-										resetSourceForm();
-									}}
+									onClick={props.onCloseSourceModal}
 									aria-label="Close"
 								>
 									<CloseIcon />
@@ -652,34 +422,17 @@ export const RepositoryConfiguration: Component = () => {
 								<Input
 									label="Display Name"
 									placeholder="e.g., My Development Presets"
-									ref={(el) => {
-										if (el) {
-											const name = sourceName();
-											queueMicrotask(() => {
-												el.value = name;
-											});
-										}
-									}}
-									onInput={(e) => setSourceName(e.currentTarget.value)}
+									value={props.sourceName()}
+									onInput={(e) => props.onSourceNameChange(e.currentTarget.value)}
 									data-testid="source-name-input"
 								/>
 
 								<Select
 									label="Source Type"
-									ref={(el) => {
-										if (el) {
-											const type = sourceType();
-											queueMicrotask(() => {
-												el.value = type;
-											});
-										}
-									}}
-									onChange={(e) => {
-										setSourceType(e.currentTarget.value as "github" | "url");
-										if (e.currentTarget.value === "url") {
-											setSourceProviderId("");
-										}
-									}}
+									value={props.sourceType()}
+									onChange={(e) =>
+										props.onSourceTypeChange(e.currentTarget.value as "github" | "url")
+									}
 									data-testid="source-type-select"
 								>
 									<option value="github">GitHub Repository / Gist</option>
@@ -689,38 +442,24 @@ export const RepositoryConfiguration: Component = () => {
 								<Input
 									label="URL"
 									placeholder={
-										sourceType() === "github"
+										props.sourceType() === "github"
 											? "e.g., https://github.com/user/repo or gist URL"
 											: "e.g., https://example.com/presets.json"
 									}
-									ref={(el) => {
-										if (el) {
-											const url = sourceUrl();
-											queueMicrotask(() => {
-												el.value = url;
-											});
-										}
-									}}
-									onInput={(e) => setSourceUrl(e.currentTarget.value)}
+									value={props.sourceUrl()}
+									onInput={(e) => props.onSourceUrlChange(e.currentTarget.value)}
 									data-testid="source-url-input"
 								/>
 
-								<Show when={sourceType() === "github"}>
+								<Show when={props.sourceType() === "github"}>
 									<Select
 										label="GitHub Instance (optional)"
-										ref={(el) => {
-											if (el) {
-												const providerId = sourceProviderId();
-												queueMicrotask(() => {
-													el.value = providerId;
-												});
-											}
-										}}
-										onChange={(e) => setSourceProviderId(e.currentTarget.value)}
+										value={props.sourceProviderId()}
+										onChange={(e) => props.onSourceProviderChange(e.currentTarget.value)}
 										data-testid="source-provider-select"
 									>
 										<option value="">Public (no authentication)</option>
-										<For each={providerInstances()}>
+										<For each={props.providerInstances()}>
 											{(instance) => (
 												<option value={instance.id}>
 													{instance.name} ({instance.baseUrl})
@@ -728,7 +467,7 @@ export const RepositoryConfiguration: Component = () => {
 											)}
 										</For>
 									</Select>
-									<Show when={providerInstances().length === 0}>
+									<Show when={props.providerInstances().length === 0}>
 										<p class={cn("text-muted-foreground/70 -mt-2 text-[10px]")}>
 											Add a GitHub instance above to access private repositories.
 										</p>
@@ -737,24 +476,17 @@ export const RepositoryConfiguration: Component = () => {
 							</div>
 
 							<div class={cn("flex justify-end gap-3 pt-2")}>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										setShowSourceModal(false);
-										resetSourceForm();
-									}}
-								>
+								<Button variant="ghost" size="sm" onClick={props.onCloseSourceModal}>
 									Cancel
 								</Button>
 								<Button
 									variant="secondary"
 									size="sm"
-									onClick={handleSaveSource}
-									disabled={!sourceName().trim() || !sourceUrl().trim()}
+									onClick={props.onSaveSource}
+									disabled={!props.sourceName().trim() || !props.sourceUrl().trim()}
 									data-testid="save-source-button"
 								>
-									{editingSource() ? "Save" : "Add"}
+									{props.editingSource() ? "Save" : "Add"}
 								</Button>
 							</div>
 						</div>
@@ -763,7 +495,7 @@ export const RepositoryConfiguration: Component = () => {
 			</Show>
 
 			{/* Schema Info Modal */}
-			<Show when={showSchemaInfo()}>
+			<Show when={props.showSchemaInfo()}>
 				<div
 					class={cn(
 						"bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
@@ -781,7 +513,7 @@ export const RepositoryConfiguration: Component = () => {
 								<Button
 									variant="ghost"
 									size="xs"
-									onClick={() => setShowSchemaInfo(false)}
+									onClick={props.onCloseSchemaInfo}
 									aria-label="Close"
 								>
 									<CloseIcon />
@@ -816,7 +548,7 @@ export const RepositoryConfiguration: Component = () => {
 							</div>
 
 							<div class={cn("flex justify-end pt-2")}>
-								<Button variant="secondary" size="sm" onClick={() => setShowSchemaInfo(false)}>
+								<Button variant="secondary" size="sm" onClick={props.onCloseSchemaInfo}>
 									Got it
 								</Button>
 							</div>

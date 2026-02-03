@@ -1,9 +1,11 @@
 /**
- * RepositoryImportView - View for importing presets from configured repository sources
- * Refactored to use smaller, focused sub-components with signal-based reactivity
+ * RepositoryImportView Logic
+ *
+ * Pure TypeScript logic for the RepositoryImportView component.
+ * Manages state for importing presets from repository sources.
  */
-import type { Component } from "solid-js";
-import { Match, Switch, createMemo, createSignal, onMount } from "solid-js";
+import type { Accessor } from "solid-js";
+import { createMemo, createSignal, onMount } from "solid-js";
 
 import type { Preset } from "@/logic/parameters";
 import { GitHubProvider } from "@/logic/repository/providers/github";
@@ -15,27 +17,81 @@ import type {
 	RepositoryProvider,
 	RepositorySource,
 } from "@/logic/repository/types";
-import { cn } from "@/utils/cn";
 
-import {
-	ErrorState,
-	FetchPromptState,
-	InvalidFilesState,
-	LoadingState,
-	NoFilesFoundState,
-	NoSourcesState,
-	RepositoryImportHeader,
-	RepositoryImportPresetList,
-	RepositoryImportSourceSelector,
-} from "./import";
-import type { PresetWithMeta, SourceWithProvider } from "./import/types";
+import type { PresetWithMeta, SourceWithProvider } from "../import/types";
 
-interface RepositoryImportViewProps {
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface RepositoryImportViewProps {
 	onCancel: () => void;
 	onImport: (presets: Preset[]) => void;
 }
 
-export const RepositoryImportView: Component<RepositoryImportViewProps> = (props) => {
+export type ViewState =
+	| "no-sources"
+	| "loading"
+	| "fetch-prompt"
+	| "no-files"
+	| "invalid-files"
+	| "presets"
+	| "error";
+
+export interface RepositoryImportViewLogic {
+	// Reactive getters
+	sources: Accessor<SourceWithProvider[]>;
+	selectedSourceId: Accessor<string>;
+	isLoading: Accessor<boolean>;
+	fetchResult: Accessor<FetchResult | null>;
+	selectedPresets: Accessor<Set<string>>;
+	expandedPresetId: Accessor<string | null>;
+	allPresets: Accessor<PresetWithMeta[]>;
+	viewState: Accessor<ViewState>;
+	totalPresetCount: Accessor<number>;
+	selectedPresetCount: Accessor<number>;
+	hasNoSources: Accessor<boolean>;
+	hasValidFiles: Accessor<boolean>;
+
+	// External props (passed through)
+	onCancel: () => void;
+
+	// Callbacks
+	onSourceChange: (id: string) => Promise<void>;
+	onFetch: () => Promise<void>;
+	onTogglePresetSelection: (key: string) => void;
+	onTogglePresetExpanded: (key: string) => void;
+	onSelectAll: () => void;
+	onClearSelection: () => void;
+	onImportPresets: () => void;
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Get the appropriate provider for a repository source
+ */
+function getProviderForSource(
+	source: RepositorySource,
+	providerInstance?: ProviderInstance
+): RepositoryProvider | null {
+	if (providerInstance) return GitHubProvider;
+	if (GitHubProvider.validateUrl(source.url)) return GitHubProvider;
+	return UrlProvider;
+}
+
+// ============================================================================
+// Logic Factory
+// ============================================================================
+
+/**
+ * Create the logic for RepositoryImportView component
+ */
+export function createRepositoryImportViewLogic(
+	props: RepositoryImportViewProps
+): RepositoryImportViewLogic {
 	// ========== State Signals ==========
 	const [sources, setSources] = createSignal<SourceWithProvider[]>([]);
 	const [selectedSourceId, setSelectedSourceId] = createSignal<string>("");
@@ -83,15 +139,6 @@ export const RepositoryImportView: Component<RepositoryImportViewProps> = (props
 	const selectedPresetCount = createMemo(() => selectedPresets().size);
 
 	// View state for Switch/Match
-	type ViewState =
-		| "no-sources"
-		| "loading"
-		| "fetch-prompt"
-		| "no-files"
-		| "invalid-files"
-		| "presets"
-		| "error";
-
 	const viewState = createMemo<ViewState>(() => {
 		if (hasNoSources()) return "no-sources";
 		if (isLoading()) return "loading";
@@ -102,17 +149,6 @@ export const RepositoryImportView: Component<RepositoryImportViewProps> = (props
 		if (hasValidFiles()) return "presets";
 		return "fetch-prompt";
 	});
-
-	// ========== Provider Logic ==========
-
-	const getProviderForSource = (
-		source: RepositorySource,
-		providerInstance?: ProviderInstance
-	): RepositoryProvider | null => {
-		if (providerInstance) return GitHubProvider;
-		if (GitHubProvider.validateUrl(source.url)) return GitHubProvider;
-		return UrlProvider;
-	};
 
 	// ========== Actions ==========
 
@@ -158,14 +194,14 @@ export const RepositoryImportView: Component<RepositoryImportViewProps> = (props
 		}
 	};
 
-	const handleFetch = async () => {
+	const onFetch = async () => {
 		const sourceId = selectedSourceId();
 		const sourceData = sources().find((s) => s.source.id === sourceId);
 		if (!sourceData) return;
 		await fetchFromSource(sourceData);
 	};
 
-	const handleSourceChange = async (id: string) => {
+	const onSourceChange = async (id: string) => {
 		setSelectedSourceId(id);
 		setFetchResult(null);
 		// Auto-fetch when source changes
@@ -175,7 +211,7 @@ export const RepositoryImportView: Component<RepositoryImportViewProps> = (props
 		}
 	};
 
-	const togglePresetSelection = (presetKey: string) => {
+	const onTogglePresetSelection = (presetKey: string) => {
 		setSelectedPresets((prev) => {
 			const next = new Set(prev);
 			if (next.has(presetKey)) {
@@ -187,20 +223,20 @@ export const RepositoryImportView: Component<RepositoryImportViewProps> = (props
 		});
 	};
 
-	const togglePresetExpanded = (presetKey: string) => {
+	const onTogglePresetExpanded = (presetKey: string) => {
 		setExpandedPresetId(expandedPresetId() === presetKey ? null : presetKey);
 	};
 
-	const selectAllPresets = () => {
+	const onSelectAll = () => {
 		const allKeys = new Set(allPresets().map((p) => p.presetKey));
 		setSelectedPresets(allKeys);
 	};
 
-	const clearSelection = () => {
+	const onClearSelection = () => {
 		setSelectedPresets(new Set<string>());
 	};
 
-	const handleImport = () => {
+	const onImportPresets = () => {
 		const result = fetchResult();
 		if (!result?.success) return;
 
@@ -243,64 +279,33 @@ export const RepositoryImportView: Component<RepositoryImportViewProps> = (props
 		}
 	});
 
-	// ========== Render ==========
+	// ========== Return Logic Interface ==========
 
-	return (
-		<div class={cn("flex h-full flex-col")} data-testid="repository-import-view">
-			{/* Header */}
-			<div class={cn("mb-4 flex flex-col space-y-4")}>
-				<RepositoryImportHeader onCancel={props.onCancel} />
+	return {
+		// Reactive getters
+		sources,
+		selectedSourceId,
+		isLoading,
+		fetchResult,
+		selectedPresets,
+		expandedPresetId,
+		allPresets,
+		viewState,
+		totalPresetCount,
+		selectedPresetCount,
+		hasNoSources,
+		hasValidFiles,
 
-				{/* Source selector - only show when we have sources */}
-				<Switch>
-					<Match when={!hasNoSources()}>
-						<RepositoryImportSourceSelector
-							sources={sources}
-							selectedSourceId={selectedSourceId}
-							onSourceChange={handleSourceChange}
-							isLoading={isLoading}
-							onFetch={handleFetch}
-							showImportControls={hasValidFiles}
-							selectedCount={selectedPresetCount}
-							totalCount={totalPresetCount}
-							onSelectAll={selectAllPresets}
-							onClearSelection={clearSelection}
-							onImport={handleImport}
-						/>
-					</Match>
-				</Switch>
-			</div>
+		// External props (passed through)
+		onCancel: props.onCancel,
 
-			{/* Content area - shows different states */}
-			<Switch>
-				<Match when={viewState() === "no-sources"}>
-					<NoSourcesState onCancel={props.onCancel} />
-				</Match>
-				<Match when={viewState() === "error"}>
-					<ErrorState error={fetchResult()?.error || "Unknown error"} />
-				</Match>
-				<Match when={viewState() === "loading"}>
-					<LoadingState />
-				</Match>
-				<Match when={viewState() === "fetch-prompt"}>
-					<FetchPromptState />
-				</Match>
-				<Match when={viewState() === "no-files"}>
-					<NoFilesFoundState />
-				</Match>
-				<Match when={viewState() === "invalid-files"}>
-					<InvalidFilesState fetchResult={fetchResult} />
-				</Match>
-				<Match when={viewState() === "presets"}>
-					<RepositoryImportPresetList
-						presets={allPresets}
-						selectedPresets={selectedPresets}
-						expandedPresetId={expandedPresetId}
-						onTogglePreset={togglePresetSelection}
-						onToggleExpanded={togglePresetExpanded}
-					/>
-				</Match>
-			</Switch>
-		</div>
-	);
-};
+		// Callbacks
+		onSourceChange,
+		onFetch,
+		onTogglePresetSelection,
+		onTogglePresetExpanded,
+		onSelectAll,
+		onClearSelection,
+		onImportPresets,
+	};
+}
