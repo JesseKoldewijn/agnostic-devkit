@@ -372,6 +372,111 @@ function getEffectiveValue(
 }
 
 /**
+ * Categorize parameters into those to remove and those to revert
+ */
+function categorizeParameterChanges(
+	presetParams: Parameter[],
+	otherActivePresets: Preset[]
+): { toRemove: Parameter[]; toRevert: Parameter[] } {
+	const toRemove: Parameter[] = [];
+	const toRevert: Parameter[] = [];
+
+	for (const param of presetParams) {
+		const effectiveValue = getEffectiveValue(param.type, param.key, otherActivePresets);
+		if (effectiveValue === undefined) {
+			toRemove.push(param);
+		} else if (effectiveValue !== param.value) {
+			// Only need to revert if the value is different from the current one
+			toRevert.push({ ...param, value: effectiveValue });
+		}
+	}
+
+	return { toRemove, toRevert };
+}
+
+/**
+ * Handle query parameter removals and reverts in batch
+ */
+async function handleQueryParamChanges(
+	tabId: number,
+	toRemove: Parameter[],
+	toRevert: Parameter[]
+): Promise<boolean> {
+	if (toRemove.length === 0 && toRevert.length === 0) {
+		return true;
+	}
+
+	try {
+		const url = await getTabUrl(tabId);
+		if (!url) return true;
+
+		const urlObj = new URL(url);
+		for (const param of toRemove) {
+			urlObj.searchParams.delete(param.key);
+		}
+		for (const param of toRevert) {
+			urlObj.searchParams.set(param.key, param.value);
+		}
+		await browser.tabs?.update(tabId, { url: urlObj.toString() });
+
+		// Wait for page to start reloading
+		await new Promise((resolve) => setTimeout(resolve, 200));
+		return true;
+	} catch (error) {
+		console.error("[ParameterApplicator] Failed to update query params during removal:", error);
+		return false;
+	}
+}
+
+/**
+ * Handle cookie removals and reverts
+ */
+async function handleCookieChanges(
+	tabId: number,
+	toRemove: Parameter[],
+	toRevert: Parameter[]
+): Promise<boolean> {
+	let success = true;
+
+	for (const param of toRemove) {
+		if (!(await removeCookie(tabId, param.key))) {
+			success = false;
+		}
+	}
+	for (const param of toRevert) {
+		if (!(await applyCookie(tabId, param.key, param.value))) {
+			success = false;
+		}
+	}
+
+	return success;
+}
+
+/**
+ * Handle localStorage removals and reverts
+ */
+async function handleLocalStorageChanges(
+	tabId: number,
+	toRemove: Parameter[],
+	toRevert: Parameter[]
+): Promise<boolean> {
+	let success = true;
+
+	for (const param of toRemove) {
+		if (!(await removeLocalStorage(tabId, param.key))) {
+			success = false;
+		}
+	}
+	for (const param of toRevert) {
+		if (!(await applyLocalStorage(tabId, param.key, param.value))) {
+			success = false;
+		}
+	}
+
+	return success;
+}
+
+/**
  * Remove all parameters from a preset that are not used by other active presets
  * For shared parameters, reverts to the value from the next most recent active preset
  */
@@ -395,77 +500,37 @@ export async function removePreset(tabId: number, presetId: string): Promise<boo
 		.map((id) => allPresets.find((p: Preset) => p.id === id))
 		.filter((p): p is Preset => p !== undefined);
 
-	// Determine which parameters to remove and which to revert
-	const paramsToRemove: Parameter[] = [];
-	const paramsToRevert: Parameter[] = [];
-
-	for (const param of preset.parameters) {
-		const effectiveValue = getEffectiveValue(param.type, param.key, otherActivePresets);
-		if (effectiveValue === undefined) {
-			paramsToRemove.push(param);
-		} else if (effectiveValue !== param.value) {
-			// Only need to revert if the value is different from the current one
-			paramsToRevert.push({ ...param, value: effectiveValue });
-		}
-	}
+	// Categorize parameters into remove/revert lists
+	const { toRemove, toRevert } = categorizeParameterChanges(preset.parameters, otherActivePresets);
 
 	console.log(
-		`[ParameterApplicator] Params to remove: ${paramsToRemove.length}, to revert: ${paramsToRevert.length}`
+		`[ParameterApplicator] Params to remove: ${toRemove.length}, to revert: ${toRevert.length}`
 	);
 
-	let success = true;
+	// Filter parameters by type
+	const filterByType = (params: Parameter[], type: ParameterType) =>
+		params.filter((p) => p.type === type);
 
-	// Handle query params
-	const queryParamsToRemove = paramsToRemove.filter((p) => p.type === "queryParam");
-	const queryParamsToRevert = paramsToRevert.filter((p) => p.type === "queryParam");
+	// Handle each parameter type
+	const querySuccess = await handleQueryParamChanges(
+		tabId,
+		filterByType(toRemove, "queryParam"),
+		filterByType(toRevert, "queryParam")
+	);
 
-	if (queryParamsToRemove.length > 0 || queryParamsToRevert.length > 0) {
-		try {
-			const url = await getTabUrl(tabId);
-			if (url) {
-				const urlObj = new URL(url);
-				for (const param of queryParamsToRemove) {
-					urlObj.searchParams.delete(param.key);
-				}
-				for (const param of queryParamsToRevert) {
-					urlObj.searchParams.set(param.key, param.value);
-				}
-				await browser.tabs?.update(tabId, { url: urlObj.toString() });
+	const cookieSuccess = await handleCookieChanges(
+		tabId,
+		filterByType(toRemove, "cookie"),
+		filterByType(toRevert, "cookie")
+	);
 
-				// Wait for page to start reloading
-				await new Promise((resolve) => setTimeout(resolve, 200));
-			}
-		} catch (error) {
-			console.error("[ParameterApplicator] Failed to update query params during removal:", error);
-			success = false;
-		}
-	}
+	const localStorageSuccess = await handleLocalStorageChanges(
+		tabId,
+		filterByType(toRemove, "localStorage"),
+		filterByType(toRevert, "localStorage")
+	);
 
-	// Handle cookies
-	for (const param of paramsToRemove.filter((p) => p.type === "cookie")) {
-		if (!(await removeCookie(tabId, param.key))) {
-			success = false;
-		}
-	}
-	for (const param of paramsToRevert.filter((p) => p.type === "cookie")) {
-		if (!(await applyCookie(tabId, param.key, param.value))) {
-			success = false;
-		}
-	}
-
-	// Handle localStorage
-	for (const param of paramsToRemove.filter((p) => p.type === "localStorage")) {
-		if (!(await removeLocalStorage(tabId, param.key))) {
-			success = false;
-		}
-	}
-	for (const param of paramsToRevert.filter((p) => p.type === "localStorage")) {
-		if (!(await applyLocalStorage(tabId, param.key, param.value))) {
-			success = false;
-		}
-	}
-
-	return success;
+	return querySuccess && cookieSuccess && localStorageSuccess;
 }
 
 /**
