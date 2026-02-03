@@ -10,8 +10,10 @@ import * as matchers from "vitest-axe/matchers";
 expect.extend(matchers);
 
 // Augment Vitest's Assertion interface with axe matchers
+// These empty interfaces are required to extend Vitest's types with axe matchers
 declare module "vitest" {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	interface Assertion<T = any> extends AxeMatchers {}
+	// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+	interface Assertion<T = unknown> extends AxeMatchers {}
+	// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 	interface AsymmetricMatchersContaining extends AxeMatchers {}
 }

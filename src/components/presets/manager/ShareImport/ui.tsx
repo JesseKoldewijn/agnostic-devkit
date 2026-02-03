@@ -1,64 +1,20 @@
 /**
- * Share import modal component for importing presets from shared URLs
+ * ShareImport UI component - Pure presentational component
+ * Receives all data and callbacks via props from logic
  */
 import type { Component } from "solid-js";
-import { For, Show, createSignal } from "solid-js";
+import { For, Show } from "solid-js";
 
-import type { Preset } from "@/logic/parameters";
 import { getParameterTypeIcon } from "@/logic/parameters";
 import { cn } from "@/utils/cn";
-import type { DecompressResult } from "@/utils/presetCoder";
 
-import { Badge } from "../../ui/Badge";
-import { Button } from "../../ui/Button";
-import { Card } from "../../ui/Card";
-import { Separator } from "../../ui/Separator";
+import { Badge } from "../../../ui/Badge";
+import { Button } from "../../../ui/Button";
+import { Card } from "../../../ui/Card";
+import { Separator } from "../../../ui/Separator";
+import type { ShareImportLogic } from "./logic";
 
-export interface ShareImportProps {
-	shareImportData: DecompressResult | null;
-	shareImportError: string | null;
-	expandedPresetId: string | null;
-	onToggleExpanded: (presetId: string) => void;
-	onConfirm: () => void;
-	onCancel: () => void;
-}
-
-export const ShareImport: Component<ShareImportProps> = (props) => {
-	const [importSelections, setImportSelections] = createSignal<Set<string>>(new Set());
-
-	const getPresets = (): Preset[] => {
-		if (!props.shareImportData) return [];
-		// DecompressResult has result: Preset[]
-		return props.shareImportData.result;
-	};
-
-	const toggleSelection = (presetId: string) => {
-		setImportSelections((prev) => {
-			const next = new Set(prev);
-			if (next.has(presetId)) {
-				next.delete(presetId);
-			} else {
-				next.add(presetId);
-			}
-			return next;
-		});
-	};
-
-	const selectAll = () => {
-		const presets = getPresets();
-		setImportSelections(new Set(presets.map((p: Preset) => p.id)));
-	};
-
-	const deselectAll = () => {
-		setImportSelections(new Set<string>());
-	};
-
-	// Initialize all selected
-	const presets = getPresets();
-	if (presets.length > 0 && importSelections().size === 0) {
-		selectAll();
-	}
-
+export const ShareImportUI: Component<ShareImportLogic> = (props) => {
 	return (
 		<div class={cn("flex h-full flex-col")} data-testid="share-import-modal">
 			<div class={cn("mb-4 flex flex-col space-y-4")}>
@@ -105,7 +61,7 @@ export const ShareImport: Component<ShareImportProps> = (props) => {
 					</Card>
 				</Show>
 
-				<Show when={props.shareImportData && !props.shareImportError}>
+				<Show when={props.presets().length > 0 && !props.shareImportError}>
 					<div
 						class={cn(
 							"border-border/50 bg-muted/30 flex items-center justify-between gap-3 rounded-xl border p-3"
@@ -115,42 +71,43 @@ export const ShareImport: Component<ShareImportProps> = (props) => {
 							<Button
 								variant="secondary"
 								size="sm"
-								onClick={importSelections().size === presets.length ? deselectAll : selectAll}
+								onClick={props.allSelected() ? props.onDeselectAll : props.onSelectAll}
 								data-testid="share-import-select-all-button"
 							>
-								{importSelections().size === presets.length ? "Deselect All" : "Select All"}
+								{props.allSelected() ? "Deselect All" : "Select All"}
 							</Button>
 						</div>
 						<Button
 							size="sm"
 							onClick={props.onConfirm}
-							disabled={importSelections().size === 0}
+							disabled={props.importSelections().size === 0}
 							data-testid="share-import-confirm"
 						>
-							Import ({importSelections().size})
+							Import ({props.importSelections().size})
 						</Button>
 					</div>
 				</Show>
 			</div>
 
-			<Show when={props.shareImportData && !props.shareImportError}>
+			<Show when={props.presets().length > 0 && !props.shareImportError}>
 				<div class={cn("-mr-1 flex-1 space-y-3 overflow-y-auto pr-1")}>
-					<For each={getPresets()}>
+					<For each={props.presets()}>
 						{(preset) => (
 							<Card
 								class={cn(
 									"border-border/60 p-4 shadow-sm transition-all",
-									importSelections().has(preset.id) && "border-primary/40 bg-primary/5"
+									props.importSelections().has(preset.id) && "border-primary/40 bg-primary/5"
 								)}
 								data-testid="share-import-preset-item"
 							>
 								<div class={cn("flex items-start gap-3")}>
 									<input
 										type="checkbox"
-										checked={importSelections().has(preset.id)}
-										onChange={() => toggleSelection(preset.id)}
+										checked={props.importSelections().has(preset.id)}
+										onChange={() => props.onToggleSelection(preset.id)}
 										class={cn("mt-1")}
 										data-testid="share-import-preset-checkbox"
+										aria-label={`Select ${preset.name} for import`}
 									/>
 									<button
 										type="button"
@@ -189,7 +146,7 @@ export const ShareImport: Component<ShareImportProps> = (props) => {
 								</div>
 
 								<Show when={props.expandedPresetId === preset.id}>
-									<div class={cn("mt-4")}>
+									<div class={cn("mt-4")} data-testid="share-import-preset-expanded-params">
 										<Separator class={cn("mb-4 opacity-50")} />
 										<div class={cn("space-y-2")}>
 											<For each={preset.parameters}>

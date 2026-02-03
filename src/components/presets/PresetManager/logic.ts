@@ -1,9 +1,10 @@
 /**
- * Full CRUD interface for managing presets and their parameters
- * This is the main orchestrator component that manages state and delegates to sub-components
+ * PresetManager Logic
+ * Pure business logic for the PresetManager orchestrator component
+ * Uses SolidJS primitives only for reactive state management
  */
-import type { Component } from "solid-js";
-import { Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import type { Accessor } from "solid-js";
+import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 
 import type { Parameter, Preset, PrimitiveType } from "@/logic/parameters";
 import {
@@ -20,21 +21,132 @@ import {
 	parseShareUrl,
 	updatePresetData,
 } from "@/logic/parameters";
-import { cn } from "@/utils/cn";
 import type { DecompressResult } from "@/utils/presetCoder";
 
-import { RepositoryImportView } from "../repository";
-import { EmptyStates } from "./manager/EmptyStates";
-import { Export } from "./manager/Export";
-import { Form } from "./manager/Form";
-import { Header } from "./manager/Header";
-import { Import } from "./manager/Import";
-import { List } from "./manager/List";
-import { ShareImport } from "./manager/ShareImport";
-import type { PresetManagerProps, ViewMode } from "./manager/types";
+import type { ViewMode } from "../manager/types";
 
-export const PresetManager: Component<PresetManagerProps> = (props) => {
-	// Core state
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface PresetManagerProps {
+	class?: string;
+	onClose?: () => void;
+}
+
+export interface PresetManagerLogic {
+	// Pass-through props
+	class: string | undefined;
+
+	// Core state accessors
+	presets: Accessor<Preset[]>;
+	loading: Accessor<boolean>;
+	viewMode: Accessor<ViewMode>;
+	editingPreset: Accessor<Preset | null>;
+	confirmDelete: Accessor<string | null>;
+	expandedPresetId: Accessor<string | null>;
+
+	// Selection state (for export)
+	selectedPresets: Accessor<Set<string>>;
+	copySuccess: Accessor<boolean>;
+
+	// Share import state
+	shareImportData: Accessor<DecompressResult | null>;
+	shareImportError: Accessor<string | null>;
+	shareImportExpandedId: Accessor<string | null>;
+
+	// Form state
+	parameterIds: Accessor<string[]>;
+	saving: Accessor<boolean>;
+
+	// Navigation callbacks
+	onClose: (() => void) | undefined;
+	onStartCreate: () => void;
+	onStartEdit: (preset: Preset) => void;
+	onCancelForm: () => void;
+	onToggleExpanded: (id: string) => void;
+	onStartExport: () => void;
+	onCancelExport: () => void;
+	onStartFileImport: () => void;
+	onCancelFileImport: () => void;
+	onStartRepositoryImport: () => void;
+	onRepositoryImportCancel: () => void;
+
+	// Form callbacks
+	onAddParameter: () => void;
+	onRemoveParameter: (id: string) => void;
+	onSavePreset: (e?: Event) => Promise<void>;
+	getParameterData: (id: string) => Parameter;
+	getPrimitiveType: (id: string) => PrimitiveType;
+	onPrimitiveTypeChange: (id: string, type: PrimitiveType) => void;
+	getBoolValue: (id: string) => boolean;
+	onBoolValueChange: (id: string, value: boolean) => void;
+
+	// CRUD callbacks
+	onDelete: (id: string) => Promise<void>;
+	onDuplicate: (id: string) => Promise<void>;
+	onSetConfirmDelete: (id: string | null) => void;
+
+	// Selection callbacks (for export)
+	onTogglePresetSelection: (id: string) => void;
+	onSelectAll: () => void;
+	onClearSelection: () => void;
+
+	// Export callbacks
+	onExportDownload: () => Promise<void>;
+	onExportUrl: () => Promise<void>;
+	onExportSingle: (preset: Preset) => Promise<void>;
+
+	// Import callbacks
+	onImportFile: (e: Event) => Promise<void>;
+	onRepositoryImportConfirm: (presets: Preset[]) => Promise<void>;
+
+	// Share import callbacks
+	onLoadShareUrl: (url: string) => void;
+	onShareImportConfirm: () => Promise<void>;
+	onShareImportCancel: () => void;
+	onToggleShareImportExpanded: (id: string) => void;
+}
+
+// ============================================================================
+// Helper Functions (Pure)
+// ============================================================================
+
+/**
+ * Download JSON data as a file
+ */
+function downloadJson(json: string, filename: string): void {
+	const blob = new Blob([json], { type: "application/json" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = filename;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Get today's date in ISO format (YYYY-MM-DD)
+ */
+function getDateString(): string {
+	return new Date().toISOString().split("T")[0];
+}
+
+/**
+ * Create a filename-safe version of a name
+ */
+function sanitizeFilename(name: string): string {
+	return name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+// ============================================================================
+// Logic Factory
+// ============================================================================
+
+export function createPresetManagerLogic(props: PresetManagerProps): PresetManagerLogic {
+	// ============================================
+	// Core State
+	// ============================================
 	const [presets, setPresets] = createSignal<Preset[]>([]);
 	const [loading, setLoading] = createSignal(true);
 	const [viewMode, setViewMode] = createSignal<ViewMode>("list");
@@ -348,20 +460,10 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	// Actions: Export
 	// ============================================
 
-	const downloadJson = (json: string, filename: string) => {
-		const blob = new Blob([json], { type: "application/json" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		a.click();
-		URL.revokeObjectURL(url);
-	};
-
 	const handleExportDownload = async () => {
 		try {
 			const selected = Array.from(selectedPresets());
-			const date = new Date().toISOString().split("T")[0];
+			const date = getDateString();
 
 			if (selected.length === 0) {
 				const json = await exportPresets();
@@ -407,8 +509,8 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	const handleExportSingle = async (preset: Preset) => {
 		try {
 			const json = await exportPresets([preset.id]);
-			const date = new Date().toISOString().split("T")[0];
-			const safeName = preset.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+			const date = getDateString();
+			const safeName = sanitizeFilename(preset.name);
 			downloadJson(json, `preset-${safeName}-${date}.json`);
 		} catch (error) {
 			console.error("[PresetManager] Failed to export preset:", error);
@@ -519,100 +621,80 @@ export const PresetManager: Component<PresetManagerProps> = (props) => {
 	};
 
 	// ============================================
-	// Render
+	// Return Logic Interface
 	// ============================================
 
-	return (
-		<div class={cn("relative flex flex-col", props.class)}>
-			<Show when={viewMode() === "list"}>
-				<div class={cn("flex h-full flex-col")} data-testid="preset-manager-list">
-					<Header
-						onClose={props.onClose}
-						onStartCreate={handleStartCreate}
-						onStartExport={handleStartExport}
-						onStartFileImport={handleStartFileImport}
-					/>
+	return {
+		// Pass-through props
+		class: props.class,
 
-					<EmptyStates
-						isLoading={loading()}
-						hasPresets={presets().length > 0}
-						onStartCreate={handleStartCreate}
-					/>
+		// Core state
+		presets,
+		loading,
+		viewMode,
+		editingPreset,
+		confirmDelete,
+		expandedPresetId,
 
-					<Show when={!loading() && presets().length > 0}>
-						<List
-							presets={presets()}
-							expandedPresetId={expandedPresetId()}
-							confirmDelete={confirmDelete()}
-							onToggleExpanded={handleToggleExpanded}
-							onStartEdit={handleStartEdit}
-							onDelete={handleDelete}
-							onDuplicate={handleDuplicate}
-							onExportSingle={handleExportSingle}
-							onSetConfirmDelete={setConfirmDelete}
-						/>
-					</Show>
-				</div>
-			</Show>
+		// Selection state
+		selectedPresets,
+		copySuccess,
 
-			<Show when={viewMode() === "create" || viewMode() === "edit"}>
-				<Form
-					viewMode={viewMode()}
-					editingPreset={editingPreset()}
-					parameterIds={parameterIds()}
-					saving={saving()}
-					onSave={handleSavePreset}
-					onCancel={handleCancelForm}
-					onAddParameter={handleAddParameter}
-					onRemoveParameter={handleRemoveParameter}
-					getParameterData={getParameterData}
-					getPrimitiveType={getParamPrimitiveType}
-					onPrimitiveTypeChange={setParamPrimitiveType}
-					getBoolValue={getParamBoolValue}
-					onBoolValueChange={setParamBoolValue}
-				/>
-			</Show>
+		// Share import state
+		shareImportData,
+		shareImportError,
+		shareImportExpandedId,
 
-			<Show when={viewMode() === "export"}>
-				<Export
-					presets={presets()}
-					selectedPresets={selectedPresets()}
-					copySuccess={copySuccess()}
-					onToggleSelection={handleTogglePresetSelection}
-					onSelectAll={handleSelectAll}
-					onClearSelection={handleClearSelection}
-					onExportDownload={handleExportDownload}
-					onExportUrl={handleExportUrl}
-					onCancel={handleCancelExport}
-				/>
-			</Show>
+		// Form state
+		parameterIds,
+		saving,
 
-			<Show when={viewMode() === "file-import"}>
-				<Import
-					onImport={handleImportFile}
-					onStartRepositoryImport={handleStartRepositoryImport}
-					onCancel={handleCancelFileImport}
-					onLoadShareUrl={handleLoadShareUrl}
-				/>
-			</Show>
+		// Navigation callbacks
+		onClose: props.onClose,
+		onStartCreate: handleStartCreate,
+		onStartEdit: handleStartEdit,
+		onCancelForm: handleCancelForm,
+		onToggleExpanded: handleToggleExpanded,
+		onStartExport: handleStartExport,
+		onCancelExport: handleCancelExport,
+		onStartFileImport: handleStartFileImport,
+		onCancelFileImport: handleCancelFileImport,
+		onStartRepositoryImport: handleStartRepositoryImport,
+		onRepositoryImportCancel: handleRepositoryImportCancel,
 
-			<Show when={viewMode() === "share-import"}>
-				<ShareImport
-					shareImportData={shareImportData()}
-					shareImportError={shareImportError()}
-					expandedPresetId={shareImportExpandedId()}
-					onToggleExpanded={handleToggleShareImportExpanded}
-					onConfirm={handleShareImportConfirm}
-					onCancel={handleShareImportCancel}
-				/>
-			</Show>
+		// Form callbacks
+		onAddParameter: handleAddParameter,
+		onRemoveParameter: handleRemoveParameter,
+		onSavePreset: handleSavePreset,
+		getParameterData,
+		getPrimitiveType: getParamPrimitiveType,
+		onPrimitiveTypeChange: setParamPrimitiveType,
+		getBoolValue: getParamBoolValue,
+		onBoolValueChange: setParamBoolValue,
 
-			<Show when={viewMode() === "repository-import"}>
-				<RepositoryImportView
-					onCancel={handleRepositoryImportCancel}
-					onImport={handleRepositoryImportConfirm}
-				/>
-			</Show>
-		</div>
-	);
-};
+		// CRUD callbacks
+		onDelete: handleDelete,
+		onDuplicate: handleDuplicate,
+		onSetConfirmDelete: setConfirmDelete,
+
+		// Selection callbacks
+		onTogglePresetSelection: handleTogglePresetSelection,
+		onSelectAll: handleSelectAll,
+		onClearSelection: handleClearSelection,
+
+		// Export callbacks
+		onExportDownload: handleExportDownload,
+		onExportUrl: handleExportUrl,
+		onExportSingle: handleExportSingle,
+
+		// Import callbacks
+		onImportFile: handleImportFile,
+		onRepositoryImportConfirm: handleRepositoryImportConfirm,
+
+		// Share import callbacks
+		onLoadShareUrl: handleLoadShareUrl,
+		onShareImportConfirm: handleShareImportConfirm,
+		onShareImportCancel: handleShareImportCancel,
+		onToggleShareImportExpanded: handleToggleShareImportExpanded,
+	};
+}
