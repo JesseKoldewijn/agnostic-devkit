@@ -1,5 +1,5 @@
 import type { Component, JSX } from "solid-js";
-import { splitProps } from "solid-js";
+import { createUniqueId, splitProps } from "solid-js";
 
 import { cn } from "@/utils/cn";
 
@@ -17,14 +17,21 @@ export const Select: Component<SelectProps> = (props) => {
 		"label",
 		"containerClass",
 		"required",
+		"id",
 	]);
+	const selectId = local.id ?? createUniqueId();
 
 	return (
 		<div class={cn("flex flex-col", local.containerClass)}>
-			{local.label && <Label required={local.required as boolean}>{local.label}</Label>}
+			{local.label && (
+				<Label for={selectId} required={local.required as boolean}>
+					{local.label}
+				</Label>
+			)}
 			<div class="group relative w-full">
 				<select
 					{...others}
+					id={selectId}
 					class={cn(
 						"border-border bg-background text-foreground focus:border-primary focus:ring-primary/10 flex h-11 w-full cursor-pointer appearance-none items-center justify-between rounded-xl border-2 px-4 text-[13px] font-black tracking-wider uppercase transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
 						local.class

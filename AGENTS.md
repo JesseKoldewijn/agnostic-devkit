@@ -25,13 +25,15 @@ This document defines the development standards, architectural patterns, and cod
 
 ### Technology Stack
 
-| Layer       | Technology                                      |
-| ----------- | ----------------------------------------------- |
-| Framework   | [WXT](https://wxt.dev/) (Browser Extension)     |
-| UI          | [SolidJS](https://www.solidjs.com/)             |
-| Styling     | [Tailwind CSS v4](https://tailwindcss.com/)     |
-| Validation  | [Zod](https://zod.dev/)                         |
-| Testing     | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) |
+| Layer           | Technology                                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework       | [WXT](https://wxt.dev/) (Browser Extension)                                                                                                              |
+| UI              | [SolidJS](https://www.solidjs.com/)                                                                                                                      |
+| Styling         | [Tailwind CSS v4](https://tailwindcss.com/)                                                                                                              |
+| Validation      | [Zod](https://zod.dev/)                                                                                                                                  |
+| Testing         | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/)                                                                                    |
+| Component Tests | [@solidjs/testing-library](https://github.com/solidjs/solid-testing-library)                                                                             |
+| Accessibility   | [vitest-axe](https://github.com/chaance/vitest-axe) + [@axe-core/playwright](https://github.com/dequelabs/axe-core-npm/tree/develop/packages/playwright) |
 
 ### Directory Structure
 
@@ -47,13 +49,28 @@ src/
 └── styles/          # Global styles and Tailwind configuration
 
 test/
-├── core/            # Shared test infrastructure
-│   ├── fixtures/    # Test data factories and sample data
-│   ├── helpers/     # Test utility functions
-│   └── mocks/       # Global mock builders
-├── unit/            # Unit tests for logic and utilities
-├── integration/     # Integration tests for component interactions
-└── e2e/             # Playwright end-to-end tests
+├── core/                    # Shared test infrastructure
+│   ├── fixtures/            # Test data factories and sample data
+│   ├── helpers/             # Test utilities (testUtils.ts, renderUtils.ts)
+│   ├── mocks/               # Global mock builders
+│   ├── setup.ts             # Global Vitest setup (axe matchers)
+│   └── index.ts             # Barrel exports for all test utilities
+├── unit/                    # Unit tests (mirrors src/ structure)
+│   ├── components/ui/       # UI component tests with a11y checks
+│   ├── logic/               # Business logic tests
+│   │   ├── parameters/      # Parameter/preset logic tests
+│   │   └── repository/      # Repository logic tests
+│   └── utils/               # Utility function tests
+├── integration/             # Integration tests (mirrors src/ structure)
+│   ├── components/          # Component integration tests
+│   └── logic/               # Logic integration tests
+└── e2e/                     # Playwright E2E tests (grouped by feature)
+    ├── core/                # E2E fixtures, helpers, a11yUtils
+    ├── popup/               # Popup entrypoint tests
+    ├── sidepanel/           # Sidepanel entrypoint tests
+    ├── settings/            # Settings page tests
+    ├── presets/             # Preset feature tests
+    └── shared/              # Cross-cutting tests (background, content, sync)
 ```
 
 ---
@@ -75,11 +92,11 @@ src/components/[feature]/ComponentName/
 
 #### Responsibilities
 
-| File       | Responsibility                                                                 |
-| ---------- | ------------------------------------------------------------------------------ |
+| File       | Responsibility                                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `logic.ts` | Pure TypeScript functions. **No SolidJS primitives.** Handles data fetching, transformations, event handlers, and business rules. Must be fully testable in isolation. |
-| `ui.tsx`   | Presentational component. Receives all data and callbacks via props. Contains minimal logic (only rendering conditionals). |
-| `index.ts` | Uses the `connect` HOC to bind `logic.ts` exports to `ui.tsx` props. Handles SolidJS reactivity bridging. |
+| `ui.tsx`   | Presentational component. Receives all data and callbacks via props. Contains minimal logic (only rendering conditionals).                                             |
+| `index.ts` | Uses the `connect` HOC to bind `logic.ts` exports to `ui.tsx` props. Handles SolidJS reactivity bridging.                                                              |
 
 #### Example
 
@@ -88,30 +105,32 @@ src/components/[feature]/ComponentName/
 import type { Preset } from "@/logic/presets/types";
 
 export interface ComponentNameLogic {
-  presets: Preset[];
-  isLoading: boolean;
-  onDelete: (id: string) => void;
-  onSave: (preset: Preset) => Promise<void>;
+	presets: Preset[];
+	isLoading: boolean;
+	onDelete: (id: string) => void;
+	onSave: (preset: Preset) => Promise<void>;
 }
 
 export function createComponentNameLogic(): ComponentNameLogic {
-  // Pure logic implementation
+	// Pure logic implementation
 }
 ```
 
 ```tsx
 // ComponentName/ui.tsx
 import type { Component } from "solid-js";
+
 import type { ComponentNameLogic } from "./logic";
 
 export const ComponentNameUI: Component<ComponentNameLogic> = (props) => {
-  return <div>{/* Render using props */}</div>;
+	return <div>{/* Render using props */}</div>;
 };
 ```
 
 ```typescript
 // ComponentName/index.ts
 import { connect } from "@/utils/connect";
+
 import { createComponentNameLogic } from "./logic";
 import { ComponentNameUI } from "./ui";
 
@@ -137,6 +156,7 @@ The `src/logic/` directory and component `logic.ts` files must:
 - Return **plain objects/arrays**, not reactive primitives.
 
 This ensures logic is:
+
 1. Testable without SolidJS test utilities.
 2. Portable if the UI framework changes.
 3. Easy to reason about in isolation.
@@ -153,17 +173,96 @@ This ensures logic is:
 
 ### Test Organization
 
-| Type        | Location           | Tool       | Purpose                                      |
-| ----------- | ------------------ | ---------- | -------------------------------------------- |
-| Unit        | `test/unit/`       | Vitest     | Test logic functions and utilities in isolation |
-| Integration | `test/integration/`| Vitest     | Test component interactions and state flows  |
-| E2E         | `test/e2e/`        | Playwright | Test full extension behavior in real browsers |
+| Type        | Location            | Tool       | File Pattern   | Purpose                                         |
+| ----------- | ------------------- | ---------- | -------------- | ----------------------------------------------- |
+| Unit        | `test/unit/`        | Vitest     | `*.test.ts(x)` | Test logic functions and utilities in isolation |
+| Integration | `test/integration/` | Vitest     | `*.test.ts(x)` | Test component interactions and state flows     |
+| E2E         | `test/e2e/`         | Playwright | `*.spec.ts`    | Test full extension behavior in real browsers   |
+
+### Test File Location
+
+Test files **must mirror the source directory structure**:
+
+```
+src/utils/browser.ts           → test/unit/utils/browser.test.ts
+src/logic/parameters/storage.ts → test/unit/logic/parameters/storage.test.ts
+src/components/ui/Button.tsx   → test/unit/components/ui/Button.test.tsx
+```
 
 ### Coverage Requirements
 
 - All logic in `src/logic/` and `src/utils/` must have unit tests.
+- All UI components in `src/components/ui/` must have accessibility tests.
 - Coverage is tracked via a merged pipeline (Vitest + Playwright).
 - Run `yarn test:all:coverage` to generate combined coverage reports.
+
+---
+
+## Accessibility Testing
+
+### Requirements
+
+**All component tests must include accessibility validation.** Use `vitest-axe` for unit/integration tests and `@axe-core/playwright` for E2E tests.
+
+### Unit Test Pattern
+
+```tsx
+import { checkA11y, render } from "@test/core/helpers/renderUtils";
+import { describe, expect, it } from "vitest";
+
+import { Button } from "@/components/ui/Button";
+
+describe("Button", () => {
+	describe("accessibility", () => {
+		it("should have no accessibility violations", async () => {
+			const { container } = render(<Button>Click me</Button>);
+			const results = await checkA11y(container);
+
+			expect(results).toHaveNoViolations();
+		});
+
+		it("should have no violations with aria-label for icon buttons", async () => {
+			const { container } = render(
+				<Button size="icon" aria-label="Add item">
+					+
+				</Button>
+			);
+			const results = await checkA11y(container);
+
+			expect(results).toHaveNoViolations();
+		});
+	});
+});
+```
+
+### E2E Accessibility Pattern
+
+```typescript
+import { assertPageA11y, checkPageA11y } from "../core/a11yUtils";
+import { expect, test } from "../core/fixtures";
+
+test("settings page should be accessible", async ({ page, extensionId }) => {
+	await page.goto(`chrome-extension://${extensionId}/settings.html`);
+
+	// Option 1: Get results and assert
+	const results = await checkPageA11y(page);
+	expect(results.violations).toEqual([]);
+
+	// Option 2: Assert directly (throws on violations)
+	await assertPageA11y(page);
+});
+```
+
+### Render Utilities
+
+The project provides rendering helpers in `test/core/helpers/renderUtils.ts`:
+
+| Function                | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| `render(jsx)`           | Render a JSX element, returns container and unmount |
+| `renderComponent(C, p)` | Render a component with props                       |
+| `checkA11y(container)`  | Run axe-core on a container, returns results        |
+| `renderWithA11y(jsx)`   | Render and check a11y in one call                   |
 
 ---
 
@@ -172,6 +271,7 @@ This ensures logic is:
 ### Global, Reusable Mocks
 
 All mocks must be:
+
 1. **Global**: Stored in `test/core/mocks/`, not scattered across test files.
 2. **Reusable**: Built as factories/builders for flexible configuration.
 3. **Consistent**: Follow the `createMock*` naming convention.
@@ -183,36 +283,38 @@ Use the `createMock` prefix for all mock builders:
 ```typescript
 // test/core/mocks/mockStorage.ts
 export function createMockStorageBuilder() {
-  const store: Record<string, unknown> = {};
-  
-  return {
-    withPresets(presets: Preset[]) {
-      store["local:presets"] = presets;
-      return this;
-    },
-    withSettings(settings: Partial<Settings>) {
-      store["local:settings"] = settings;
-      return this;
-    },
-    build() {
-      return {
-        get: vi.fn((key: string) => store[key]),
-        set: vi.fn((key: string, value: unknown) => { store[key] = value; }),
-        // ... other storage methods
-      };
-    },
-  };
+	const store: Record<string, unknown> = {};
+
+	return {
+		withPresets(presets: Preset[]) {
+			store["local:presets"] = presets;
+			return this;
+		},
+		withSettings(settings: Partial<Settings>) {
+			store["local:settings"] = settings;
+			return this;
+		},
+		build() {
+			return {
+				get: vi.fn((key: string) => store[key]),
+				set: vi.fn((key: string, value: unknown) => {
+					store[key] = value;
+				}),
+				// ... other storage methods
+			};
+		},
+	};
 }
 ```
 
 ### Mock Location Guidelines
 
-| Type              | Location                  | Example                        |
-| ----------------- | ------------------------- | ------------------------------ |
-| Browser API mocks | `test/core/mocks/`        | `fakeBrowser.ts`               |
-| Data fixtures     | `test/core/fixtures/`     | `presets.ts`, `settings.ts`    |
-| Test helpers      | `test/core/helpers/`      | `testUtils.ts`, `renderUtils.ts` |
-| One-off mocks     | Inline in test file       | Only if truly single-use       |
+| Type              | Location              | Example                          |
+| ----------------- | --------------------- | -------------------------------- |
+| Browser API mocks | `test/core/mocks/`    | `fakeBrowser.ts`                 |
+| Data fixtures     | `test/core/fixtures/` | `presets.ts`, `settings.ts`      |
+| Test helpers      | `test/core/helpers/`  | `testUtils.ts`, `renderUtils.ts` |
+| One-off mocks     | Inline in test file   | Only if truly single-use         |
 
 ### Existing Infrastructure
 
@@ -227,6 +329,7 @@ export { createPreset, createParameter, samplePresets } from "./fixtures/presets
 
 // Helpers
 export { waitFor, sleep, createDeferred } from "./helpers/testUtils";
+export { render, checkA11y, renderWithA11y } from "./helpers/renderUtils";
 ```
 
 ---
@@ -249,7 +352,7 @@ import { cn } from "../../../utils/cn";
 Use `@test/` for test utilities:
 
 ```typescript
-import { setupBrowserMocks, samplePresets } from "@test/core";
+import { samplePresets, setupBrowserMocks } from "@test/core";
 ```
 
 ### Tailwind CSS Utilities
@@ -268,16 +371,16 @@ import { cn } from "@/utils/cn";
 
 ### Scripts Reference
 
-| Command                    | Purpose                                      |
-| -------------------------- | -------------------------------------------- |
-| `yarn dev`                 | Start development with HMR                   |
-| `yarn build:all`           | Build for Chrome and Firefox                 |
-| `yarn test`                | Run Vitest unit/integration tests            |
-| `yarn test:e2e`            | Run Playwright E2E tests                     |
-| `yarn test:all:coverage`   | Full coverage run (Vitest + Playwright)      |
-| `yarn lint`                | Run ESLint                                   |
-| `yarn lint:fix`            | Auto-fix ESLint issues                       |
-| `yarn check:unused`        | Detect unused exports with Knip              |
+| Command                  | Purpose                                 |
+| ------------------------ | --------------------------------------- |
+| `yarn dev`               | Start development with HMR              |
+| `yarn build:all`         | Build for Chrome and Firefox            |
+| `yarn test`              | Run Vitest unit/integration tests       |
+| `yarn test:e2e`          | Run Playwright E2E tests                |
+| `yarn test:all:coverage` | Full coverage run (Vitest + Playwright) |
+| `yarn lint`              | Run ESLint                              |
+| `yarn lint:fix`          | Auto-fix ESLint issues                  |
+| `yarn check:unused`      | Detect unused exports with Knip         |
 
 ---
 
@@ -334,6 +437,7 @@ BREAKING CHANGE: The `oldMethod()` has been removed. Use `newMethod()` instead.
 - ✅ Keep logic files SolidJS-agnostic
 - ✅ Use `createMock*` builders for test mocks
 - ✅ Follow conventional commits
+- ✅ Include accessibility tests for all UI components
 
 ### Don't
 
@@ -342,3 +446,4 @@ BREAKING CHANGE: The `oldMethod()` has been removed. Use `newMethod()` instead.
 - ❌ Create one-off mocks when a reusable builder exists
 - ❌ Skip tests for logic functions
 - ❌ Use relative imports when `@/` alias is available
+- ❌ Create UI components without accessibility tests

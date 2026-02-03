@@ -19,17 +19,17 @@ const DefaultErrorFallback: Component<ErrorFallbackProps> = (props) => {
 	return (
 		<div
 			class={cn(
-				"flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-center"
+				"border-destructive/30 bg-destructive/10 flex flex-col items-center justify-center gap-3 rounded-lg border p-4 text-center"
 			)}
 		>
-			<div class="text-sm font-medium text-destructive">Something went wrong</div>
-			<div class="max-w-xs text-xs text-destructive/70">{props.error.message}</div>
+			<div class="text-destructive text-sm font-medium">Something went wrong</div>
+			<div class="text-destructive/70 max-w-xs text-xs">{props.error.message}</div>
 			<button
 				type="button"
 				onClick={props.reset}
 				class={cn(
-					"rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground",
-					"hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-destructive/50"
+					"bg-destructive text-destructive-foreground rounded-md px-3 py-1.5 text-xs font-medium",
+					"focus:ring-destructive/50 hover:brightness-110 focus:ring-2 focus:outline-none"
 				)}
 			>
 				Try Again
@@ -185,10 +185,7 @@ export function connect<TLogic extends object>(
  * // Usage: <MyComponent initialValue="hello" />
  * ```
  */
-export function connectWithProps<
-	TLogic extends object,
-	TExternalProps extends object,
->(
+export function connectWithProps<TLogic extends object, TExternalProps extends object>(
 	UIComponent: Component<TLogic>,
 	createLogic: (props: TExternalProps) => TLogic,
 	options: ConnectOptions<TLogic> = {}
