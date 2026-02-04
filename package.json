@@ -38,6 +38,9 @@
 		"coverage:open:vitest": "npx --yes open-cli coverage/vitest/index.html",
 		"coverage:open:playwright": "npx --yes open-cli coverage/playwright/index.html",
 		"check:unused": "node scripts/check-unused.js",
+		"validate:build": "node scripts/validate-build.js",
+		"validate:build:chrome": "node scripts/validate-build.js --browser chrome",
+		"validate:build:firefox": "node scripts/validate-build.js --browser firefox",
 		"package": "yarn zip:all",
 		"release:dry-run": "semantic-release --dry-run --no-ci"
 	},
@@ -90,6 +93,7 @@
 		"vite-tsconfig-paths": "^6.0.5",
 		"vitest": "^4.0.16",
 		"vitest-axe": "^0.1.0",
+		"web-ext": "^9.2.0",
 		"wxt": "^0.20.13"
 	},
 	"packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
