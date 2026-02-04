@@ -3,6 +3,7 @@ import { For, Show, createResource, createSignal, onMount } from "solid-js";
 
 import { browser } from "wxt/browser";
 
+import { DebugMenu } from "@/components/debug";
 import { RepositoryConfiguration } from "@/components/repository";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
@@ -14,8 +15,15 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Separator } from "@/components/ui/Separator";
 import { Switch } from "@/components/ui/Switch";
+import {
+	clearForceProfile,
+	getEffectiveProfile,
+	getForceProfile,
+	isValidExtensionEnv,
+	setForceProfile,
+} from "@/logic/featureFlags";
 import { createPreset, getParameterTypeIcon, parseShareUrl } from "@/logic/parameters";
-import { getUpdateInfo } from "@/logic/releaseService";
+import { getCanaryUpdateInfo, getUpdateInfo } from "@/logic/releaseService";
 import { getBrowserName, isSidebarSupported } from "@/utils/browser";
 import { cn } from "@/utils/cn";
 import type { DisplayMode } from "@/utils/displayMode";
@@ -25,8 +33,15 @@ import type { Theme } from "@/utils/theme";
 import { applyTheme, getTheme, setTheme } from "@/utils/theme";
 
 export const Settings: Component = () => {
-	const extensionEnv = __EXTENSION_ENV__;
+	const buildEnv = __EXTENSION_ENV__;
 	const version = __EXTENSION_VERSION__;
+
+	// Effective profile (may be overridden via forceProfile)
+	const [effectiveEnv, setEffectiveEnv] = createSignal(getEffectiveProfile(buildEnv));
+	const [forceProfileValue, setForceProfileValue] = createSignal(getForceProfile());
+
+	// Debug menu modal state
+	const [showDebugMenu, setShowDebugMenu] = createSignal(false);
 
 	const [theme, setThemeInput] = createSignal<Theme>("system");
 	const [displayMode, setDisplayModeInput] = createSignal<DisplayMode>("popup");
@@ -48,7 +63,19 @@ export const Settings: Component = () => {
 	};
 
 	// Resource for fetching update info
-	const [updateInfo] = createResource(() => getUpdateInfo(version, extensionEnv));
+	const [updateInfo] = createResource(() => getUpdateInfo(version, effectiveEnv()));
+
+	// Resource for fetching canary update info (only for production builds)
+	const [canaryInfo] = createResource(
+		() => effectiveEnv() === "production",
+		(shouldFetch) => (shouldFetch ? getCanaryUpdateInfo(version) : null)
+	);
+
+	// Handle clearing force profile
+	const handleClearForceProfile = () => {
+		clearForceProfile();
+		window.location.reload();
+	};
 
 	onMount(async () => {
 		const currentTheme = await getTheme();
@@ -61,6 +88,28 @@ export const Settings: Component = () => {
 
 		setSidebarSupported(isSidebarSupported());
 		setBrowserName(getBrowserName());
+
+		// Check for forceProfile parameter in URL
+		const urlParams = new URLSearchParams(window.location.search);
+		const forceProfileParam = urlParams.get("forceProfile");
+		if (forceProfileParam && isValidExtensionEnv(forceProfileParam)) {
+			// Only apply if different from current
+			const currentForced = getForceProfile();
+			if (forceProfileParam !== currentForced) {
+				setForceProfile(forceProfileParam);
+				// Clean URL and reload to apply
+				urlParams.delete("forceProfile");
+				const newUrl =
+					window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : "");
+				window.history.replaceState({}, "", newUrl);
+				window.location.reload();
+				return; // Stop processing, page will reload
+			}
+		}
+
+		// Update state after potential forceProfile change
+		setEffectiveEnv(getEffectiveProfile(buildEnv));
+		setForceProfileValue(getForceProfile());
 
 		// Check for share parameter in URL
 		try {
@@ -280,10 +329,38 @@ export const Settings: Component = () => {
 
 				<Card data-testid="release-channels-section">
 					<CardHeader>
-						<CardTitle>Release Channel</CardTitle>
-						<CardDescription>Stay updated with latest features</CardDescription>
+						<CardTitle>Build Information</CardTitle>
+						<CardDescription>Release channel and feature flags</CardDescription>
 					</CardHeader>
 					<CardContent class={cn("space-y-4")}>
+						{/* Force Profile Warning Banner */}
+						<Show when={forceProfileValue() !== null}>
+							<div class="rounded-lg border border-orange-500/30 bg-orange-500/10 p-3">
+								<div class="flex items-center justify-between gap-2">
+									<div class="flex items-center gap-2">
+										<span class="text-orange-600 dark:text-orange-400">⚠️</span>
+										<div>
+											<p class="text-sm font-medium text-orange-700 dark:text-orange-300">
+												Profile Override Active
+											</p>
+											<p class="text-xs text-orange-600/80 dark:text-orange-400/80">
+												Running as <strong class="font-bold">{forceProfileValue()}</strong> (actual:{" "}
+												{buildEnv})
+											</p>
+										</div>
+									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={handleClearForceProfile}
+										class="text-orange-600 hover:bg-orange-500/20 dark:text-orange-400"
+									>
+										Reset
+									</Button>
+								</div>
+							</div>
+						</Show>
+
 						<div
 							class={cn(
 								"border-border/50 bg-muted/50 flex items-center justify-between rounded-xl border-2 p-4"
@@ -295,13 +372,15 @@ export const Settings: Component = () => {
 									<span
 										class={cn(
 											"inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold tracking-tighter uppercase",
-											extensionEnv === "production"
+											effectiveEnv() === "production"
 												? "bg-blue-500/10 text-blue-500"
-												: "bg-red-500/10 text-red-500"
+												: effectiveEnv() === "canary"
+													? "bg-amber-500/10 text-amber-600"
+													: "bg-green-500/10 text-green-600"
 										)}
 										data-testid="current-channel-label"
 									>
-										{extensionEnv.charAt(0).toUpperCase() + extensionEnv.slice(1)}
+										{effectiveEnv().charAt(0).toUpperCase() + effectiveEnv().slice(1)}
 									</span>
 								</div>
 							</div>
@@ -333,23 +412,67 @@ export const Settings: Component = () => {
 									</Show>
 									<Show when={!updateInfo()?.isUpdateAvailable}>
 										<p class="text-muted-foreground text-[11px] tracking-widest uppercase">
-											You are on the latest {extensionEnv} version
+											You are on the latest {effectiveEnv()} version
 										</p>
 									</Show>
 								</div>
 							</Show>
 						</div>
 
-						<Show when={extensionEnv === "production"}>
-							<div class="mt-4 rounded-lg border border-red-500/10 bg-red-500/5 p-3">
-								<p class="text-[10px] leading-relaxed font-medium text-red-500/80">
-									Want to try early features? Push to the <span class="font-bold">develop</span>{" "}
-									branch to trigger a Canary build.
-								</p>
+						<Show
+							when={
+								effectiveEnv() === "production" &&
+								!canaryInfo.loading &&
+								canaryInfo()?.isCanaryAvailable
+							}
+						>
+							<div class="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+								<div class="flex items-center justify-between">
+									<div class="space-y-1">
+										<p class="text-[10px] font-bold tracking-widest text-amber-600 uppercase">
+											Canary Build Available
+										</p>
+										<p class="text-[10px] leading-relaxed text-amber-600/80">
+											Try early features with version{" "}
+											<span class="font-bold">{canaryInfo()?.canaryVersion}</span>
+										</p>
+									</div>
+									<a
+										href={canaryInfo()?.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="rounded-md bg-amber-500/10 px-3 py-1.5 text-[10px] font-bold tracking-widest text-amber-600 uppercase transition-colors hover:bg-amber-500/20"
+										data-testid="canary-release-link"
+									>
+										View Release
+									</a>
+								</div>
 							</div>
 						</Show>
+
+						{/* Feature Flags Button */}
+						<Separator />
+						<div class="flex items-center justify-between">
+							<div>
+								<p class="text-sm font-medium">Feature Flags</p>
+								<p class="text-xs text-neutral-500">
+									Toggle feature flags for testing and development
+								</p>
+							</div>
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={() => setShowDebugMenu(true)}
+								data-testid="open-feature-flags-button"
+							>
+								Configure
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
+
+				{/* Feature Flags Modal */}
+				<DebugMenu open={showDebugMenu()} onClose={() => setShowDebugMenu(false)} />
 			</div>
 
 			{/* Auto-save Status Indicator */}
@@ -366,7 +489,6 @@ export const Settings: Component = () => {
 						stroke="currentColor"
 						viewBox="0 0 24 24"
 						aria-hidden="true"
-						role="img"
 					>
 						<title>Check</title>
 						<path
@@ -561,7 +683,6 @@ export const Settings: Component = () => {
 						stroke="currentColor"
 						viewBox="0 0 24 24"
 						aria-hidden="true"
-						role="img"
 					>
 						<title>Check</title>
 						<path

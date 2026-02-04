@@ -94,6 +94,40 @@ export async function getLatestRelease(
 	}
 }
 
+export interface CanaryUpdateInfo {
+	isCanaryAvailable: boolean;
+	canaryVersion: string;
+	url: string;
+	publishedAt: string;
+}
+
+/**
+ * Checks if a canary version is available that is newer than the current production version.
+ * Used for production users who want to try early features.
+ */
+export async function getCanaryUpdateInfo(currentVersion: string): Promise<CanaryUpdateInfo> {
+	const latestCanary = await getLatestRelease("canary");
+
+	if (!latestCanary) {
+		return {
+			isCanaryAvailable: false,
+			canaryVersion: "",
+			url: "",
+			publishedAt: "",
+		};
+	}
+
+	// Compare canary version against current production version
+	const isNewer = compareVersions(latestCanary.tag_name, currentVersion) > 0;
+
+	return {
+		isCanaryAvailable: isNewer,
+		canaryVersion: latestCanary.tag_name,
+		url: latestCanary.html_url,
+		publishedAt: latestCanary.published_at,
+	};
+}
+
 /**
  * Compares current version with remote and returns update info
  */
