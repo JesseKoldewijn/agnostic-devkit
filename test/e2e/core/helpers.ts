@@ -1,6 +1,46 @@
 import type { BrowserContext, Page } from "@playwright/test";
 
 /**
+ * Script to inject for simulating incognito mode in E2E tests.
+ * This overrides chrome.tabs.get and chrome.tabs.query to return incognito: true
+ * for the specified tab ID.
+ *
+ * Note: This function is designed to be serialized and passed to page.addInitScript(),
+ * so it must be self-contained with no external dependencies.
+ */
+function incognitoOverrideScript(tabId: number) {
+	const setupOverride = () => {
+		const chromeObj = (window as { chrome?: { tabs?: Record<string, unknown> } }).chrome;
+		if (!chromeObj?.tabs) {
+			setTimeout(setupOverride, 10);
+			return;
+		}
+
+		const originalGet = (chromeObj.tabs.get as (id: number) => Promise<{ id: number }>).bind(
+			chromeObj.tabs
+		);
+		const originalQuery = (
+			chromeObj.tabs.query as (queryInfo: unknown) => Promise<{ id: number }[]>
+		).bind(chromeObj.tabs);
+
+		chromeObj.tabs.get = async (id: number) => {
+			const tab = await originalGet(id);
+			return { ...tab, incognito: id === tabId };
+		};
+
+		chromeObj.tabs.query = async (queryInfo: unknown) => {
+			const tabs = await originalQuery(queryInfo);
+			return tabs.map((t) => ({
+				...t,
+				incognito: t.id === tabId,
+			}));
+		};
+	};
+
+	setupOverride();
+}
+
+/**
  * Helper function to get extension ID from service workers
  * Following Playwright's official pattern with added stability
  */
@@ -77,6 +117,36 @@ export async function openPopupPage(
 }
 
 /**
+ * Helper function to open popup page with incognito simulation
+ * Uses page script injection to mock the tab.incognito property
+ * @param context - Browser context
+ * @param extensionId - Extension ID
+ * @param targetTabId - Tab ID to simulate as incognito
+ */
+export async function openPopupPageWithIncognito(
+	context: BrowserContext,
+	extensionId: string,
+	targetTabId: number
+): Promise<Page> {
+	const page = await context.newPage();
+
+	// Inject script to override chrome.tabs API to return incognito: true
+	await page.addInitScript(incognitoOverrideScript, targetTabId);
+
+	const url = `chrome-extension://${extensionId}/popup.html?targetTabId=${targetTabId}`;
+
+	await page.goto(url, {
+		waitUntil: "load",
+		timeout: 30_000,
+	});
+
+	await page.waitForSelector("#root", { state: "visible", timeout: 20_000 });
+	await page.waitForTimeout(500);
+
+	return page;
+}
+
+/**
  * Helper function to open sidebar page
  * With launchPersistentContext, direct navigation works per Playwright docs
  * @param context - Browser context
@@ -98,6 +168,36 @@ export async function openSidebarPage(
 	});
 	await page.waitForSelector("#root", { state: "attached", timeout: 10_000 });
 	await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+	return page;
+}
+
+/**
+ * Helper function to open sidebar page with incognito simulation
+ * Uses page script injection to mock the tab.incognito property
+ * @param context - Browser context
+ * @param extensionId - Extension ID
+ * @param targetTabId - Tab ID to simulate as incognito
+ */
+export async function openSidebarPageWithIncognito(
+	context: BrowserContext,
+	extensionId: string,
+	targetTabId: number
+): Promise<Page> {
+	const page = await context.newPage();
+
+	// Inject script to override chrome.tabs API to return incognito: true
+	await page.addInitScript(incognitoOverrideScript, targetTabId);
+
+	const url = `chrome-extension://${extensionId}/sidepanel.html?targetTabId=${targetTabId}`;
+
+	await page.goto(url, {
+		timeout: 15_000,
+		waitUntil: "domcontentloaded",
+	});
+
+	await page.waitForSelector("#root", { state: "attached", timeout: 10_000 });
+	await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+
 	return page;
 }
 

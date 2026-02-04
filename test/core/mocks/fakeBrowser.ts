@@ -11,23 +11,42 @@ export { fakeBrowser };
  * Setup common browser API mocks for testing
  * Call this in beforeEach to get consistent mock behavior
  */
-export function setupBrowserMocks(options: { tabUrl?: string } = {}) {
+export function setupBrowserMocks(options: { tabUrl?: string; incognito?: boolean } = {}) {
 	const mockTabUrl = { current: options.tabUrl ?? "https://example.com/page" };
+	const mockIncognito = { current: options.incognito ?? false };
 
 	fakeBrowser.reset();
 
-	// Setup fake tabs
+	// Setup fake tabs.get
 	(fakeBrowser.tabs.get as ReturnType<typeof vi.fn>) = vi.fn(async (tabId: number) => ({
 		id: tabId,
 		url: mockTabUrl.current,
+		title: "Test Page",
+		incognito: mockIncognito.current,
 	}));
 
+	// Setup fake tabs.query
+	(fakeBrowser.tabs.query as ReturnType<typeof vi.fn>) = vi.fn(async () => [
+		{
+			id: 123,
+			url: mockTabUrl.current,
+			title: "Test Page",
+			incognito: mockIncognito.current,
+		},
+	]);
+
+	// Setup fake tabs.update
 	(fakeBrowser.tabs.update as ReturnType<typeof vi.fn>) = vi.fn(
 		async (tabId: number, props: { url?: string }) => {
 			if (props.url) {
 				mockTabUrl.current = props.url;
 			}
-			return { id: tabId, url: mockTabUrl.current };
+			return {
+				id: tabId,
+				url: mockTabUrl.current,
+				title: "Test Page",
+				incognito: mockIncognito.current,
+			};
 		}
 	);
 
@@ -43,10 +62,14 @@ export function setupBrowserMocks(options: { tabUrl?: string } = {}) {
 
 	return {
 		mockTabUrl,
+		mockIncognito,
 		setTabUrl: (url: string) => {
 			mockTabUrl.current = url;
 		},
 		getTabUrl: () => mockTabUrl.current,
+		setIncognito: (value: boolean) => {
+			mockIncognito.current = value;
+		},
 	};
 }
 
