@@ -41,6 +41,46 @@ function incognitoOverrideScript(tabId: number) {
 }
 
 /**
+ * Script to inject for simulating incognito mode in E2E tests (for all tabs).
+ * This is used for sidepanel tests where we can't specify a target tab ID
+ * because the sidepanel queries for the active tab directly.
+ *
+ * Note: This function is designed to be serialized and passed to page.addInitScript(),
+ * so it must be self-contained with no external dependencies.
+ */
+function incognitoOverrideAllTabsScript() {
+	const setupOverride = () => {
+		const chromeObj = (window as { chrome?: { tabs?: Record<string, unknown> } }).chrome;
+		if (!chromeObj?.tabs) {
+			setTimeout(setupOverride, 10);
+			return;
+		}
+
+		const originalGet = (chromeObj.tabs.get as (id: number) => Promise<{ id: number }>).bind(
+			chromeObj.tabs
+		);
+		const originalQuery = (
+			chromeObj.tabs.query as (queryInfo: unknown) => Promise<{ id: number }[]>
+		).bind(chromeObj.tabs);
+
+		chromeObj.tabs.get = async (id: number) => {
+			const tab = await originalGet(id);
+			return { ...tab, incognito: true };
+		};
+
+		chromeObj.tabs.query = async (queryInfo: unknown) => {
+			const tabs = await originalQuery(queryInfo);
+			return tabs.map((t) => ({
+				...t,
+				incognito: true,
+			}));
+		};
+	};
+
+	setupOverride();
+}
+
+/**
  * Helper function to get extension ID from service workers
  * Following Playwright's official pattern with added stability
  */
@@ -173,22 +213,24 @@ export async function openSidebarPage(
 
 /**
  * Helper function to open sidebar page with incognito simulation
- * Uses page script injection to mock the tab.incognito property
+ * Uses page script injection to mock the tab.incognito property for all tabs.
+ * Unlike popup, the sidepanel queries for the active tab directly without
+ * a targetTabId parameter, so we mock all tabs as incognito.
  * @param context - Browser context
  * @param extensionId - Extension ID
- * @param targetTabId - Tab ID to simulate as incognito
+ * @param _targetTabId - Unused, kept for API consistency with popup helper
  */
 export async function openSidebarPageWithIncognito(
 	context: BrowserContext,
 	extensionId: string,
-	targetTabId: number
+	_targetTabId?: number
 ): Promise<Page> {
 	const page = await context.newPage();
 
-	// Inject script to override chrome.tabs API to return incognito: true
-	await page.addInitScript(incognitoOverrideScript, targetTabId);
+	// Inject script to override chrome.tabs API to return incognito: true for all tabs
+	await page.addInitScript(incognitoOverrideAllTabsScript);
 
-	const url = `chrome-extension://${extensionId}/sidepanel.html?targetTabId=${targetTabId}`;
+	const url = `chrome-extension://${extensionId}/sidepanel.html`;
 
 	await page.goto(url, {
 		timeout: 15_000,

@@ -66,10 +66,8 @@ test.describe("Incognito Mode E2E Tests", () => {
 
 	test.describe("Sidebar", () => {
 		test("should show incognito badge when tab is incognito", async ({ context, extensionId }) => {
-			const testPage = await createTestPage(context, "https://example.com");
-			const tabId = await getTabId(context, testPage);
-
-			const sidebarPage = await openSidebarPageWithIncognito(context, extensionId, tabId);
+			// Open sidebar with incognito simulation (mocks all tabs as incognito)
+			const sidebarPage = await openSidebarPageWithIncognito(context, extensionId);
 
 			// Verify incognito badge is visible
 			const incognitoBadge = sidebarPage.locator('[data-testid="incognito-badge"]');
@@ -77,17 +75,14 @@ test.describe("Incognito Mode E2E Tests", () => {
 			await expect(incognitoBadge).toContainText(/Incognito|Private/);
 
 			await sidebarPage.close();
-			await testPage.close();
 		});
 
 		test("should have visual distinction for incognito card in sidebar", async ({
 			context,
 			extensionId,
 		}) => {
-			const testPage = await createTestPage(context, "https://example.com");
-			const tabId = await getTabId(context, testPage);
-
-			const sidebarPage = await openSidebarPageWithIncognito(context, extensionId, tabId);
+			// Open sidebar with incognito simulation (mocks all tabs as incognito)
+			const sidebarPage = await openSidebarPageWithIncognito(context, extensionId);
 
 			const currentTabSection = sidebarPage.locator('[data-testid="current-tab-section"]');
 			await expect(currentTabSection).toBeVisible();
@@ -97,7 +92,6 @@ test.describe("Incognito Mode E2E Tests", () => {
 			expect(cardClasses).toContain("border-purple");
 
 			await sidebarPage.close();
-			await testPage.close();
 		});
 	});
 

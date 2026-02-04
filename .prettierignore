@@ -48,3 +48,7 @@ Thumbs.db
 public/assets
 CHANGELOG.md
 .badges
+.agents
+.codex
+.cursor
+.opencode

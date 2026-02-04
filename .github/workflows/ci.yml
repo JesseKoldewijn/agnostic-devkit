@@ -221,6 +221,9 @@ jobs:
           EXTENSION_ENV: ${{ matrix.profile }}
         run: yarn package
 
+      - name: Validate build output
+        run: yarn validate:build
+
       - name: Upload build artifact
         if: env.IS_DRY_RUN != 'true'
         uses: actions/upload-artifact@v4
