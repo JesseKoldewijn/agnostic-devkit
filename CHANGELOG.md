@@ -1,3 +1,16 @@
+# [1.5.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.3-canary.2...v1.5.0-canary.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* cleanup of deadcode and improved UI/Logic handling ([6c84110](https://github.com/JesseKoldewijn/agnostic-devkit/commit/6c84110d068188dbf16eac0cd8ea8bc4df105745))
+* refactor of high complexity functionality ([d5f2d22](https://github.com/JesseKoldewijn/agnostic-devkit/commit/d5f2d2255aec822bcf79280c5400cdbf0b714227))
+
+
+### Features
+
+* complete refactor of extension architechture ([5bcaadf](https://github.com/JesseKoldewijn/agnostic-devkit/commit/5bcaadf4904c9a10788a789ae1819d402bca48d4))
+
 ## [1.4.3-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.3-canary.1...v1.4.3-canary.2) (2026-01-30)
 
 
