@@ -13,6 +13,7 @@ import { cn } from "@/utils/cn";
 import { Badge } from "../../ui/Badge";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
+import { Input } from "../../ui/Input";
 import { Separator } from "../../ui/Separator";
 import { Switch } from "../../ui/Switch";
 import type { PresetToggleListLogic } from "./logic";
@@ -43,6 +44,18 @@ export const PresetToggleListUI: Component<PresetToggleListLogic> = (props) => {
 				</Show>
 			</div>
 
+			{/* Search input - shown when there are presets */}
+			<Show when={!props.loading() && props.presets().length > 0}>
+				<Input
+					type="text"
+					placeholder="Search presets..."
+					value={props.searchQuery()}
+					onInput={(e) => props.setSearchQuery(e.currentTarget.value)}
+					class={cn("h-9 text-xs")}
+					data-testid="preset-search-input"
+				/>
+			</Show>
+
 			{/* Loading State */}
 			<Show when={props.loading()}>
 				<div class={cn("flex items-center justify-center py-6")}>
@@ -54,7 +67,7 @@ export const PresetToggleListUI: Component<PresetToggleListLogic> = (props) => {
 				</div>
 			</Show>
 
-			{/* Empty State */}
+			{/* Empty State - No presets at all */}
 			<Show when={!props.loading() && props.presets().length === 0}>
 				<Card class={cn("border-border/50 bg-muted/10 border-dashed px-4 py-10 text-center")}>
 					<p class={cn("text-muted-foreground text-[10px] font-black tracking-widest uppercase")}>
@@ -74,10 +87,38 @@ export const PresetToggleListUI: Component<PresetToggleListLogic> = (props) => {
 				</Card>
 			</Show>
 
+			{/* Empty State - No search results */}
+			<Show
+				when={
+					!props.loading() &&
+					props.presets().length > 0 &&
+					props.filteredPresets().length === 0 &&
+					props.searchQuery()
+				}
+			>
+				<Card
+					class={cn("border-border/50 bg-muted/10 border-dashed px-4 py-10 text-center")}
+					data-testid="no-search-results"
+				>
+					<p class={cn("text-muted-foreground text-[10px] font-black tracking-widest uppercase")}>
+						No presets match your search
+					</p>
+					<Button
+						variant="link"
+						size="sm"
+						onClick={() => props.setSearchQuery("")}
+						class={cn("mt-2")}
+						data-testid="clear-search-button"
+					>
+						Clear Search
+					</Button>
+				</Card>
+			</Show>
+
 			{/* Presets List */}
-			<Show when={!props.loading() && props.presets().length > 0}>
+			<Show when={!props.loading() && props.filteredPresets().length > 0}>
 				<div class={cn("flex flex-col space-y-3")} data-testid="presets-container">
-					<For each={props.presets()}>
+					<For each={props.filteredPresets()}>
 						{(preset) => (
 							<Card
 								class={cn(

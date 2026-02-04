@@ -21,43 +21,37 @@ function normalizeVersion(version: string): string {
 }
 
 /**
+ * Compare two version parts (numeric or string)
+ */
+function compareParts(partA: string | undefined, partB: string | undefined): number {
+	if (partA === partB) return 0;
+	if (partA === undefined) return -1;
+	if (partB === undefined) return 1;
+
+	const numA = Number.parseInt(partA, 10);
+	const numB = Number.parseInt(partB, 10);
+
+	// Both are numbers
+	if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+		return numA - numB;
+	}
+
+	// String comparison for pre-release tags (e.g., canary.1)
+	return partA < partB ? -1 : partA > partB ? 1 : 0;
+}
+
+/**
  * Simple semantic version comparison
  * Returns positive if a > b, negative if a < b, 0 if equal
  */
 function compareVersions(a: string, b: string): number {
 	const partsA = normalizeVersion(a).split(/[.-]/);
 	const partsB = normalizeVersion(b).split(/[.-]/);
+	const maxLength = Math.max(partsA.length, partsB.length);
 
-	for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
-		const partA = partsA[i];
-		const partB = partsB[i];
-
-		if (partA === partB) {
-			continue;
-		}
-		if (partA === undefined) {
-			return -1;
-		}
-		if (partB === undefined) {
-			return 1;
-		}
-
-		const numA = Number.parseInt(partA, 10);
-		const numB = Number.parseInt(partB, 10);
-
-		if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
-			if (numA !== numB) {
-				return numA - numB;
-			}
-		} else {
-			// String comparison for pre-release tags (e.g., canary.1)
-			if (partA < partB) {
-				return -1;
-			}
-			if (partA > partB) {
-				return 1;
-			}
-		}
+	for (let i = 0; i < maxLength; i++) {
+		const result = compareParts(partsA[i], partsB[i]);
+		if (result !== 0) return result;
 	}
 	return 0;
 }

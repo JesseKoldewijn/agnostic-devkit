@@ -16,6 +16,9 @@ export interface PresetManagerLogic {
 
 	// Core state
 	presets: Accessor<Preset[]>;
+	filteredListPresets: Accessor<Preset[]>;
+	listSearchQuery: Accessor<string>;
+	setListSearchQuery: (query: string) => void;
 	loading: Accessor<boolean>;
 	viewMode: Accessor<ViewMode>;
 	editingPreset: Accessor<Preset | null>;
@@ -114,6 +117,9 @@ export function createMockPresetManagerLogic(
 	overrides: Partial<{
 		class: string | undefined;
 		presets: Preset[];
+		filteredListPresets: Preset[];
+		listSearchQuery: string;
+		setListSearchQuery: (query: string) => void;
 		loading: boolean;
 		viewMode: ViewMode;
 		editingPreset: Preset | null;
@@ -172,6 +178,9 @@ export function createMockPresetManagerLogic(
 	const {
 		class: className = undefined,
 		presets = [],
+		filteredListPresets = presets, // Default to presets if not overridden
+		listSearchQuery = "",
+		setListSearchQuery = vi.fn(),
 		loading = false,
 		viewMode = "list",
 		editingPreset = null,
@@ -230,6 +239,9 @@ export function createMockPresetManagerLogic(
 	return {
 		class: className,
 		presets: () => presets,
+		filteredListPresets: () => filteredListPresets,
+		listSearchQuery: () => listSearchQuery,
+		setListSearchQuery,
 		loading: () => loading,
 		viewMode: () => viewMode,
 		editingPreset: () => editingPreset,

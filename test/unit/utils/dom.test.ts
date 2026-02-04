@@ -43,12 +43,14 @@ describe("dom utilities", () => {
 	describe("createIsolatedElement", () => {
 		it("should create a div container element", () => {
 			createIsolatedElement();
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			expect(document.createElement).toHaveBeenCalledWith("div");
 		});
 
 		it("should set the class name to chrome-extension-root", () => {
 			createIsolatedElement();
 
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			const createElementCall = vi.mocked(document.createElement).mock.results[0].value;
 			expect(createElementCall.className).toBe("chrome-extension-root");
 		});
@@ -56,6 +58,7 @@ describe("dom utilities", () => {
 		it("should attach a shadow DOM in open mode", () => {
 			createIsolatedElement();
 
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			const createElementCall = vi.mocked(document.createElement).mock.results[0].value;
 			expect(createElementCall.attachShadow).toHaveBeenCalledWith({ mode: "open" });
 		});
@@ -67,6 +70,7 @@ describe("dom utilities", () => {
 
 		it("should create isolated elements for CSS encapsulation", () => {
 			// Reset the mock count before this specific test
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			vi.mocked(document.createElement).mockClear();
 
 			// Create two isolated elements to verify independent creation
@@ -74,6 +78,7 @@ describe("dom utilities", () => {
 			createIsolatedElement();
 
 			// Each call should create a new element
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			expect(document.createElement).toHaveBeenCalledTimes(2);
 		});
 
@@ -82,7 +87,9 @@ describe("dom utilities", () => {
 
 			// Verify the shadow root has expected methods
 			expect(shadowRoot.appendChild).toBeDefined();
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			expect(shadowRoot.querySelector).toBeDefined();
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing mocked DOM method
 			expect(shadowRoot.querySelectorAll).toBeDefined();
 		});
 	});

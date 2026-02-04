@@ -267,7 +267,7 @@ export async function getFeatureFlags(env: ExtensionEnv): Promise<FeatureFlags> 
 
 	for (const key of validKeys) {
 		if (key in overrides && typeof overrides[key] === "boolean") {
-			flags[key] = overrides[key] as boolean;
+			flags[key] = overrides[key];
 		}
 	}
 

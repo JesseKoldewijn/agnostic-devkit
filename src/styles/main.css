@@ -215,3 +215,96 @@ kbd,
 .font-mono {
 	font-family: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
 }
+
+/* ============================================================================
+   Custom Scrollbar Styles
+   Thin, minimal scrollbars with rounded corners that follow the theme
+   ============================================================================ */
+
+/* Color scheme for native UI elements (including scrollbars) */
+:root {
+	color-scheme: light;
+}
+
+:root.dark {
+	color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root.system {
+		color-scheme: dark;
+	}
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+	background: transparent;
+	border-radius: 4px;
+}
+
+/* Light mode scrollbar (default) */
+*::-webkit-scrollbar-thumb {
+	background: rgb(9 9 11 / 40%); /* #09090b at 40% */
+	border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: rgb(9 9 11 / 60%);
+}
+
+/* Dark mode scrollbar - use !important to override defaults for page scrollbar */
+.dark *::-webkit-scrollbar-thumb,
+:root.dark *::-webkit-scrollbar-thumb,
+:root.dark::-webkit-scrollbar-thumb {
+	background: rgb(250 250 250 / 40%) !important; /* #fafafa at 40% */
+}
+
+.dark *::-webkit-scrollbar-thumb:hover,
+:root.dark *::-webkit-scrollbar-thumb:hover,
+:root.dark::-webkit-scrollbar-thumb:hover {
+	background: rgb(250 250 250 / 60%) !important;
+}
+
+/* System preference dark mode */
+@media (prefers-color-scheme: dark) {
+	.system *::-webkit-scrollbar-thumb,
+	:root.system *::-webkit-scrollbar-thumb,
+	:root.system::-webkit-scrollbar-thumb {
+		background: rgb(250 250 250 / 40%) !important;
+	}
+
+	.system *::-webkit-scrollbar-thumb:hover,
+	:root.system *::-webkit-scrollbar-thumb:hover,
+	:root.system::-webkit-scrollbar-thumb:hover {
+		background: rgb(250 250 250 / 60%) !important;
+	}
+}
+
+/* Firefox scrollbar colors */
+/* stylelint-disable no-descending-specificity */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgb(9 9 11 / 40%) transparent;
+}
+
+:root.dark,
+:root.dark *,
+.dark,
+.dark * {
+	scrollbar-color: rgb(250 250 250 / 40%) transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root.system,
+	:root.system *,
+	.system,
+	.system * {
+		scrollbar-color: rgb(250 250 250 / 40%) transparent;
+	}
+}
+/* stylelint-enable no-descending-specificity */

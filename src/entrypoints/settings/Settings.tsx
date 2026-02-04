@@ -450,29 +450,33 @@ export const Settings: Component = () => {
 							</div>
 						</Show>
 
-						{/* Feature Flags Button */}
-						<Separator />
-						<div class="flex items-center justify-between">
-							<div>
-								<p class="text-sm font-medium">Feature Flags</p>
-								<p class="text-xs text-neutral-500">
-									Toggle feature flags for testing and development
-								</p>
+						{/* Feature Flags Button - hidden in production unless profile is forced */}
+						<Show when={effectiveEnv() !== "production" || getForceProfile() !== null}>
+							<Separator />
+							<div class="flex items-center justify-between">
+								<div>
+									<p class="text-sm font-medium">Feature Flags</p>
+									<p class="text-xs text-neutral-500">
+										Toggle feature flags for testing and development
+									</p>
+								</div>
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setShowDebugMenu(true)}
+									data-testid="open-feature-flags-button"
+								>
+									Configure
+								</Button>
 							</div>
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => setShowDebugMenu(true)}
-								data-testid="open-feature-flags-button"
-							>
-								Configure
-							</Button>
-						</div>
+						</Show>
 					</CardContent>
 				</Card>
 
-				{/* Feature Flags Modal */}
-				<DebugMenu open={showDebugMenu()} onClose={() => setShowDebugMenu(false)} />
+				{/* Feature Flags Modal - rendered conditionally based on environment */}
+				<Show when={effectiveEnv() !== "production" || getForceProfile() !== null}>
+					<DebugMenu open={showDebugMenu()} onClose={() => setShowDebugMenu(false)} />
+				</Show>
 			</div>
 
 			{/* Auto-save Status Indicator */}

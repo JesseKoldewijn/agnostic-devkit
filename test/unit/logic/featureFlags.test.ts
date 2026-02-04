@@ -301,9 +301,7 @@ describe("featureFlags", () => {
 			for (const meta of Object.values(FEATURE_FLAG_META)) {
 				expect(meta.category).toBeDefined();
 				expect(typeof meta.category).toBe("string");
-				expect(
-					FEATURE_FLAG_CATEGORIES[meta.category as keyof typeof FEATURE_FLAG_CATEGORIES]
-				).toBeDefined();
+				expect(FEATURE_FLAG_CATEGORIES[meta.category]).toBeDefined();
 			}
 		});
 

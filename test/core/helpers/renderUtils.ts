@@ -53,10 +53,7 @@ export function renderComponent<TProps extends object>(
 	Component: Component<TProps>,
 	props: TProps
 ): RenderResult {
-	const result = solidRender(() => {
-		const element = Component(props);
-		return element;
-	});
+	const result = solidRender(() => Component(props));
 	return {
 		container: result.container,
 		unmount: result.unmount,

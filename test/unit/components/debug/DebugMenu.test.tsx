@@ -253,11 +253,139 @@ describe("DebugMenu", () => {
 	});
 
 	describe("environment awareness", () => {
-		it("should show current environment profile", async () => {
+		it("should show profile button group", async () => {
 			render(<DebugMenu {...defaultProps} />);
 
 			await waitFor(() => {
-				expect(screen.getByText("development")).toBeTruthy();
+				const buttonGroup = screen.getByTestId("profile-button-group");
+				expect(buttonGroup).toBeTruthy();
+			});
+		});
+
+		it("should render all profile buttons", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("profile-button-development")).toBeTruthy();
+				expect(screen.getByTestId("profile-button-canary")).toBeTruthy();
+				expect(screen.getByTestId("profile-button-production")).toBeTruthy();
+			});
+		});
+
+		it("should mark development as the active profile", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				const devButton = screen.getByTestId("profile-button-development");
+				expect(devButton.getAttribute("aria-pressed")).toBe("true");
+			});
+		});
+
+		it("should mark non-active profiles as not pressed", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				const canaryButton = screen.getByTestId("profile-button-canary");
+				const prodButton = screen.getByTestId("profile-button-production");
+				expect(canaryButton.getAttribute("aria-pressed")).toBe("false");
+				expect(prodButton.getAttribute("aria-pressed")).toBe("false");
+			});
+		});
+
+		it("should show build indicator on development profile", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				const devButton = screen.getByTestId("profile-button-development");
+				expect(devButton.textContent).toContain("(build)");
+			});
+		});
+
+		it("should have proper aria-label on profile buttons", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				const devButton = screen.getByTestId("profile-button-development");
+				expect(devButton.getAttribute("aria-label")).toContain("development profile");
+				expect(devButton.getAttribute("aria-label")).toContain("build default");
+			});
+		});
+
+		it("should have proper fieldset grouping for profile buttons", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				const buttonGroup = screen.getByTestId("profile-button-group");
+				// The button group is inside a fieldset which provides semantic grouping
+				expect(buttonGroup.parentElement?.tagName).toBe("FIELDSET");
+			});
+		});
+	});
+
+	describe("profile switching", () => {
+		it("should show confirmation dialog when clicking a different profile", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("profile-button-canary")).toBeTruthy();
+			});
+
+			const canaryButton = screen.getByTestId("profile-button-canary");
+			fireEvent.click(canaryButton);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("profile-switch-confirm")).toBeTruthy();
+				expect(screen.getByText(/Switch Profile/)).toBeTruthy();
+			});
+		});
+
+		it("should not show confirmation when clicking the active profile", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("profile-button-development")).toBeTruthy();
+			});
+
+			const devButton = screen.getByTestId("profile-button-development");
+			fireEvent.click(devButton);
+
+			// Should not show confirmation dialog
+			expect(screen.queryByTestId("profile-switch-confirm")).toBeNull();
+		});
+
+		it("should show profile name in confirmation message", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("profile-button-production")).toBeTruthy();
+			});
+
+			const prodButton = screen.getByTestId("profile-button-production");
+			fireEvent.click(prodButton);
+
+			await waitFor(() => {
+				const messageElement = screen.getByTestId("confirm-dialog-message");
+				expect(messageElement.textContent).toContain("production");
+			});
+		});
+
+		it("should close confirmation dialog on cancel", async () => {
+			render(<DebugMenu {...defaultProps} />);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("profile-button-canary")).toBeTruthy();
+			});
+
+			fireEvent.click(screen.getByTestId("profile-button-canary"));
+
+			await waitFor(() => {
+				expect(screen.getByText("Cancel")).toBeTruthy();
+			});
+
+			fireEvent.click(screen.getByText("Cancel"));
+
+			await waitFor(() => {
+				expect(screen.queryByTestId("profile-switch-confirm")).toBeNull();
 			});
 		});
 	});

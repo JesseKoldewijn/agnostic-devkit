@@ -15,12 +15,15 @@ export interface PresetToggleListLogic {
 
 	// Reactive getters
 	presets: Accessor<(Preset & { isActive: boolean })[]>;
+	filteredPresets: Accessor<(Preset & { isActive: boolean })[]>;
+	searchQuery: Accessor<string>;
 	currentTabId: Accessor<number | null>;
 	loading: Accessor<boolean>;
 	togglingPreset: Accessor<string | null>;
 	expandedPresetId: Accessor<string | null>;
 
 	// Callbacks
+	setSearchQuery: (query: string) => void;
 	onToggle: (presetId: string) => Promise<void>;
 	onToggleExpanded: (presetId: string) => void;
 }
@@ -42,10 +45,13 @@ export function createMockPresetToggleListLogic(
 		class: string;
 		// State
 		presets: (Preset & { isActive: boolean })[];
+		filteredPresets: (Preset & { isActive: boolean })[];
+		searchQuery: string;
 		currentTabId: number | null;
 		loading: boolean;
 		togglingPreset: string | null;
 		expandedPresetId: string | null;
+		setSearchQuery: (query: string) => void;
 		onToggle: (presetId: string) => Promise<void>;
 		onToggleExpanded: (presetId: string) => void;
 	}> = {}
@@ -57,10 +63,13 @@ export function createMockPresetToggleListLogic(
 		class: className = undefined,
 		// State
 		presets = [],
+		filteredPresets = presets,
+		searchQuery = "",
 		currentTabId = 1,
 		loading = false,
 		togglingPreset = null,
 		expandedPresetId = null,
+		setSearchQuery = vi.fn(),
 		onToggle = vi.fn().mockResolvedValue(undefined),
 		onToggleExpanded = vi.fn(),
 	} = overrides;
@@ -72,11 +81,14 @@ export function createMockPresetToggleListLogic(
 		class: className,
 		// Reactive getters
 		presets: () => presets,
+		filteredPresets: () => filteredPresets,
+		searchQuery: () => searchQuery,
 		currentTabId: () => currentTabId,
 		loading: () => loading,
 		togglingPreset: () => togglingPreset,
 		expandedPresetId: () => expandedPresetId,
 		// Callbacks
+		setSearchQuery,
 		onToggle,
 		onToggleExpanded,
 	};

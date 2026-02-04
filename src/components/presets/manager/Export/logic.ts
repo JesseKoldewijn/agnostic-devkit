@@ -5,6 +5,7 @@ import type { Accessor } from "solid-js";
 import { createMemo, createSignal } from "solid-js";
 
 import type { Preset } from "@/logic/parameters";
+import { createDebouncedSignal } from "@/utils/debounce";
 
 // ============================================================================
 // External Props (passed in from parent)
@@ -41,6 +42,11 @@ export interface ExportLogic {
 	isExporting: Accessor<boolean>;
 	allSelected: Accessor<boolean>;
 
+	// Search state
+	searchQuery: Accessor<string>;
+	setSearchQuery: (query: string) => void;
+	filteredPresets: Accessor<Preset[]>;
+
 	// Wrapped callbacks (add loading state management)
 	onToggleExpanded: (presetId: string) => void;
 	handleExportDownload: () => Promise<void>;
@@ -55,6 +61,22 @@ export function createExportLogic(props: ExportProps): ExportLogic {
 	// Local state
 	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
 	const [isExporting, setIsExporting] = createSignal(false);
+
+	// Search state with debounced input
+	const [searchQuery, setSearchQuery] = createDebouncedSignal("", 150);
+
+	// Filtered presets based on search query
+	const filteredPresets = createMemo(() => {
+		const query = searchQuery().toLowerCase().trim();
+		if (!query) {
+			return props.presets;
+		}
+		return props.presets.filter(
+			(preset) =>
+				preset.name.toLowerCase().includes(query) ||
+				(preset.description?.toLowerCase().includes(query) ?? false)
+		);
+	});
 
 	// Computed values
 	const allSelected = createMemo(
@@ -100,6 +122,11 @@ export function createExportLogic(props: ExportProps): ExportLogic {
 		expandedPresetId,
 		isExporting,
 		allSelected,
+
+		// Search state
+		searchQuery,
+		setSearchQuery,
+		filteredPresets,
 
 		// Wrapped callbacks
 		onToggleExpanded,

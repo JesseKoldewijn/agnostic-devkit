@@ -20,9 +20,12 @@ import type { PresetManagerLogic } from "./logic";
 
 export const PresetManagerUI: Component<PresetManagerLogic> = (props) => {
 	return (
-		<div class={cn("relative flex flex-col", props.class)} data-testid="preset-manager">
+		<div
+			class={cn("relative flex min-h-0 flex-1 flex-col", props.class)}
+			data-testid="preset-manager"
+		>
 			<Show when={props.viewMode() === "list"}>
-				<div class={cn("flex h-full flex-col")} data-testid="preset-manager-list">
+				<div class={cn("flex min-h-0 flex-1 flex-col")} data-testid="preset-manager-list">
 					<Header
 						onClose={props.onClose}
 						onStartCreate={props.onStartCreate}
@@ -39,6 +42,9 @@ export const PresetManagerUI: Component<PresetManagerLogic> = (props) => {
 					<Show when={!props.loading() && props.presets().length > 0}>
 						<List
 							presets={props.presets()}
+							filteredPresets={props.filteredListPresets()}
+							searchQuery={props.listSearchQuery}
+							setSearchQuery={props.setListSearchQuery}
 							expandedPresetId={props.expandedPresetId()}
 							confirmDelete={props.confirmDelete()}
 							onToggleExpanded={props.onToggleExpanded}

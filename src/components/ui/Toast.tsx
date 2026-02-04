@@ -164,7 +164,7 @@ export const Toast: Component<ToastProps> = (props) => {
 
 	return (
 		<Show when={local.visible}>
-			<div
+			<output
 				role={role}
 				aria-live={role === "alert" ? "assertive" : "polite"}
 				data-testid={local["data-testid"]}
@@ -203,7 +203,7 @@ export const Toast: Component<ToastProps> = (props) => {
 						</svg>
 					</button>
 				</Show>
-			</div>
+			</output>
 		</Show>
 	);
 };

@@ -44,7 +44,7 @@ export function isSidebarSupported(): boolean {
  * Check if notifications are supported
  */
 export function isNotificationsSupported(): boolean {
-	return browser.notifications?.create !== undefined;
+	return browser.notifications?.create != null;
 }
 
 /**

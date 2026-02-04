@@ -119,26 +119,28 @@ export const Modal: Component<ModalProps> = (props) => {
 			if (focusableElements.length === 0) return;
 
 			const firstElement = focusableElements[0];
-			const lastElement = focusableElements[focusableElements.length - 1];
+			const lastElement = focusableElements.at(-1);
+			const activeElement = document.activeElement;
 
-			if (e.shiftKey) {
-				// Shift + Tab: going backwards
-				if (document.activeElement === firstElement) {
-					e.preventDefault();
-					lastElement.focus();
-				}
-			} else {
-				// Tab: going forwards
-				if (document.activeElement === lastElement) {
-					e.preventDefault();
-					firstElement.focus();
-				}
+			// sonarjs rule incorrectly flags these comparisons as always false
+			// HTMLElement extends Element, so comparison is valid
+			/* eslint-disable sonarjs/different-types-comparison */
+			if (e.shiftKey && activeElement === firstElement) {
+				// Shift + Tab: going backwards from first element
+				e.preventDefault();
+				lastElement?.focus();
+			} else if (!e.shiftKey && activeElement === lastElement) {
+				// Tab: going forwards from last element
+				e.preventDefault();
+				firstElement.focus();
 			}
+			/* eslint-enable sonarjs/different-types-comparison */
 		}
 	};
 
 	// Handle backdrop click
 	const handleBackdropClick = (e: MouseEvent) => {
+		// eslint-disable-next-line sonarjs/different-types-comparison -- EventTarget/Element comparison is valid
 		if (local.closeOnBackdropClick !== false && e.target === modalRef) {
 			local.onClose();
 		}
@@ -172,6 +174,20 @@ export const Modal: Component<ModalProps> = (props) => {
 		}
 	});
 
+	// Scroll lock - prevent body scroll when modal is open
+	createEffect(() => {
+		if (local.open) {
+			// Store original overflow value
+			const originalOverflow = document.body.style.overflow;
+			document.body.style.overflow = "hidden";
+
+			// Cleanup function to restore scroll when modal closes
+			onCleanup(() => {
+				document.body.style.overflow = originalOverflow;
+			});
+		}
+	});
+
 	// Add keyboard listener
 	onMount(() => {
 		document.addEventListener("keydown", handleKeyDown);
@@ -183,6 +199,7 @@ export const Modal: Component<ModalProps> = (props) => {
 
 	return (
 		<Show when={local.open}>
+			{/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- Backdrop handles click to close, keyboard events handled by document listener */}
 			<div
 				ref={modalRef}
 				class={cn(
@@ -190,7 +207,6 @@ export const Modal: Component<ModalProps> = (props) => {
 				)}
 				onClick={handleBackdropClick}
 				data-testid={local["data-testid"]}
-				role="presentation"
 			>
 				<Card
 					ref={contentRef}

@@ -5,7 +5,7 @@
  * Manages state for displaying and toggling presets on the current tab.
  */
 import type { Accessor } from "solid-js";
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
 import { browser } from "wxt/browser";
 
@@ -16,6 +16,7 @@ import {
 	onTabPresetStatesChanged,
 	togglePreset,
 } from "@/logic/parameters";
+import { createDebouncedSignal } from "@/utils/debounce";
 
 // ============================================================================
 // Types
@@ -38,12 +39,15 @@ export interface PresetToggleListLogic {
 
 	// Reactive getters
 	presets: Accessor<(Preset & { isActive: boolean })[]>;
+	filteredPresets: Accessor<(Preset & { isActive: boolean })[]>;
+	searchQuery: Accessor<string>;
 	currentTabId: Accessor<number | null>;
 	loading: Accessor<boolean>;
 	togglingPreset: Accessor<string | null>;
 	expandedPresetId: Accessor<string | null>;
 
 	// Callbacks
+	setSearchQuery: (query: string) => void;
 	onToggle: (presetId: string) => Promise<void>;
 	onToggleExpanded: (presetId: string) => void;
 }
@@ -62,6 +66,22 @@ export function createPresetToggleListLogic(props: PresetToggleListProps): Prese
 	const [loading, setLoading] = createSignal(true);
 	const [togglingPreset, setTogglingPreset] = createSignal<string | null>(null);
 	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
+
+	// Search functionality with debounced input
+	const [searchQuery, setSearchQuery] = createDebouncedSignal("", 150);
+
+	// Filtered presets based on search query
+	const filteredPresets = createMemo(() => {
+		const query = searchQuery().toLowerCase().trim();
+		if (!query) {
+			return presets();
+		}
+		return presets().filter(
+			(preset) =>
+				preset.name.toLowerCase().includes(query) ||
+				(preset.description?.toLowerCase().includes(query) ?? false)
+		);
+	});
 
 	// ========== Helper Functions ==========
 
@@ -154,10 +174,10 @@ export function createPresetToggleListLogic(props: PresetToggleListProps): Prese
 	onMount(async () => {
 		const tabId = await getCurrentTabId();
 		setCurrentTabId(tabId);
-		if (tabId !== null) {
-			await loadPresets();
-		} else {
+		if (tabId === null) {
 			setLoading(false);
+		} else {
+			await loadPresets();
 		}
 
 		// Don't set up tab change listeners if using a test override
@@ -220,12 +240,15 @@ export function createPresetToggleListLogic(props: PresetToggleListProps): Prese
 
 		// Reactive getters
 		presets,
+		filteredPresets,
+		searchQuery,
 		currentTabId,
 		loading,
 		togglingPreset,
 		expandedPresetId,
 
 		// Callbacks
+		setSearchQuery,
 		onToggle,
 		onToggleExpanded,
 	};

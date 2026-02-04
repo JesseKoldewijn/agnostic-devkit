@@ -10,9 +10,9 @@ import type { ExtensionEnv, FeatureFlagCategory, FeatureFlags } from "@/logic/fe
  */
 export interface DebugMenuProps {
 	/** Whether the modal is open */
-	open: boolean;
+	readonly open: boolean;
 	/** Callback when modal should close */
-	onClose: () => void;
+	readonly onClose: () => void;
 }
 
 /**
@@ -36,7 +36,9 @@ export interface DebugMenuState {
 	effectiveProfile: Accessor<ExtensionEnv>;
 	/** Build-time environment */
 	buildProfile: ExtensionEnv;
-	/** Whether force profile is active */
+	/** The currently forced profile (null if none) */
+	forceProfile: Accessor<ExtensionEnv | null>;
+	/** Whether force profile is active (forced to a different profile than build) */
 	isForceProfileActive: Accessor<boolean>;
 	/** Search query for filtering flags */
 	searchQuery: Accessor<string>;

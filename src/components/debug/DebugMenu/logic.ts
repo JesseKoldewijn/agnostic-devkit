@@ -38,9 +38,13 @@ export function createDebugMenuState(): DebugMenuState {
 	// Compute effective profile
 	const effectiveProfile = createMemo(() => getEffectiveProfile(buildProfile));
 
-	// Check if force profile is active
+	// Reactive signal for force profile, initialized from localStorage
+	// This signal is reactive so the UI will update when it changes
+	const [forceProfile] = createSignal<ExtensionEnv | null>(getForceProfile());
+
+	// Check if force profile is active (and different from build)
 	const isForceProfileActive = createMemo(() => {
-		const forced = getForceProfile();
+		const forced = forceProfile();
 		return forced !== null && forced !== buildProfile;
 	});
 
@@ -158,6 +162,7 @@ export function createDebugMenuState(): DebugMenuState {
 	return {
 		effectiveProfile,
 		buildProfile,
+		forceProfile,
 		isForceProfileActive,
 		searchQuery,
 		setSearchQuery,
@@ -168,6 +173,8 @@ export function createDebugMenuState(): DebugMenuState {
 		toggleFlag,
 		resetAllFlags,
 		isLoading: () => flags.loading,
-		refetch,
+		refetch: () => {
+			refetch();
+		},
 	};
 }

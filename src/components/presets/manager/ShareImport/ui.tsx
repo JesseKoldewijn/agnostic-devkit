@@ -12,6 +12,8 @@ import { Badge } from "../../../ui/Badge";
 import { Button } from "../../../ui/Button";
 import { Card } from "../../../ui/Card";
 import { Checkbox } from "../../../ui/Checkbox";
+import { Input } from "../../../ui/Input";
+import { ScrollArea } from "../../../ui/ScrollArea";
 import { Separator } from "../../../ui/Separator";
 import type { ShareImportLogic } from "./logic";
 
@@ -98,103 +100,130 @@ export const ShareImportUI: Component<ShareImportLogic> = (props) => {
 						</Button>
 					</div>
 				</Show>
+
+				{/* Search input - shown when there are presets */}
+				<Show when={props.presets().length > 0 && !props.shareImportError}>
+					<Input
+						type="text"
+						placeholder="Search presets..."
+						value={props.searchQuery()}
+						onInput={(e) => props.setSearchQuery(e.currentTarget.value)}
+						class={cn("h-9 text-xs")}
+						data-testid="share-import-search-input"
+					/>
+				</Show>
 			</div>
 
-			<Show when={props.presets().length > 0 && !props.shareImportError}>
-				<div class={cn("-mr-1 flex-1 space-y-3 overflow-y-auto pr-1")}>
-					<For each={props.presets()}>
-						{(preset) => (
-							<Card
-								class={cn(
-									"border-border/60 p-4 shadow-sm transition-all",
-									props.importSelections().has(preset.id) && "border-primary/40 bg-primary/5"
-								)}
-								data-testid="share-import-preset-item"
-							>
-								<div class={cn("flex items-start gap-3")}>
-									<Checkbox
-										checked={props.importSelections().has(preset.id)}
-										onChange={() => props.onToggleSelection(preset.id)}
-										class={cn("mt-1")}
-										data-testid="share-import-preset-checkbox"
-										aria-label={`Select ${preset.name} for import`}
-									/>
-									<button
-										type="button"
-										class={cn("group min-w-0 flex-1 text-left")}
-										onClick={() => props.onToggleExpanded(preset.id)}
-									>
-										<div
-											class={cn(
-												"text-foreground group-hover:text-primary truncate text-[14px] font-black tracking-tight uppercase transition-colors"
-											)}
+			{/* No search results state */}
+			<Show
+				when={
+					props.filteredPresets().length === 0 && props.searchQuery() && !props.shareImportError
+				}
+			>
+				<Card class={cn("border-border/50 bg-muted/10 border-dashed px-4 py-10 text-center")}>
+					<p class={cn("text-muted-foreground text-[10px] font-black tracking-widest uppercase")}>
+						No presets match "{props.searchQuery()}"
+					</p>
+				</Card>
+			</Show>
+
+			<Show when={props.filteredPresets().length > 0 && !props.shareImportError}>
+				<ScrollArea class={cn("-mr-1 pr-1")}>
+					<div class={cn("space-y-3")}>
+						<For each={props.filteredPresets()}>
+							{(preset) => (
+								<Card
+									class={cn(
+										"border-border/60 p-4 shadow-sm transition-all",
+										props.importSelections().has(preset.id) && "border-primary/40 bg-primary/5"
+									)}
+									data-testid="share-import-preset-item"
+								>
+									<div class={cn("flex items-start gap-3")}>
+										<Checkbox
+											checked={props.importSelections().has(preset.id)}
+											onChange={() => props.onToggleSelection(preset.id)}
+											class={cn("mt-1")}
+											data-testid="share-import-preset-checkbox"
+											aria-label={`Select ${preset.name} for import`}
+										/>
+										<button
+											type="button"
+											class={cn("group min-w-0 flex-1 text-left")}
+											onClick={() => props.onToggleExpanded(preset.id)}
 										>
-											{preset.name}
-										</div>
-										<Show when={preset.description}>
 											<div
 												class={cn(
-													"text-muted-foreground mt-1 truncate text-[11px] leading-tight font-bold"
+													"text-foreground group-hover:text-primary truncate text-[14px] font-black tracking-tight uppercase transition-colors"
 												)}
 											>
-												{preset.description}
+												{preset.name}
 											</div>
-										</Show>
-										<div class={cn("mt-2.5 flex items-center gap-2")}>
-											<Badge variant="secondary" class={cn("h-4 px-2 text-[8px]! font-black")}>
-												{preset.parameters.length} VARS
-											</Badge>
-											<span
-												class={cn(
-													"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
-												)}
-											>
-												{props.expandedPresetId === preset.id ? "Hide" : "View"}
-											</span>
-										</div>
-									</button>
-								</div>
+											<Show when={preset.description}>
+												<div
+													class={cn(
+														"text-muted-foreground mt-1 truncate text-[11px] leading-tight font-bold"
+													)}
+												>
+													{preset.description}
+												</div>
+											</Show>
+											<div class={cn("mt-2.5 flex items-center gap-2")}>
+												<Badge variant="secondary" class={cn("h-4 px-2 text-[8px]! font-black")}>
+													{preset.parameters.length} VARS
+												</Badge>
+												<span
+													class={cn(
+														"text-muted-foreground/50 text-[9px] font-black tracking-widest uppercase"
+													)}
+												>
+													{props.expandedPresetId === preset.id ? "Hide" : "View"}
+												</span>
+											</div>
+										</button>
+									</div>
 
-								<Show when={props.expandedPresetId === preset.id}>
-									<div class={cn("mt-4")} data-testid="share-import-preset-expanded-params">
-										<Separator class={cn("mb-4 opacity-50")} />
-										<div class={cn("space-y-2")}>
-											<For each={preset.parameters}>
-												{(param) => (
-													<div
-														class={cn(
-															"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-3 py-2 text-[11px] shadow-sm"
-														)}
-													>
-														<div class={cn("flex min-w-0 flex-1 items-center")}>
-															<span class={cn("mr-2 scale-90 opacity-60")}>
-																{getParameterTypeIcon(param.type)}
-															</span>
-															<span
-																class={cn(
-																	"text-foreground truncate font-black tracking-tighter uppercase"
-																)}
-															>
-																{param.key}
-															</span>
-														</div>
-														<span
+									<Show when={props.expandedPresetId === preset.id}>
+										<div class={cn("mt-4")} data-testid="share-import-preset-expanded-params">
+											<Separator class={cn("mb-4 opacity-50")} />
+											<div class={cn("space-y-2")}>
+												<For each={preset.parameters}>
+													{(param) => (
+														<div
 															class={cn(
-																"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-2 py-1 font-mono"
+																"border-border/40 bg-muted/40 flex items-center justify-between rounded-lg border px-3 py-2 text-[11px] shadow-sm"
 															)}
 														>
-															{param.value}
-														</span>
-													</div>
-												)}
-											</For>
+															<div class={cn("flex min-w-0 flex-1 items-center")}>
+																<span class={cn("mr-2 scale-90 opacity-60")}>
+																	{getParameterTypeIcon(param.type)}
+																</span>
+																<span
+																	class={cn(
+																		"text-foreground truncate font-black tracking-tighter uppercase"
+																	)}
+																>
+																	{param.key}
+																</span>
+															</div>
+															<span
+																class={cn(
+																	"border-border/20 bg-background/60 text-muted-foreground/90 ml-2 max-w-[55%] truncate rounded-sm border px-2 py-1 font-mono"
+																)}
+															>
+																{param.value}
+															</span>
+														</div>
+													)}
+												</For>
+											</div>
 										</div>
-									</div>
-								</Show>
-							</Card>
-						)}
-					</For>
-				</div>
+									</Show>
+								</Card>
+							)}
+						</For>
+					</div>
+				</ScrollArea>
 			</Show>
 		</div>
 	);
