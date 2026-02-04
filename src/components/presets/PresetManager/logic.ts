@@ -4,7 +4,7 @@
  * Uses SolidJS primitives only for reactive state management
  */
 import type { Accessor } from "solid-js";
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
 import type { Parameter, Preset, PrimitiveType } from "@/logic/parameters";
 import {
@@ -21,6 +21,7 @@ import {
 	parseShareUrl,
 	updatePresetData,
 } from "@/logic/parameters";
+import { createDebouncedSignal } from "@/utils/debounce";
 import type { DecompressResult } from "@/utils/presetCoder";
 
 import type { ViewMode } from "../manager/types";
@@ -42,6 +43,9 @@ export interface PresetManagerLogic {
 
 	// Core state accessors
 	presets: Accessor<Preset[]>;
+	filteredListPresets: Accessor<Preset[]>;
+	listSearchQuery: Accessor<string>;
+	setListSearchQuery: (query: string) => void;
 	loading: Accessor<boolean>;
 	viewMode: Accessor<ViewMode>;
 	editingPreset: Accessor<Preset | null>;
@@ -144,7 +148,7 @@ function getDateString(): string {
  * Create a filename-safe version of a name
  */
 function sanitizeFilename(name: string): string {
-	return name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+	return name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-");
 }
 
 // ============================================================================
@@ -158,6 +162,30 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 	const [presets, setPresets] = createSignal<Preset[]>([]);
 	const [loading, setLoading] = createSignal(true);
 	const [viewMode, setViewMode] = createSignal<ViewMode>("list");
+
+	// List search state with debounced input
+	const [listSearchQuery, setListSearchQuery] = createDebouncedSignal("", 150);
+
+	// Filtered presets for list view based on search query
+	const filteredListPresets = createMemo(() => {
+		const query = listSearchQuery().toLowerCase().trim();
+		if (!query) {
+			return presets();
+		}
+		return presets().filter(
+			(preset) =>
+				preset.name.toLowerCase().includes(query) ||
+				(preset.description?.toLowerCase().includes(query) ?? false)
+		);
+	});
+
+	// Clear list search when view mode changes
+	createEffect(() => {
+		// Subscribe to viewMode changes
+		viewMode();
+		// Reset search query when navigating
+		setListSearchQuery("");
+	});
 	const [editingPreset, setEditingPreset] = createSignal<Preset | null>(null);
 	const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
 	const [expandedPresetId, setExpandedPresetId] = createSignal<string | null>(null);
@@ -553,28 +581,24 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 		const file = input.files?.[0];
 		if (!file) return;
 
-		const reader = new FileReader();
-		reader.onload = async (event) => {
-			try {
-				const json = event.target?.result as string;
-				const { imported, errors } = await importPresets(json);
-				if (errors.length > 0) {
-					showToast(
-						`Imported ${imported} presets with some errors: ${errors.join(", ")}`,
-						"warning"
-					);
-				} else {
-					showToast(`Successfully imported ${imported} presets!`, "success");
-				}
-				await loadPresets();
-			} catch (error) {
-				console.error("[PresetManager] Failed to import presets:", error);
-				showToast("Failed to import presets. Invalid file format.", "error");
-			} finally {
-				input.value = "";
+		try {
+			const json = await file.text();
+			const { imported, errors } = await importPresets(json);
+			if (errors.length > 0) {
+				showToast(
+					`Imported ${imported} presets with some errors: ${errors.join(", ")}`,
+					"warning"
+				);
+			} else {
+				showToast(`Successfully imported ${imported} presets!`, "success");
 			}
-		};
-		reader.readAsText(file);
+			await loadPresets();
+		} catch (error) {
+			console.error("[PresetManager] Failed to import presets:", error);
+			showToast("Failed to import presets. Invalid file format.", "error");
+		} finally {
+			input.value = "";
+		}
 	};
 
 	const handleRepositoryImportConfirm = async (importedPresets: Preset[]) => {
@@ -659,6 +683,9 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 
 		// Core state
 		presets,
+		filteredListPresets,
+		listSearchQuery,
+		setListSearchQuery,
 		loading,
 		viewMode,
 		editingPreset,

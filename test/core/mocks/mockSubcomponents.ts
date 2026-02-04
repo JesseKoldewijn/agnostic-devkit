@@ -29,7 +29,10 @@ export interface ExportLogic {
 	expandedPresetId: Accessor<string | null>;
 	isExporting: Accessor<boolean>;
 	allSelected: Accessor<boolean>;
-
+	// Search state
+	searchQuery: Accessor<string>;
+	setSearchQuery: (query: string) => void;
+	filteredPresets: Accessor<Preset[]>;
 	// Wrapped callbacks (add loading state management)
 	onToggleExpanded: (presetId: string) => void;
 	handleExportDownload: () => Promise<void>;
@@ -68,6 +71,10 @@ export function createMockExportLogic(
 		expandedPresetId: string | null;
 		isExporting: boolean;
 		allSelected: boolean;
+		// Search state
+		searchQuery: string;
+		setSearchQuery: (query: string) => void;
+		filteredPresets: Preset[];
 		// Wrapped callbacks
 		onToggleExpanded: (presetId: string) => void;
 		handleExportDownload: () => Promise<void>;
@@ -87,6 +94,10 @@ export function createMockExportLogic(
 		expandedPresetId = null,
 		isExporting = false,
 		allSelected = false,
+		// Search state
+		searchQuery = "",
+		setSearchQuery = vi.fn(),
+		filteredPresets = presets, // Default to showing all presets
 		// Wrapped callbacks
 		onToggleExpanded = vi.fn(),
 		handleExportDownload = vi.fn().mockResolvedValue(undefined),
@@ -106,6 +117,10 @@ export function createMockExportLogic(
 		expandedPresetId: () => expandedPresetId,
 		isExporting: () => isExporting,
 		allSelected: () => allSelected,
+		// Search state
+		searchQuery: () => searchQuery,
+		setSearchQuery,
+		filteredPresets: () => filteredPresets,
 		// Wrapped callbacks
 		onToggleExpanded,
 		handleExportDownload,
@@ -131,6 +146,9 @@ export interface ShareImportLogic {
 	// Reactive getters (local state managed by logic)
 	importSelections: Accessor<Set<string>>;
 	presets: Accessor<Preset[]>;
+	filteredPresets: Accessor<Preset[]>;
+	searchQuery: Accessor<string>;
+	setSearchQuery: (query: string) => void;
 	allSelected: Accessor<boolean>;
 
 	// Callbacks
@@ -165,6 +183,9 @@ export function createMockShareImportLogic(
 		// Local state
 		importSelections: Set<string>;
 		presets: Preset[];
+		filteredPresets: Preset[];
+		searchQuery: string;
+		setSearchQuery: (query: string) => void;
 		allSelected: boolean;
 		// Callbacks
 		onToggleSelection: (presetId: string) => void;
@@ -182,6 +203,9 @@ export function createMockShareImportLogic(
 		// Local state
 		importSelections = new Set<string>(),
 		presets = [],
+		filteredPresets = presets, // Default to showing all presets
+		searchQuery = "",
+		setSearchQuery = vi.fn(),
 		allSelected = false,
 		// Callbacks
 		onToggleSelection = vi.fn(),
@@ -199,6 +223,9 @@ export function createMockShareImportLogic(
 		// Reactive getters
 		importSelections: () => importSelections,
 		presets: () => presets,
+		filteredPresets: () => filteredPresets,
+		searchQuery: () => searchQuery,
+		setSearchQuery,
 		allSelected: () => allSelected,
 		// Callbacks
 		onToggleSelection,

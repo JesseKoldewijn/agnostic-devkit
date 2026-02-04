@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui-shared/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { getBrowserName } from "@/utils/browser";
 import { cn } from "@/utils/cn";
 import type { Theme } from "@/utils/theme";
@@ -111,28 +112,31 @@ export const App: Component = () => {
 	});
 
 	return (
-		<Layout class={cn("min-h-[400px] w-[400px] p-4!")} data-testid="popup-container">
+		<Layout constrained class={cn("min-h-[500px] min-w-[440px] p-4")} data-testid="popup-container">
 			<Show
 				when={!showManager()}
 				fallback={
-					<div data-testid="preset-manager-container">
-						<PresetManager onClose={() => setShowManager(false)} class={cn("min-h-[400px]")} />
+					<div class={cn("flex min-h-0 flex-1 flex-col")} data-testid="preset-manager-container">
+						<PresetManager onClose={() => setShowManager(false)} class={cn("min-h-0 flex-1")} />
 					</div>
 				}
 			>
-				<div class={cn("flex flex-col space-y-5")}>
-					<PageHeader
-						title="Agnostic Devkit"
-						subtitle="Active Control Panel"
-						theme={currentTheme()}
-						titleTestId="popup-heading"
-					/>
+				<div class={cn("flex min-h-0 flex-1 flex-col space-y-5")}>
+					{/* Fixed header section */}
+					<div class={cn("shrink-0")}>
+						<PageHeader
+							title="Agnostic Devkit"
+							subtitle="Active Control Panel"
+							theme={currentTheme()}
+							titleTestId="popup-heading"
+						/>
+					</div>
 
-					{/* Current URL display */}
+					{/* Current URL display - fixed outside scroll area */}
 					<Show when={currentUrl()}>
 						<Card
 							class={cn(
-								"border-border/50 bg-muted/30 shadow-none",
+								"border-border/50 bg-muted/30 shrink-0 shadow-none",
 								isIncognito() && "border-purple-500/30 bg-purple-500/5"
 							)}
 							data-testid="current-tab-section"
@@ -167,11 +171,13 @@ export const App: Component = () => {
 						</Card>
 					</Show>
 
-					{/* Preset Toggle List */}
-					<PresetToggleList onManagePresets={() => setShowManager(true)} />
+					{/* Scrollable preset list area */}
+					<ScrollArea class={cn("flex-1")}>
+						<PresetToggleList onManagePresets={() => setShowManager(true)} />
+					</ScrollArea>
 
-					{/* Footer */}
-					<div class={cn("pt-3")}>
+					{/* Fixed footer */}
+					<div class={cn("shrink-0 pt-3")}>
 						<Button
 							variant="secondary"
 							class={cn("h-10 w-full")}

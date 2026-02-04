@@ -5,6 +5,7 @@ import type { Accessor } from "solid-js";
 import { createMemo, createSignal } from "solid-js";
 
 import type { Preset } from "@/logic/parameters";
+import { createDebouncedSignal } from "@/utils/debounce";
 import type { DecompressResult } from "@/utils/presetCoder";
 
 // ============================================================================
@@ -34,6 +35,9 @@ export interface ShareImportLogic {
 	// Reactive getters (local state managed here)
 	importSelections: Accessor<Set<string>>;
 	presets: Accessor<Preset[]>;
+	filteredPresets: Accessor<Preset[]>;
+	searchQuery: Accessor<string>;
+	setSearchQuery: (query: string) => void;
 	allSelected: Accessor<boolean>;
 
 	// Callbacks
@@ -61,6 +65,22 @@ export function createShareImportLogic(props: ShareImportProps): ShareImportLogi
 	};
 
 	const [importSelections, setImportSelections] = createSignal<Set<string>>(initialSelections());
+
+	// Search state with debounced input
+	const [searchQuery, setSearchQuery] = createDebouncedSignal("", 150);
+
+	// Filtered presets based on search query
+	const filteredPresets = createMemo(() => {
+		const query = searchQuery().toLowerCase().trim();
+		if (!query) {
+			return presets();
+		}
+		return presets().filter(
+			(preset) =>
+				preset.name.toLowerCase().includes(query) ||
+				(preset.description?.toLowerCase().includes(query) ?? false)
+		);
+	});
 
 	// Computed: check if all are selected
 	const allSelected = createMemo(
@@ -106,6 +126,9 @@ export function createShareImportLogic(props: ShareImportProps): ShareImportLogi
 		// Reactive getters
 		importSelections,
 		presets,
+		filteredPresets,
+		searchQuery,
+		setSearchQuery,
 		allSelected,
 
 		// Callbacks
