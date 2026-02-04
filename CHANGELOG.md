@@ -1,3 +1,10 @@
+# [1.5.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.0-canary.1...v1.5.0-canary.2) (2026-02-04)
+
+
+### Bug Fixes
+
+* Incognito/Private support with visual indicator ([9bbb7a7](https://github.com/JesseKoldewijn/agnostic-devkit/commit/9bbb7a71bb93b68da70fbfa5a8e2ecd8b01e2fb6))
+
 # [1.5.0-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.3-canary.2...v1.5.0-canary.1) (2026-02-04)
 
 
