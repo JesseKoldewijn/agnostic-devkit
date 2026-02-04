@@ -76,6 +76,7 @@ export default defineConfig({
 		return {
 			description: "A platform agnostic devkit for web development",
 			host_permissions: ["*://*/*"],
+			incognito: "spanning",
 			name,
 			options_page: "settings.html",
 			permissions: isFirefox ? firefoxPermissions : chromePermissions,

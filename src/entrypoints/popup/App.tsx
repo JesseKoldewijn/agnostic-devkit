@@ -6,8 +6,10 @@ import { browser } from "wxt/browser";
 import { PresetManager, PresetToggleList } from "@/components/presets";
 import { Layout } from "@/components/ui-shared/Layout";
 import { PageHeader } from "@/components/ui-shared/PageHeader";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
+import { getBrowserName } from "@/utils/browser";
 import { cn } from "@/utils/cn";
 import type { Theme } from "@/utils/theme";
 import { getTheme } from "@/utils/theme";
@@ -16,6 +18,16 @@ export const App: Component = () => {
 	const [currentTheme, setCurrentTheme] = createSignal<Theme>("system");
 	const [showManager, setShowManager] = createSignal(false);
 	const [currentUrl, setCurrentUrl] = createSignal<string>("");
+	const [isIncognito, setIsIncognito] = createSignal(false);
+
+	/**
+	 * Get the appropriate label for private browsing mode based on browser
+	 * Firefox uses "Private", Chrome/Edge/others use "Incognito"
+	 */
+	const getPrivateModeLabel = () => {
+		const browserName = getBrowserName();
+		return browserName === "Firefox" ? "Private" : "Incognito";
+	};
 
 	onMount(async () => {
 		const theme = await getTheme();
@@ -38,6 +50,7 @@ export const App: Component = () => {
 				const tab = await browser.tabs?.get(parsed);
 				if (tab?.url) {
 					setCurrentUrl(tab.url);
+					setIsIncognito(tab.incognito ?? false);
 				}
 			}
 		} else {
@@ -46,8 +59,9 @@ export const App: Component = () => {
 				active: true,
 				currentWindow: true,
 			});
-			if (tabs?.[0]?.url) {
-				setCurrentUrl(tabs[0].url);
+			if (tabs?.[0]) {
+				setCurrentUrl(tabs[0].url ?? "");
+				setIsIncognito(tabs[0].incognito ?? false);
 			}
 		}
 
@@ -66,8 +80,9 @@ export const App: Component = () => {
 			}
 
 			const tab = await browser.tabs?.get(activeInfo.tabId);
-			if (tab?.url) {
-				setCurrentUrl(tab.url);
+			if (tab) {
+				setCurrentUrl(tab.url ?? "");
+				setIsIncognito(tab.incognito ?? false);
 			}
 		});
 
@@ -77,8 +92,9 @@ export const App: Component = () => {
 			const targetId = hasTestOverride ? Number.parseInt(targetTabIdParam ?? "", 10) : null;
 
 			if (hasTestOverride && targetId !== null) {
-				if (tabId === targetId && tab.url) {
-					setCurrentUrl(tab.url);
+				if (tabId === targetId) {
+					setCurrentUrl(tab.url ?? "");
+					setIsIncognito(tab.incognito ?? false);
 				}
 				return;
 			}
@@ -87,8 +103,9 @@ export const App: Component = () => {
 				active: true,
 				currentWindow: true,
 			});
-			if (currentTabs?.[0]?.id === tabId && tab.url) {
-				setCurrentUrl(tab.url);
+			if (currentTabs?.[0]?.id === tabId) {
+				setCurrentUrl(tab.url ?? "");
+				setIsIncognito(tab.incognito ?? false);
 			}
 		});
 	});
@@ -114,16 +131,30 @@ export const App: Component = () => {
 					{/* Current URL display */}
 					<Show when={currentUrl()}>
 						<Card
-							class={cn("border-border/50 bg-muted/30 shadow-none")}
+							class={cn(
+								"border-border/50 bg-muted/30 shadow-none",
+								isIncognito() && "border-purple-500/30 bg-purple-500/5"
+							)}
 							data-testid="current-tab-section"
 						>
 							<CardContent class={cn("p-4")}>
-								<div
-									class={cn(
-										"text-muted-foreground mb-1.5 text-[10px] font-black tracking-widest uppercase opacity-70"
-									)}
-								>
-									Active Tab
+								<div class={cn("mb-1.5 flex items-center gap-2")}>
+									<div
+										class={cn(
+											"text-muted-foreground text-[10px] font-black tracking-widest uppercase opacity-70"
+										)}
+									>
+										Active Tab
+									</div>
+									<Show when={isIncognito()}>
+										<Badge
+											variant="outline"
+											class={cn("border-purple-500/50 text-purple-600 dark:text-purple-400")}
+											data-testid="incognito-badge"
+										>
+											{getPrivateModeLabel()}
+										</Badge>
+									</Show>
 								</div>
 								<div
 									class={cn("text-foreground truncate font-mono text-[12px]")}

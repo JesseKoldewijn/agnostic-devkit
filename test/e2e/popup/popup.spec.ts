@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../core/fixtures";
+import { createTestPage, getTabId, openPopupPageWithIncognito } from "../core/helpers";
 
 /**
  * E2E tests for the Popup interface
@@ -80,5 +81,29 @@ test.describe("Popup Interface E2E Tests", () => {
 
 		// Verify main view is back
 		await expect(popupPage.locator('[data-testid="popup-heading"]')).toBeVisible();
+	});
+
+	test("should show incognito badge when in incognito mode", async ({ context, extensionId }) => {
+		// Close the default popup page from beforeEach
+		await popupPage.close();
+
+		const testPage = await createTestPage(context, "https://example.com");
+		const tabId = await getTabId(context, testPage);
+
+		// Open popup with incognito simulation
+		popupPage = await openPopupPageWithIncognito(context, extensionId, tabId);
+
+		// Verify incognito badge is visible
+		const incognitoBadge = popupPage.locator('[data-testid="incognito-badge"]');
+		await expect(incognitoBadge).toBeVisible();
+		await expect(incognitoBadge).toContainText(/Incognito|Private/);
+
+		await testPage.close();
+	});
+
+	test("should NOT show incognito badge in normal mode", async () => {
+		// Using the default popup page from beforeEach (normal mode)
+		const incognitoBadge = popupPage.locator('[data-testid="incognito-badge"]');
+		await expect(incognitoBadge).not.toBeVisible();
 	});
 });

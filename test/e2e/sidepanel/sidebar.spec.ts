@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../core/fixtures";
+import { createTestPage, getTabId, openSidebarPageWithIncognito } from "../core/helpers";
 
 /**
  * E2E tests for the Sidebar/SidePanel interface
@@ -47,5 +48,29 @@ test.describe("Sidebar/SidePanel E2E Tests", () => {
 		expect(isOptionsUrl).toBe(true);
 
 		await newPage.close();
+	});
+
+	test("should show incognito badge when in incognito mode", async ({ context, extensionId }) => {
+		// Close the default sidebar page from beforeEach
+		await sidebarPage.close();
+
+		const testPage = await createTestPage(context, "https://example.com");
+		const tabId = await getTabId(context, testPage);
+
+		// Open sidebar with incognito simulation
+		sidebarPage = await openSidebarPageWithIncognito(context, extensionId, tabId);
+
+		// Verify incognito badge is visible
+		const incognitoBadge = sidebarPage.locator('[data-testid="incognito-badge"]');
+		await expect(incognitoBadge).toBeVisible();
+		await expect(incognitoBadge).toContainText(/Incognito|Private/);
+
+		await testPage.close();
+	});
+
+	test("should NOT show incognito badge in normal mode", async () => {
+		// Using the default sidebar page from beforeEach (normal mode)
+		const incognitoBadge = sidebarPage.locator('[data-testid="incognito-badge"]');
+		await expect(incognitoBadge).not.toBeVisible();
 	});
 });
