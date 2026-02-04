@@ -45,6 +45,7 @@
 		"release:dry-run": "semantic-release --dry-run --no-ci"
 	},
 	"dependencies": {
+		"@tanstack/solid-virtual": "^3.13.18",
 		"clsx": "^2.1.1",
 		"lz-string": "^1.5.0",
 		"solid-js": "^1.9.10",

@@ -96,6 +96,21 @@ export default defineConfig(
 		},
 	},
 
+	// TypeScript files with type checking - enable deprecated warning
+	{
+		files: ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx"],
+		languageOptions: {
+			parserOptions: {
+				projectService: true,
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+		rules: {
+			// Warn about deprecated APIs (including feature flags marked with @deprecated)
+			"@typescript-eslint/no-deprecated": "warn",
+		},
+	},
+
 	// SolidJS rules for source files
 	{
 		files: ["src/**/*.{ts,tsx}"],
@@ -110,6 +125,12 @@ export default defineConfig(
 		rules: {
 			// SolidJS components often have deeply nested callbacks (ref + queueMicrotask)
 			"sonarjs/no-nested-functions": "off",
+			// SolidJS components can return JSX.Element | null | undefined (conditional rendering)
+			// This is by design and not a code smell
+			"sonarjs/function-return-type": "off",
+			// SolidJS props are already read-only by convention (passed from parent)
+			// The framework handles reactivity - explicit readonly adds noise
+			"sonarjs/prefer-read-only-props": "off",
 		},
 	},
 
