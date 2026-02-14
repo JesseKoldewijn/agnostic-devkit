@@ -585,10 +585,7 @@ export function createPresetManagerLogic(props: PresetManagerProps): PresetManag
 			const json = await file.text();
 			const { imported, errors } = await importPresets(json);
 			if (errors.length > 0) {
-				showToast(
-					`Imported ${imported} presets with some errors: ${errors.join(", ")}`,
-					"warning"
-				);
+				showToast(`Imported ${imported} presets with some errors: ${errors.join(", ")}`, "warning");
 			} else {
 				showToast(`Successfully imported ${imported} presets!`, "success");
 			}
