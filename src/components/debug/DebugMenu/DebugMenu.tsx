@@ -259,10 +259,8 @@ export function DebugMenu(props: Readonly<DebugMenuProps>) {
 			<div class="flex h-full max-h-[70vh] flex-col">
 				{/* Header with environment info and profile selector */}
 				<div class="mb-4 flex items-center justify-between gap-4">
-					<fieldset class="flex items-center gap-2 border-none p-0 m-0">
-						<legend class="text-sm text-neutral-500">
-							Profile:
-						</legend>
+					<fieldset class="m-0 flex items-center gap-2 border-none p-0">
+						<legend class="text-sm text-neutral-500">Profile:</legend>
 						<div
 							class="flex rounded-md border border-neutral-200 dark:border-neutral-700"
 							data-testid="profile-button-group"
