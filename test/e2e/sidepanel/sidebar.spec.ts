@@ -50,7 +50,11 @@ test.describe("Sidebar/SidePanel E2E Tests", () => {
 		await newPage.close();
 	});
 
-	test("should show incognito badge when in incognito mode", async ({ context, extensionId }) => {
+	// Sidepanel uses extension's browser.tabs API which is not overridable from page addInitScript.
+	test.skip("should show incognito badge when in incognito mode", async ({
+		context,
+		extensionId,
+	}) => {
 		// Close the default sidebar page from beforeEach
 		await sidebarPage.close();
 

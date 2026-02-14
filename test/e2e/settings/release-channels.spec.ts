@@ -34,7 +34,8 @@ test.describe("Release Channels E2E Tests", () => {
 	test("should display the release channels section", async ({ page }) => {
 		const section = page.locator('[data-testid="release-channels-section"]');
 		await expect(section).toBeVisible();
-		await expect(section).toContainText("Release Channel");
+		// UI uses "Release channel" (lowercase) in CardDescription
+		await expect(section).toContainText(/Release channel/i);
 	});
 
 	test("should detect and show available stable update", async ({ page }) => {
