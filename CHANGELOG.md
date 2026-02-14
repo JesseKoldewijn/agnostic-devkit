@@ -1,3 +1,10 @@
+# [1.5.0-canary.3](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.0-canary.2...v1.5.0-canary.3) (2026-02-14)
+
+
+### Bug Fixes
+
+* style and UI improvements around lists and settings page ([5739d36](https://github.com/JesseKoldewijn/agnostic-devkit/commit/5739d361e07e8a778357f9270b8f6b66794ca1d5))
+
 # [1.5.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.0-canary.1...v1.5.0-canary.2) (2026-02-04)
 
 
