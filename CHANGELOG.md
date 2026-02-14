@@ -1,3 +1,21 @@
+# [1.5.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.2...v1.5.0) (2026-02-14)
+
+
+### Bug Fixes
+
+* cleanup of deadcode and improved UI/Logic handling ([7db9442](https://github.com/JesseKoldewijn/agnostic-devkit/commit/7db9442e67898d48d8ffb4f0795571cf39ad4e29))
+* code standard improvements + test-suite refactor ([40b70df](https://github.com/JesseKoldewijn/agnostic-devkit/commit/40b70dffd00bd3f50576d708a8956194e3428d91))
+* code standard improvements + test-suite refactor - phase 2 ([f3c3d3e](https://github.com/JesseKoldewijn/agnostic-devkit/commit/f3c3d3e79d873a654b78c4f20f87cde54f31d69c))
+* Incognito/Private support with visual indicator ([3fb0528](https://github.com/JesseKoldewijn/agnostic-devkit/commit/3fb05288e4912ef84df4d4fbfb90406236f5b270))
+* refactor of high complexity functionality ([101ef68](https://github.com/JesseKoldewijn/agnostic-devkit/commit/101ef68b3b7b66fff19e8b70d13e2d5c364db911))
+* remote preset repository logic + UI fixes ([5e20c70](https://github.com/JesseKoldewijn/agnostic-devkit/commit/5e20c702367420a34534bf730dd647e44dd799a7))
+* style and UI improvements around lists and settings page ([949c558](https://github.com/JesseKoldewijn/agnostic-devkit/commit/949c55854d74dafcef31abf785aea703531e6a49))
+
+
+### Features
+
+* complete refactor of extension architechture ([e6d1ba4](https://github.com/JesseKoldewijn/agnostic-devkit/commit/e6d1ba4e9998553134d23dda3c5346bb6b7673c5))
+
 # [1.5.0-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.0-canary.1...v1.5.0-canary.2) (2026-02-04)
 
 
