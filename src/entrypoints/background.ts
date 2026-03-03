@@ -5,6 +5,70 @@ import { cleanupTabState } from "@/logic/parameters";
 import { logBrowserInfo } from "@/utils/browser";
 import { initDisplayMode } from "@/utils/displayMode";
 
+/**
+ * Check if a tab is in incognito/private browsing mode.
+ */
+async function isTabIncognito(tabId: number): Promise<boolean> {
+	try {
+		const tab = await browser.tabs?.get(tabId);
+		return tab?.incognito === true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Build a diagnostic error response for a failed scripting operation.
+ * Detects incognito-specific failures and returns a structured reason code.
+ */
+async function buildScriptErrorResponse(
+	error: Error,
+	tabId: number,
+	operation: string
+): Promise<{ success: false; error: string; reason?: string; incognito?: boolean }> {
+	const incognito = await isTabIncognito(tabId);
+	const errorMsg = error.message || String(error);
+
+	// Common incognito-related error patterns from Chrome/Firefox
+	const isPermissionError =
+		errorMsg.includes("Cannot access") ||
+		errorMsg.includes("No tab with id") ||
+		errorMsg.includes("permission") ||
+		errorMsg.includes("Missing host permission");
+
+	if (incognito && isPermissionError) {
+		console.error(
+			`[Background] ${operation} failed on incognito tab ${tabId}: ${errorMsg}. ` +
+				`The extension may not have "Allow in incognito" enabled.`
+		);
+		return {
+			error:
+				`${operation} failed on incognito tab: ${errorMsg}. ` +
+				`Ensure the extension has "Allow in incognito" enabled in your browser's extension settings.`,
+			incognito: true,
+			reason: "incognito_not_allowed",
+			success: false,
+		};
+	}
+
+	if (incognito) {
+		console.error(`[Background] ${operation} failed on incognito tab ${tabId}: ${errorMsg}`);
+		return {
+			error: `${operation} failed on incognito tab: ${errorMsg}`,
+			incognito: true,
+			reason: "incognito_script_error",
+			success: false,
+		};
+	}
+
+	console.error(`[Background] ${operation} failed on tab ${tabId}: ${errorMsg}`);
+	return {
+		error: `${operation} failed: ${errorMsg}`,
+		reason: "script_error",
+		success: false,
+	};
+}
+
 export default defineBackground(() => {
 	browser.runtime?.onInstalled.addListener(async () => {
 		console.log("Extension installed");
@@ -54,7 +118,9 @@ export default defineBackground(() => {
 					world: "MAIN",
 				})
 				.then(() => sendResponse({ success: true }))
-				.catch((error) => sendResponse({ error: error.message, success: false }));
+				.catch((error: Error) =>
+					buildScriptErrorResponse(error, tabId, "APPLY_LS").then(sendResponse)
+				);
 			return true;
 		}
 
@@ -79,7 +145,9 @@ export default defineBackground(() => {
 					world: "MAIN",
 				})
 				.then(() => sendResponse({ success: true }))
-				.catch((error) => sendResponse({ error: error.message, success: false }));
+				.catch((error: Error) =>
+					buildScriptErrorResponse(error, tabId, "REMOVE_LS").then(sendResponse)
+				);
 			return true;
 		}
 
@@ -100,7 +168,9 @@ export default defineBackground(() => {
 					world: "MAIN",
 				})
 				.then((results) => sendResponse({ success: true, value: results[0]?.result }))
-				.catch((error) => sendResponse({ error: error.message, success: false }));
+				.catch((error: Error) =>
+					buildScriptErrorResponse(error, tabId, "GET_LS").then(sendResponse)
+				);
 			return true;
 		}
 

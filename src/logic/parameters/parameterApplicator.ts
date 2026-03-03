@@ -22,6 +22,26 @@ async function getTabUrl(tabId: number): Promise<string | undefined> {
 }
 
 /**
+ * Get the cookie store ID for a tab.
+ * Incognito tabs use a separate cookie store from normal tabs.
+ * Returns undefined for normal tabs (uses the default store).
+ */
+async function getTabCookieStoreId(tabId: number): Promise<string | undefined> {
+	try {
+		const tab = await browser.tabs?.get(tabId);
+		if (!tab?.incognito) {
+			return undefined;
+		}
+
+		const stores = await browser.cookies.getAllCookieStores();
+		const incognitoStore = stores.find((s) => s.tabIds.includes(tabId));
+		return incognitoStore?.id;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
  * Apply a query parameter to a tab's URL
  */
 async function applyQueryParam(tabId: number, key: string, value: string): Promise<boolean> {
@@ -78,12 +98,14 @@ async function applyCookie(tabId: number, key: string, value: string): Promise<b
 		}
 
 		const urlObj = new URL(url);
+		const storeId = await getTabCookieStoreId(tabId);
 
 		await browser.cookies.set({
 			name: key,
 			path: "/",
 			url: urlObj.origin,
 			value: value,
+			...(storeId ? { storeId } : {}),
 		});
 
 		return true;
@@ -104,16 +126,43 @@ async function removeCookie(tabId: number, key: string): Promise<boolean> {
 		}
 
 		const urlObj = new URL(url);
+		const storeId = await getTabCookieStoreId(tabId);
 
 		await browser.cookies.remove({
 			name: key,
 			url: urlObj.origin,
+			...(storeId ? { storeId } : {}),
 		});
 
 		return true;
 	} catch (error) {
 		console.error("[ParameterApplicator] Failed to remove cookie:", error);
 		return false;
+	}
+}
+
+/**
+ * Log a diagnostic message when a localStorage operation fails on an incognito tab.
+ * The background script returns structured error responses with `reason` and `incognito` fields.
+ */
+function logIncognitoLocalStorageError(
+	operation: string,
+	key: string,
+	response: { error?: string; reason?: string; incognito?: boolean }
+): void {
+	if (!response?.reason) {
+		return;
+	}
+
+	if (response.reason === "incognito_not_allowed") {
+		console.warn(
+			`[ParameterApplicator] localStorage ${operation} for key "${key}" failed on incognito tab. ` +
+				`Ensure the extension has "Allow in incognito" enabled in your browser's extension settings.`
+		);
+	} else if (response.incognito) {
+		console.warn(
+			`[ParameterApplicator] localStorage ${operation} for key "${key}" failed on incognito tab: ${response.error}`
+		);
 	}
 }
 
@@ -128,6 +177,9 @@ async function applyLocalStorage(tabId: number, key: string, value: string): Pro
 			type: "APPLY_LS",
 			value,
 		});
+		if (!response?.success) {
+			logIncognitoLocalStorageError("apply", key, response);
+		}
 		return Boolean(response?.success);
 	} catch (error) {
 		console.error("[ParameterApplicator] Failed to apply localStorage:", error);
@@ -145,6 +197,9 @@ async function removeLocalStorage(tabId: number, key: string): Promise<boolean> 
 			tabId,
 			type: "REMOVE_LS",
 		});
+		if (!response?.success) {
+			logIncognitoLocalStorageError("remove", key, response);
+		}
 		return Boolean(response?.success);
 	} catch (error) {
 		console.error("[ParameterApplicator] Failed to remove localStorage:", error);
@@ -183,9 +238,11 @@ export async function getCookieValue(tabId: number, key: string): Promise<string
 		}
 
 		const urlObj = new URL(url);
+		const storeId = await getTabCookieStoreId(tabId);
 		const cookie = await browser.cookies.get({
 			name: key,
 			url: urlObj.origin,
+			...(storeId ? { storeId } : {}),
 		});
 
 		return cookie?.value ?? null;
@@ -204,6 +261,9 @@ export async function getLocalStorageValue(tabId: number, key: string): Promise<
 			tabId,
 			type: "GET_LS",
 		});
+		if (!response?.success) {
+			logIncognitoLocalStorageError("get", key, response);
+		}
 		return response?.value ?? null;
 	} catch {
 		return null;
@@ -606,9 +666,11 @@ async function verifyCookie(tabId: number, key: string, expectedValue: string): 
 		}
 
 		const urlObj = new URL(url);
+		const storeId = await getTabCookieStoreId(tabId);
 		const cookie = await browser.cookies.get({
 			name: key,
 			url: urlObj.origin,
+			...(storeId ? { storeId } : {}),
 		});
 
 		return cookie?.value === expectedValue;
@@ -631,6 +693,9 @@ async function verifyLocalStorage(
 			tabId,
 			type: "GET_LS",
 		});
+		if (!response?.success) {
+			logIncognitoLocalStorageError("verify", key, response);
+		}
 		return response?.success && response.value === expectedValue;
 	} catch {
 		return false;
