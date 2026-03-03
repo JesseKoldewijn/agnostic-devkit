@@ -1,3 +1,10 @@
+## [1.5.1-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.0...v1.5.1-canary.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* resolve cookie and localStorage failures in incognito mode ([bdd9cae](https://github.com/JesseKoldewijn/agnostic-devkit/commit/bdd9caedbe979218e6df0acf27c248e55b841df4))
+
 # [1.5.0](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.4.2...v1.5.0) (2026-02-14)
 
 
