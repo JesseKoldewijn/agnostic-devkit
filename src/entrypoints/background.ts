@@ -93,9 +93,7 @@ function getTabStore(
 	return storage.get(tabId)!;
 }
 
-type ScriptedWriteResult =
-	| { success: true }
-	| { success: false; errorName: string; error: string };
+type ScriptedWriteResult = { success: true } | { success: false; errorName: string; error: string };
 type ScriptedReadResult =
 	| { success: true; value: string | null }
 	| { success: false; errorName: string; error: string };
@@ -132,12 +130,7 @@ export async function handleApplyLS(
 				getTabStore(storage, tabId).set(key, value);
 				return { success: true };
 			}
-			return buildScriptErrorResponse(
-				new Error(result.error),
-				tabId,
-				"APPLY_LS",
-				result.errorName
-			);
+			return buildScriptErrorResponse(new Error(result.error), tabId, "APPLY_LS", result.errorName);
 		}
 
 		return { success: true };
@@ -221,12 +214,7 @@ export async function handleGetLS(
 				const memValue = storage.get(tabId)?.get(key) ?? null;
 				return { success: true, value: memValue };
 			}
-			return buildScriptErrorResponse(
-				new Error(result.error),
-				tabId,
-				"GET_LS",
-				result.errorName
-			);
+			return buildScriptErrorResponse(new Error(result.error), tabId, "GET_LS", result.errorName);
 		}
 
 		return { success: true, value: result?.value ?? null };
