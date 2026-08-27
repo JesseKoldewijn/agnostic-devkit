@@ -54,6 +54,13 @@ export function setupBrowserMocks(options: { tabUrl?: string; incognito?: boolea
 	(fakeBrowser.cookies.set as ReturnType<typeof vi.fn>) = vi.fn(async () => ({}));
 	(fakeBrowser.cookies.get as ReturnType<typeof vi.fn>) = vi.fn(async () => null);
 	(fakeBrowser.cookies.remove as ReturnType<typeof vi.fn>) = vi.fn(async () => ({}));
+	(fakeBrowser.cookies.getAllCookieStores as ReturnType<typeof vi.fn>) = vi.fn(async () => {
+		const stores = [{ id: "0", tabIds: [] as number[] }];
+		if (mockIncognito.current) {
+			stores.push({ id: "1", tabIds: [123] });
+		}
+		return stores;
+	});
 
 	// Setup fake scripting
 	(fakeBrowser.scripting.executeScript as ReturnType<typeof vi.fn>) = vi.fn(async () => [

@@ -1,7 +1,7 @@
 /**
  * @vitest-environment node
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import {
@@ -637,6 +637,515 @@ describe("parameterApplicator", () => {
 		});
 	});
 
+	describe("incognito mode - cookie store isolation", () => {
+		beforeEach(() => {
+			// Mock tabs.get to return incognito: true
+			(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
+				id: tabId,
+				url: mockTabUrl,
+				incognito: true,
+			}));
+
+			// Mock getAllCookieStores to return both normal and incognito stores
+			(fakeBrowser.cookies.getAllCookieStores as any) = vi.fn(async () => [
+				{ id: "0", tabIds: [] },
+				{ id: "1", tabIds: [123] },
+			]);
+		});
+
+		it("should pass storeId when applying a cookie on an incognito tab", async () => {
+			const param: Parameter = {
+				id: "1",
+				key: "incognitoCookie",
+				type: "cookie",
+				value: "secretValue",
+			};
+
+			const result = await applyParameter(123, param);
+			expect(result).toBeTruthy();
+			expect(fakeBrowser.cookies.set).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "incognitoCookie",
+					value: "secretValue",
+					storeId: "1",
+				})
+			);
+		});
+
+		it("should pass storeId when removing a cookie on an incognito tab", async () => {
+			const param: Parameter = {
+				id: "1",
+				key: "incognitoCookie",
+				type: "cookie",
+				value: "secretValue",
+			};
+
+			const result = await removeParameter(123, param);
+			expect(result).toBeTruthy();
+			expect(fakeBrowser.cookies.remove).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "incognitoCookie",
+					storeId: "1",
+				})
+			);
+		});
+
+		it("should pass storeId when getting a cookie value on an incognito tab", async () => {
+			const { getCookieValue } = await import("@/logic/parameters/parameterApplicator");
+			(fakeBrowser.cookies.get as any).mockResolvedValue({
+				name: "incognitoCookie",
+				value: "secretValue",
+			});
+
+			await getCookieValue(123, "incognitoCookie");
+			expect(fakeBrowser.cookies.get).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "incognitoCookie",
+					storeId: "1",
+				})
+			);
+		});
+
+		it("should pass storeId when verifying a cookie on an incognito tab", async () => {
+			(fakeBrowser.cookies.get as any).mockResolvedValue({
+				value: "secretValue",
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "incognitoCookie",
+				type: "cookie",
+				value: "secretValue",
+			};
+
+			const result = await verifyParameter(123, param);
+			expect(result).toBeTruthy();
+			expect(fakeBrowser.cookies.get).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "incognitoCookie",
+					storeId: "1",
+				})
+			);
+		});
+
+		it("should NOT pass storeId for normal (non-incognito) tabs", async () => {
+			// Override to non-incognito
+			(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
+				id: tabId,
+				url: mockTabUrl,
+				incognito: false,
+			}));
+
+			const param: Parameter = {
+				id: "1",
+				key: "normalCookie",
+				type: "cookie",
+				value: "normalValue",
+			};
+
+			await applyParameter(123, param);
+			const callArgs = (fakeBrowser.cookies.set as any).mock.calls[0][0];
+			expect(callArgs.storeId).toBeUndefined();
+		});
+
+		it("should use correct cookie store when applying a preset with cookies on incognito tab", async () => {
+			const preset: Preset = {
+				id: "preset1",
+				name: "Incognito Preset",
+				parameters: [
+					{ id: "p1", key: "qp1", type: "queryParam", value: "v1" },
+					{ id: "p2", key: "ck1", type: "cookie", value: "cv1" },
+					{ id: "p3", key: "ck2", type: "cookie", value: "cv2" },
+				],
+			};
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
+
+			const result = await applyPreset(123, "preset1");
+			expect(result).toBeTruthy();
+
+			// Both cookie.set calls should include storeId for incognito
+			const cookieSetCalls = (fakeBrowser.cookies.set as any).mock.calls;
+			for (const call of cookieSetCalls) {
+				expect(call[0]).toHaveProperty("storeId", "1");
+			}
+		});
+
+		it("should use correct cookie store when removing a preset with cookies on incognito tab", async () => {
+			const preset: Preset = {
+				id: "preset1",
+				name: "Incognito Preset",
+				parameters: [{ id: "p1", key: "ck1", type: "cookie", value: "cv1" }],
+			};
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
+			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": [] } });
+
+			const result = await removePreset(123, "preset1");
+			expect(result).toBeTruthy();
+
+			expect(fakeBrowser.cookies.remove).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: "ck1",
+					storeId: "1",
+				})
+			);
+		});
+
+		it("should handle getAllCookieStores failure gracefully for incognito tabs", async () => {
+			(fakeBrowser.cookies.getAllCookieStores as any) = vi.fn(async () => {
+				throw new Error("API not available");
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "fallbackCookie",
+				type: "cookie",
+				value: "value",
+			};
+
+			// Should still succeed (falls back to no storeId)
+			const result = await applyParameter(123, param);
+			expect(result).toBeTruthy();
+		});
+
+		it("should handle missing incognito store gracefully", async () => {
+			// Only return the default store, no incognito store
+			(fakeBrowser.cookies.getAllCookieStores as any) = vi.fn(async () => [
+				{ id: "0", tabIds: [] },
+			]);
+
+			const param: Parameter = {
+				id: "1",
+				key: "noStoreCookie",
+				type: "cookie",
+				value: "value",
+			};
+
+			// Should still succeed (falls back to no storeId)
+			const result = await applyParameter(123, param);
+			expect(result).toBeTruthy();
+		});
+	});
+
+	describe("incognito mode - localStorage error diagnostics", () => {
+		let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+		beforeEach(() => {
+			consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		});
+
+		afterEach(() => {
+			consoleWarnSpy.mockRestore();
+		});
+
+		it("should log a diagnostic warning when applyLocalStorage receives incognito_not_allowed", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "APPLY_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await applyParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+		});
+
+		it("should log a diagnostic warning when removeLocalStorage receives incognito_not_allowed", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "REMOVE_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await removeParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+		});
+
+		it("should log a diagnostic warning when getLocalStorageValue receives incognito_not_allowed", async () => {
+			const { getLocalStorageValue } = await import("@/logic/parameters/parameterApplicator");
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "GET_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const value = await getLocalStorageValue(123, "lsKey");
+			expect(value).toBeNull();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+		});
+
+		it("should log a generic incognito warning when applyLocalStorage receives incognito_script_error", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "APPLY_LS failed on incognito tab: Some scripting error",
+				incognito: true,
+				reason: "incognito_script_error",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await applyParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(
+				expect.stringContaining("failed on incognito tab")
+			);
+		});
+
+		it("should not log incognito warning for normal script_error responses", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "APPLY_LS failed: Tab not found",
+				reason: "script_error",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await applyParameter(123, param);
+			expect(result).toBeFalsy();
+			// Should NOT log an incognito-specific warning
+			expect(consoleWarnSpy).not.toHaveBeenCalledWith(expect.stringContaining("incognito"));
+		});
+
+		it("should handle null response from sendMessage without crashing", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce(null);
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await applyParameter(123, param);
+			expect(result).toBeFalsy();
+			// logIncognitoLocalStorageError should early-return, no warnings
+			expect(consoleWarnSpy).not.toHaveBeenCalled();
+		});
+
+		it("should handle response with no reason field without logging incognito warnings", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "Some unknown error",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await applyParameter(123, param);
+			expect(result).toBeFalsy();
+			// No reason field → logIncognitoLocalStorageError early-returns
+			expect(consoleWarnSpy).not.toHaveBeenCalled();
+		});
+
+		it("should log a generic incognito warning when removeLocalStorage receives incognito_script_error", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "REMOVE_LS failed on incognito tab: Some scripting error",
+				incognito: true,
+				reason: "incognito_script_error",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await removeParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(
+				expect.stringContaining("failed on incognito tab")
+			);
+		});
+
+		it("should not log incognito warning when removeLocalStorage receives script_error", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "REMOVE_LS failed: Tab not found",
+				reason: "script_error",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await removeParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).not.toHaveBeenCalledWith(expect.stringContaining("incognito"));
+		});
+
+		it("should log a generic incognito warning when getLocalStorageValue receives incognito_script_error", async () => {
+			const { getLocalStorageValue } = await import("@/logic/parameters/parameterApplicator");
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "GET_LS failed on incognito tab: Some scripting error",
+				incognito: true,
+				reason: "incognito_script_error",
+				success: false,
+			});
+
+			const value = await getLocalStorageValue(123, "lsKey");
+			expect(value).toBeNull();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(
+				expect.stringContaining("failed on incognito tab")
+			);
+		});
+
+		it("should log a generic incognito warning when verifyLocalStorage receives incognito_script_error", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "GET_LS failed on incognito tab: Some scripting error",
+				incognito: true,
+				reason: "incognito_script_error",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await verifyParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(
+				expect.stringContaining("failed on incognito tab")
+			);
+		});
+
+		it("should log a diagnostic warning when verifyLocalStorage receives incognito_not_allowed", async () => {
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+				error: "GET_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await verifyParameter(123, param);
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+		});
+	});
+
+	describe("incognito mode - composite function failures", () => {
+		let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+		beforeEach(() => {
+			consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		});
+
+		afterEach(() => {
+			consoleWarnSpy.mockRestore();
+		});
+
+		it("should return false when applyPreset has localStorage items that fail on incognito", async () => {
+			// sendMessage returns incognito error for LS operations
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
+				error: "APPLY_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const preset: Preset = {
+				id: "preset1",
+				name: "Incognito LS Preset",
+				parameters: [
+					{ id: "p1", key: "lsKey1", type: "localStorage", value: "v1" },
+					{ id: "p2", key: "lsKey2", type: "localStorage", value: "v2" },
+				],
+			};
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
+
+			const result = await applyPreset(123, "preset1");
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+		});
+
+		it("should return false when removePreset has localStorage items that fail on incognito", async () => {
+			// sendMessage returns incognito error for LS operations
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
+				error: "REMOVE_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const preset: Preset = {
+				id: "preset1",
+				name: "Incognito LS Preset",
+				parameters: [{ id: "p1", key: "lsKey1", type: "localStorage", value: "v1" }],
+			};
+			await fakeBrowser.storage.sync.set({ presets: [preset] });
+			await fakeBrowser.storage.local.set({ tabPresetStates: { "123": [] } });
+
+			const result = await removePreset(123, "preset1");
+			expect(result).toBeFalsy();
+			expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+		});
+
+		it("should return false when syncParameter for localStorage fails on incognito", async () => {
+			// First call (apply) fails, so syncParameter returns false immediately
+			(fakeBrowser.runtime.sendMessage as any).mockResolvedValue({
+				error: "APPLY_LS failed on incognito tab: Cannot access",
+				incognito: true,
+				reason: "incognito_not_allowed",
+				success: false,
+			});
+
+			const param: Parameter = {
+				id: "1",
+				key: "lsKey",
+				type: "localStorage",
+				value: "lsValue",
+			};
+
+			const result = await syncParameter(123, param);
+			expect(result).toBeFalsy();
+		});
+	});
+
 	describe("boolean parameter removal", () => {
 		it("should set value to 'false' instead of removing for boolean queryParam", async () => {
 			mockTabUrl = "https://example.com/page?boolKey=true";
@@ -711,6 +1220,106 @@ describe("parameterApplicator", () => {
 					value: "false",
 				})
 			);
+		});
+	});
+
+	describe("incognito / private window behavior", () => {
+		beforeEach(() => {
+			fakeBrowser.reset();
+			mockTabUrl = "https://example.com/page";
+
+			(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
+				id: tabId,
+				url: mockTabUrl,
+				incognito: true,
+			}));
+
+			(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, props: any) => {
+				if (props.url) mockTabUrl = props.url;
+				return { id: tabId, url: mockTabUrl, incognito: true };
+			});
+
+			(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
+			(fakeBrowser.cookies.get as any) = vi.fn(async () => null);
+			(fakeBrowser.cookies.remove as any) = vi.fn(async () => ({}));
+
+			(fakeBrowser.cookies.getAllCookieStores as any) = vi.fn(async () => [
+				{ id: "0", tabIds: [] as number[] },
+				{ id: "1", tabIds: [123] },
+			]);
+
+			(fakeBrowser.runtime.sendMessage as any) = vi.fn(async (msg: any) => {
+				if (msg.type === "APPLY_LS") return { success: true };
+				if (msg.type === "REMOVE_LS") return { success: true };
+				if (msg.type === "GET_LS") return { success: true, value: null };
+				return { success: true };
+			});
+		});
+
+		describe("cookies", () => {
+			it("passes storeId when the incognito cookie store is found", async () => {
+				const param: Parameter = { id: "1", key: "cookieKey", type: "cookie", value: "val" };
+
+				const result = await applyParameter(123, param);
+
+				expect(result).toBeTruthy();
+				expect(fakeBrowser.cookies.set).toHaveBeenCalledWith(
+					expect.objectContaining({ storeId: "1" })
+				);
+			});
+
+			it("omits storeId and logs a warning when incognito store not found", async () => {
+				(fakeBrowser.cookies.getAllCookieStores as any).mockResolvedValueOnce([
+					{ id: "0", tabIds: [] as number[] },
+				]);
+				const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+				const param: Parameter = { id: "1", key: "cookieKey", type: "cookie", value: "val" };
+
+				const result = await applyParameter(123, param);
+
+				expect(result).toBeTruthy();
+				expect(fakeBrowser.cookies.set).toHaveBeenCalledWith(
+					expect.not.objectContaining({ storeId: expect.anything() })
+				);
+				expect(warnSpy).toHaveBeenCalledWith(
+					expect.stringContaining("Could not find incognito cookie store")
+				);
+				warnSpy.mockRestore();
+			});
+		});
+
+		describe("localStorage", () => {
+			it("logs storage_unavailable warning when background returns that reason", async () => {
+				(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+					success: false,
+					reason: "storage_unavailable",
+					error: "localStorage is unavailable",
+				});
+				const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+				const param: Parameter = { id: "1", key: "lsKey", type: "localStorage", value: "val" };
+
+				const result = await applyParameter(123, param);
+
+				expect(result).toBeFalsy();
+				expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Using in-memory fallback"));
+				warnSpy.mockRestore();
+			});
+
+			it("logs incognito_not_allowed warning and mentions Allow in incognito", async () => {
+				(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+					success: false,
+					reason: "incognito_not_allowed",
+					incognito: true,
+					error: "permission denied",
+				});
+				const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+				const param: Parameter = { id: "1", key: "lsKey", type: "localStorage", value: "val" };
+
+				await applyParameter(123, param);
+
+				expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
+				warnSpy.mockRestore();
+			});
 		});
 	});
 });

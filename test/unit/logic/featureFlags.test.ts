@@ -330,6 +330,49 @@ describe("featureFlags", () => {
 		});
 	});
 
+	describe("private window / localStorage unavailable", () => {
+		const throwingStorage = {
+			getItem: vi.fn(() => {
+				throw new DOMException("access denied", "SecurityError");
+			}),
+			setItem: vi.fn(() => {
+				throw new DOMException("access denied", "SecurityError");
+			}),
+			removeItem: vi.fn(() => {
+				throw new DOMException("access denied", "SecurityError");
+			}),
+			clear: vi.fn(),
+		};
+
+		beforeEach(() => {
+			vi.stubGlobal("localStorage", throwingStorage);
+			vi.clearAllMocks();
+		});
+
+		it("getForceProfile returns null when localStorage throws", () => {
+			expect(getForceProfile()).toBeNull();
+		});
+
+		it("getEffectiveProfile returns buildEnv when localStorage throws", () => {
+			expect(getEffectiveProfile("development")).toBe("development");
+			expect(getEffectiveProfile("production")).toBe("production");
+			expect(getEffectiveProfile("canary")).toBe("canary");
+		});
+
+		it("setForceProfile does not throw when localStorage throws", () => {
+			expect(() => setForceProfile("canary")).not.toThrow();
+			expect(() => setForceProfile("development")).not.toThrow();
+		});
+
+		it("setForceProfile(null) does not throw when localStorage throws", () => {
+			expect(() => setForceProfile(null)).not.toThrow();
+		});
+
+		it("clearForceProfile does not throw when localStorage throws", () => {
+			expect(() => clearForceProfile()).not.toThrow();
+		});
+	});
+
 	describe("forceProfile", () => {
 		beforeEach(() => {
 			// Clear localStorage before each test
