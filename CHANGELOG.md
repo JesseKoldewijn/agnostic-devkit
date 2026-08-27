@@ -1,3 +1,11 @@
+## [1.5.1-canary.2](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.1-canary.1...v1.5.1-canary.2) (2026-08-27)
+
+
+### Bug Fixes
+
+* **lint:** remove redundant undefined argument in background test ([2961817](https://github.com/JesseKoldewijn/agnostic-devkit/commit/2961817a66be136a4b013c9aee9f3822f5d44de4))
+* properly handle private-window localStorage and cookie failures ([f360b75](https://github.com/JesseKoldewijn/agnostic-devkit/commit/f360b751c2433d54d222bbecc5a7eb7e3a036b18))
+
 ## [1.5.1-canary.1](https://github.com/JesseKoldewijn/agnostic-devkit/compare/v1.5.0...v1.5.1-canary.1) (2026-03-03)
 
 
