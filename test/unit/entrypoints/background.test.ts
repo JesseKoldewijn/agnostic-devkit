@@ -45,8 +45,8 @@ describe("background localStorage handlers", () => {
 			expect(isStorageUnavailableError("")).toBe(false);
 		});
 
-		it("returns false for undefined", () => {
-			expect(isStorageUnavailableError(undefined)).toBe(false);
+		it("returns false when called with no argument", () => {
+			expect(isStorageUnavailableError()).toBe(false);
 		});
 	});
 
