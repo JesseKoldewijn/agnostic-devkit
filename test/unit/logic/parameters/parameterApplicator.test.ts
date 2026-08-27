@@ -1222,4 +1222,108 @@ describe("parameterApplicator", () => {
 			);
 		});
 	});
+
+	describe("incognito / private window behavior", () => {
+		beforeEach(() => {
+			fakeBrowser.reset();
+			mockTabUrl = "https://example.com/page";
+
+			(fakeBrowser.tabs.get as any) = vi.fn(async (tabId: number) => ({
+				id: tabId,
+				url: mockTabUrl,
+				incognito: true,
+			}));
+
+			(fakeBrowser.tabs.update as any) = vi.fn(async (tabId: number, props: any) => {
+				if (props.url) mockTabUrl = props.url;
+				return { id: tabId, url: mockTabUrl, incognito: true };
+			});
+
+			(fakeBrowser.cookies.set as any) = vi.fn(async () => ({}));
+			(fakeBrowser.cookies.get as any) = vi.fn(async () => null);
+			(fakeBrowser.cookies.remove as any) = vi.fn(async () => ({}));
+
+			(fakeBrowser.cookies.getAllCookieStores as any) = vi.fn(async () => [
+				{ id: "0", tabIds: [] as number[] },
+				{ id: "1", tabIds: [123] },
+			]);
+
+			(fakeBrowser.runtime.sendMessage as any) = vi.fn(async (msg: any) => {
+				if (msg.type === "APPLY_LS") return { success: true };
+				if (msg.type === "REMOVE_LS") return { success: true };
+				if (msg.type === "GET_LS") return { success: true, value: null };
+				return { success: true };
+			});
+		});
+
+		describe("cookies", () => {
+			it("passes storeId when the incognito cookie store is found", async () => {
+				const param: Parameter = { id: "1", key: "cookieKey", type: "cookie", value: "val" };
+
+				const result = await applyParameter(123, param);
+
+				expect(result).toBeTruthy();
+				expect(fakeBrowser.cookies.set).toHaveBeenCalledWith(
+					expect.objectContaining({ storeId: "1" })
+				);
+			});
+
+			it("omits storeId and logs a warning when incognito store not found", async () => {
+				(fakeBrowser.cookies.getAllCookieStores as any).mockResolvedValueOnce([
+					{ id: "0", tabIds: [] as number[] },
+				]);
+				const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+				const param: Parameter = { id: "1", key: "cookieKey", type: "cookie", value: "val" };
+
+				const result = await applyParameter(123, param);
+
+				expect(result).toBeTruthy();
+				expect(fakeBrowser.cookies.set).toHaveBeenCalledWith(
+					expect.not.objectContaining({ storeId: expect.anything() })
+				);
+				expect(warnSpy).toHaveBeenCalledWith(
+					expect.stringContaining("Could not find incognito cookie store")
+				);
+				warnSpy.mockRestore();
+			});
+		});
+
+		describe("localStorage", () => {
+			it("logs storage_unavailable warning when background returns that reason", async () => {
+				(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+					success: false,
+					reason: "storage_unavailable",
+					error: "localStorage is unavailable",
+				});
+				const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+				const param: Parameter = { id: "1", key: "lsKey", type: "localStorage", value: "val" };
+
+				const result = await applyParameter(123, param);
+
+				expect(result).toBeFalsy();
+				expect(warnSpy).toHaveBeenCalledWith(
+					expect.stringContaining("Using in-memory fallback")
+				);
+				warnSpy.mockRestore();
+			});
+
+			it("logs incognito_not_allowed warning and mentions Allow in incognito", async () => {
+				(fakeBrowser.runtime.sendMessage as any).mockResolvedValueOnce({
+					success: false,
+					reason: "incognito_not_allowed",
+					incognito: true,
+					error: "permission denied",
+				});
+				const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+				const param: Parameter = { id: "1", key: "lsKey", type: "localStorage", value: "val" };
+
+				await applyParameter(123, param);
+
+				expect(warnSpy).toHaveBeenCalledWith(
+					expect.stringContaining("Allow in incognito")
+				);
+				warnSpy.mockRestore();
+			});
+		});
+	});
 });

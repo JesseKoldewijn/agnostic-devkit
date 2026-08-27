@@ -35,6 +35,12 @@ async function getTabCookieStoreId(tabId: number): Promise<string | undefined> {
 
 		const stores = await browser.cookies.getAllCookieStores();
 		const incognitoStore = stores.find((s) => s.tabIds.includes(tabId));
+		if (!incognitoStore) {
+			console.warn(
+				`[ParameterApplicator] Could not find incognito cookie store for tab ${tabId}. ` +
+					`Cookies may be applied to the wrong store.`
+			);
+		}
 		return incognitoStore?.id;
 	} catch {
 		return undefined;
@@ -158,6 +164,11 @@ function logIncognitoLocalStorageError(
 		console.warn(
 			`[ParameterApplicator] localStorage ${operation} for key "${key}" failed on incognito tab. ` +
 				`Ensure the extension has "Allow in incognito" enabled in your browser's extension settings.`
+		);
+	} else if (response.reason === "storage_unavailable") {
+		console.warn(
+			`[ParameterApplicator] localStorage ${operation} for key "${key}" failed: ` +
+				`localStorage is unavailable in this private/restricted window. Using in-memory fallback.`
 		);
 	} else if (response.incognito) {
 		console.warn(
