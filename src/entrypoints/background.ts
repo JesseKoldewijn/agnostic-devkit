@@ -5,9 +5,6 @@ import { cleanupTabState } from "@/logic/parameters";
 import { logBrowserInfo } from "@/utils/browser";
 import { initDisplayMode } from "@/utils/displayMode";
 
-/**
- * Check if a tab is in incognito/private browsing mode.
- */
 async function isTabIncognito(tabId: number): Promise<boolean> {
 	try {
 		const tab = await browser.tabs?.get(tabId);
@@ -17,19 +14,29 @@ async function isTabIncognito(tabId: number): Promise<boolean> {
 	}
 }
 
-/**
- * Build a diagnostic error response for a failed scripting operation.
- * Detects incognito-specific failures and returns a structured reason code.
- */
+/** Returns true for error names that indicate localStorage is blocked (private mode, storage disabled). */
+export function isStorageUnavailableError(errorName?: string): boolean {
+	return errorName === "QuotaExceededError" || errorName === "SecurityError";
+}
+
 async function buildScriptErrorResponse(
 	error: Error,
 	tabId: number,
-	operation: string
+	operation: string,
+	errorName?: string
 ): Promise<{ success: false; error: string; reason?: string; incognito?: boolean }> {
 	const incognito = await isTabIncognito(tabId);
 	const errorMsg = error.message || String(error);
 
-	// Common incognito-related error patterns from Chrome/Firefox
+	if (isStorageUnavailableError(errorName)) {
+		return {
+			error: `${operation} failed: localStorage is unavailable (private/restricted window)`,
+			incognito,
+			reason: "storage_unavailable",
+			success: false,
+		};
+	}
+
 	const isPermissionError =
 		errorMsg.includes("Cannot access") ||
 		errorMsg.includes("No tab with id") ||
@@ -69,25 +76,179 @@ async function buildScriptErrorResponse(
 	};
 }
 
+export type LSOpResult =
+	| { success: true; value?: string | null }
+	| { success: false; error: string; reason?: string; incognito?: boolean };
+
+/** In-memory fallback store for tabs where localStorage is unavailable (private/restricted windows). */
+export const privateWindowStorage = new Map<number, Map<string, string>>();
+
+function getTabStore(
+	storage: Map<number, Map<string, string>>,
+	tabId: number
+): Map<string, string> {
+	if (!storage.has(tabId)) {
+		storage.set(tabId, new Map());
+	}
+	return storage.get(tabId)!;
+}
+
+type ScriptedWriteResult =
+	| { success: true }
+	| { success: false; errorName: string; error: string };
+type ScriptedReadResult =
+	| { success: true; value: string | null }
+	| { success: false; errorName: string; error: string };
+
+export async function handleApplyLS(
+	tabId: number,
+	key: string,
+	value: string,
+	storage: Map<number, Map<string, string>> = privateWindowStorage
+): Promise<LSOpResult> {
+	if (!browser.scripting) {
+		return { success: false, error: "browser.scripting not available" };
+	}
+
+	try {
+		const results = await browser.scripting.executeScript({
+			args: [key, value] as [string, string],
+			func: (k: string, v: string): ScriptedWriteResult => {
+				try {
+					localStorage.setItem(k, v);
+					return { success: true };
+				} catch (e) {
+					const err = e as Error;
+					return { success: false, errorName: err.name, error: err.message };
+				}
+			},
+			target: { tabId },
+			world: "MAIN",
+		});
+
+		const result = results[0]?.result as ScriptedWriteResult | undefined;
+		if (result && !result.success) {
+			if (isStorageUnavailableError(result.errorName)) {
+				getTabStore(storage, tabId).set(key, value);
+				return { success: true };
+			}
+			return buildScriptErrorResponse(
+				new Error(result.error),
+				tabId,
+				"APPLY_LS",
+				result.errorName
+			);
+		}
+
+		return { success: true };
+	} catch (error) {
+		return buildScriptErrorResponse(error as Error, tabId, "APPLY_LS");
+	}
+}
+
+export async function handleRemoveLS(
+	tabId: number,
+	key: string,
+	storage: Map<number, Map<string, string>> = privateWindowStorage
+): Promise<LSOpResult> {
+	if (!browser.scripting) {
+		return { success: false, error: "browser.scripting not available" };
+	}
+
+	try {
+		const results = await browser.scripting.executeScript({
+			args: [key] as [string],
+			func: (k: string): ScriptedWriteResult => {
+				try {
+					localStorage.removeItem(k);
+					return { success: true };
+				} catch (e) {
+					const err = e as Error;
+					return { success: false, errorName: err.name, error: err.message };
+				}
+			},
+			target: { tabId },
+			world: "MAIN",
+		});
+
+		const result = results[0]?.result as ScriptedWriteResult | undefined;
+		if (result && !result.success) {
+			if (isStorageUnavailableError(result.errorName)) {
+				storage.get(tabId)?.delete(key);
+				return { success: true };
+			}
+			return buildScriptErrorResponse(
+				new Error(result.error),
+				tabId,
+				"REMOVE_LS",
+				result.errorName
+			);
+		}
+
+		return { success: true };
+	} catch (error) {
+		return buildScriptErrorResponse(error as Error, tabId, "REMOVE_LS");
+	}
+}
+
+export async function handleGetLS(
+	tabId: number,
+	key: string,
+	storage: Map<number, Map<string, string>> = privateWindowStorage
+): Promise<LSOpResult> {
+	if (!browser.scripting) {
+		return { success: false, error: "browser.scripting not available" };
+	}
+
+	try {
+		const results = await browser.scripting.executeScript({
+			args: [key] as [string],
+			func: (k: string): ScriptedReadResult => {
+				try {
+					return { success: true, value: localStorage.getItem(k) };
+				} catch (e) {
+					const err = e as Error;
+					return { success: false, errorName: err.name, error: err.message };
+				}
+			},
+			target: { tabId },
+			world: "MAIN",
+		});
+
+		const result = results[0]?.result as ScriptedReadResult | undefined;
+		if (result && !result.success) {
+			if (isStorageUnavailableError(result.errorName)) {
+				const memValue = storage.get(tabId)?.get(key) ?? null;
+				return { success: true, value: memValue };
+			}
+			return buildScriptErrorResponse(
+				new Error(result.error),
+				tabId,
+				"GET_LS",
+				result.errorName
+			);
+		}
+
+		return { success: true, value: result?.value ?? null };
+	} catch (error) {
+		return buildScriptErrorResponse(error as Error, tabId, "GET_LS");
+	}
+}
+
 export default defineBackground(() => {
 	browser.runtime?.onInstalled.addListener(async () => {
 		console.log("Extension installed");
-		// Log browser info for debugging
 		logBrowserInfo();
-		// Initialize display mode
 		await initDisplayMode();
 
-		// Check current popup state
 		const popup = await browser.action?.getPopup({});
 		console.log("[Background] Current popup after init:", popup);
 	});
 
-	// Initialize display mode on startup
 	browser.runtime?.onStartup.addListener(async () => {
 		logBrowserInfo();
 		await initDisplayMode();
 
-		// Check current popup state
 		const popup = await browser.action?.getPopup({});
 		console.log("[Background] Current popup after init:", popup);
 	});
@@ -99,87 +260,26 @@ export default defineBackground(() => {
 
 		if (msg.type === "APPLY_LS") {
 			const { tabId, key, value } = msg;
-			if (!browser.scripting) {
-				sendResponse({
-					error: "browser.scripting not available",
-					success: false,
-				});
-				return true;
-			}
-
-			browser.scripting
-				.executeScript({
-					args: [key, value],
-					func: (k: string, v: string) => {
-						console.log(`[ContentScript] Setting LS (MAIN): ${k}=${v}`);
-						localStorage.setItem(k, v);
-					},
-					target: { tabId },
-					world: "MAIN",
-				})
-				.then(() => sendResponse({ success: true }))
-				.catch((error: Error) =>
-					buildScriptErrorResponse(error, tabId, "APPLY_LS").then(sendResponse)
-				);
+			handleApplyLS(tabId, key, value).then(sendResponse);
 			return true;
 		}
 
 		if (msg.type === "REMOVE_LS") {
 			const { tabId, key } = msg;
-			if (!browser.scripting) {
-				sendResponse({
-					error: "browser.scripting not available",
-					success: false,
-				});
-				return true;
-			}
-
-			browser.scripting
-				.executeScript({
-					args: [key],
-					func: (k: string) => {
-						console.log(`[ContentScript] Removing LS (MAIN): ${k}`);
-						localStorage.removeItem(k);
-					},
-					target: { tabId },
-					world: "MAIN",
-				})
-				.then(() => sendResponse({ success: true }))
-				.catch((error: Error) =>
-					buildScriptErrorResponse(error, tabId, "REMOVE_LS").then(sendResponse)
-				);
+			handleRemoveLS(tabId, key).then(sendResponse);
 			return true;
 		}
 
 		if (msg.type === "GET_LS") {
 			const { tabId, key } = msg;
-			if (!browser.scripting) {
-				sendResponse({
-					error: "browser.scripting not available",
-					success: false,
-				});
-				return true;
-			}
-			browser.scripting
-				.executeScript({
-					args: [key],
-					func: (k: string) => localStorage.getItem(k),
-					target: { tabId },
-					world: "MAIN",
-				})
-				.then((results) => sendResponse({ success: true, value: results[0]?.result }))
-				.catch((error: Error) =>
-					buildScriptErrorResponse(error, tabId, "GET_LS").then(sendResponse)
-				);
+			handleGetLS(tabId, key).then(sendResponse);
 			return true;
 		}
 
 		sendResponse({ msg, success: true });
-
 		return true;
 	});
 
-	// Listen for changes to display mode and re-apply
 	browser.storage?.onChanged.addListener((changes, areaName) => {
 		console.log("[Background] Storage changed:", areaName, changes);
 		if (areaName === "sync" && changes.displayMode) {
@@ -189,14 +289,13 @@ export default defineBackground(() => {
 				"->",
 				changes.displayMode.newValue
 			);
-			// Re-initialize display mode when it changes
 			initDisplayMode();
 		}
 	});
 
-	// Clean up tab preset states when tabs are closed
 	browser.tabs?.onRemoved.addListener(async (tabId, _removeInfo) => {
 		console.log("[Background] Tab closed, cleaning up preset state:", tabId);
+		privateWindowStorage.delete(tabId);
 		try {
 			await cleanupTabState(tabId);
 		} catch (error) {

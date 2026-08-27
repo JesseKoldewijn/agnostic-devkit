@@ -113,16 +113,14 @@ const FORCE_PROFILE_KEY = "forceProfile";
  * @returns The effective environment to use for feature flags
  */
 export function getEffectiveProfile(buildEnv: ExtensionEnv): ExtensionEnv {
-	// Only check localStorage in browser environments
-	if (typeof localStorage === "undefined") {
-		return buildEnv;
+	try {
+		const forced = localStorage.getItem(FORCE_PROFILE_KEY);
+		if (forced && isValidExtensionEnv(forced)) {
+			return forced;
+		}
+	} catch {
+		// localStorage unavailable (private window or storage disabled)
 	}
-
-	const forced = localStorage.getItem(FORCE_PROFILE_KEY);
-	if (forced && isValidExtensionEnv(forced)) {
-		return forced;
-	}
-
 	return buildEnv;
 }
 
@@ -131,15 +129,14 @@ export function getEffectiveProfile(buildEnv: ExtensionEnv): ExtensionEnv {
  * @returns The forced profile or null if not set
  */
 export function getForceProfile(): ExtensionEnv | null {
-	if (typeof localStorage === "undefined") {
-		return null;
+	try {
+		const forced = localStorage.getItem(FORCE_PROFILE_KEY);
+		if (forced && isValidExtensionEnv(forced)) {
+			return forced;
+		}
+	} catch {
+		// localStorage unavailable (private window or storage disabled)
 	}
-
-	const forced = localStorage.getItem(FORCE_PROFILE_KEY);
-	if (forced && isValidExtensionEnv(forced)) {
-		return forced;
-	}
-
 	return null;
 }
 
@@ -148,14 +145,14 @@ export function getForceProfile(): ExtensionEnv | null {
  * @param env - The environment to force, or null to clear
  */
 export function setForceProfile(env: ExtensionEnv | null): void {
-	if (typeof localStorage === "undefined") {
-		return;
-	}
-
-	if (env === null) {
-		localStorage.removeItem(FORCE_PROFILE_KEY);
-	} else {
-		localStorage.setItem(FORCE_PROFILE_KEY, env);
+	try {
+		if (env === null) {
+			localStorage.removeItem(FORCE_PROFILE_KEY);
+		} else {
+			localStorage.setItem(FORCE_PROFILE_KEY, env);
+		}
+	} catch {
+		// localStorage unavailable (private window or storage disabled) — silently no-op
 	}
 }
 
