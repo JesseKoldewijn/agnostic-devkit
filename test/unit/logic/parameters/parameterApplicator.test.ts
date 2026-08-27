@@ -1301,9 +1301,7 @@ describe("parameterApplicator", () => {
 				const result = await applyParameter(123, param);
 
 				expect(result).toBeFalsy();
-				expect(warnSpy).toHaveBeenCalledWith(
-					expect.stringContaining("Using in-memory fallback")
-				);
+				expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Using in-memory fallback"));
 				warnSpy.mockRestore();
 			});
 
@@ -1319,9 +1317,7 @@ describe("parameterApplicator", () => {
 
 				await applyParameter(123, param);
 
-				expect(warnSpy).toHaveBeenCalledWith(
-					expect.stringContaining("Allow in incognito")
-				);
+				expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Allow in incognito"));
 				warnSpy.mockRestore();
 			});
 		});
